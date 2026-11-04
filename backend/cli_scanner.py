@@ -9,20 +9,36 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Load .env
+env_f = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+if os.path.exists(env_f):
+    with open(env_f) as f:
+        for line in f:
+            if "=" in line and not line.startswith("#"):
+                k, v = line.strip().split("=", 1)
+                os.environ[k] = v
+
+from app.data.angel_one import AngelOneSmartAPIProvider
 from app.data.sample_universe import SampleUniverseProvider
 from app.core.shortlist_engine import scan_and_shortlist_universe, monitor_open_positions, evaluate_single_stock_full_profile
 
 
-def print_banner():
+def print_banner(source_name: str = "Angel One SmartAPI"):
     print("=" * 80)
     print("  🚀 TRADELENS AI - INDIAN MARKET DECISION SUPPORT & SHORTLIST ASSISTANT")
-    print("  Empirical Probabilities · Derivatives (OI) · Fundamentals · Risk Vetoes")
+    print(f"  Live Data Feed: {source_name} · Multi-Factor Screening · Capital Protection")
     print("=" * 80)
 
 
 def run_scanner():
-    print_banner()
-    provider = SampleUniverseProvider()
+    provider = AngelOneSmartAPIProvider()
+    if provider.connect():
+        feed_name = f"100% REAL-TIME Angel One SmartAPI (Client: {provider.client_code})"
+    else:
+        feed_name = "Sample Benchmark Data Fallback"
+        provider = SampleUniverseProvider()
+        
+    print_banner(feed_name)
     all_stocks = provider.get_all_stocks()
     
     print(f"\n[*] Scanning universe of {len(all_stocks)} eligible Indian F&O / LargeCap tickers...")
