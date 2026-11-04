@@ -86,18 +86,28 @@
 </head>
 <body class="min-h-screen transition-colors duration-200">
 
-  <!-- TOP INDEX TICKER STRIP (Prominent Indian Indices) -->
-  <div class="header-theme border-b border-theme py-2 px-4 transition-colors">
-    <div class="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto gap-4 text-xs scrollbar-none">
-      <div class="flex items-center gap-2 font-bold text-theme-secondary uppercase tracking-wider shrink-0">
-        <i class="fa-solid fa-chart-line text-emerald-500"></i> Indices:
-      </div>
-      <div id="indicesTicker" class="flex items-center gap-6 shrink-0">
+  <!-- PROMINENT LIVE MARKET INDICES BAR (Clean, Legible Cards) -->
+  <div class="header-theme border-b border-theme py-2.5 px-4 transition-colors relative shadow-sm">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <!-- Left scroll button -->
+      <button onclick="scrollIndices(-240)" class="h-8 w-8 rounded-lg sub-card-theme border border-theme text-theme-secondary hover:text-theme-primary flex items-center justify-center shrink-0 transition" title="Scroll Left">
+        <i class="fa-solid fa-chevron-left text-xs"></i>
+      </button>
+
+      <!-- Scrollable Index Cards Container -->
+      <div id="indicesScrollContainer" class="flex items-center gap-3 overflow-x-auto scroll-smooth scrollbar-none py-0.5 flex-1">
         <!-- Rendered via JS -->
       </div>
-      <div class="shrink-0 flex items-center gap-2 text-[11px] text-theme-secondary pl-4 border-l border-theme">
-        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="font-semibold text-emerald-600 dark:text-emerald-400">Angel One Live Feed (AAAM847513)</span>
+
+      <!-- Right scroll button -->
+      <button onclick="scrollIndices(240)" class="h-8 w-8 rounded-lg sub-card-theme border border-theme text-theme-secondary hover:text-theme-primary flex items-center justify-center shrink-0 transition" title="Scroll Right">
+        <i class="fa-solid fa-chevron-right text-xs"></i>
+      </button>
+
+      <!-- Live Feed Indicator Badge -->
+      <div class="shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Angel One Live (AAAM847513)</span>
       </div>
     </div>
   </div>
@@ -534,25 +544,40 @@
 
     let scanData = fallbackData;
 
-    // Render Prominent Indices Ticker Bar
+    // Render Prominent Index Cards in Horizontal Scroll Bar
     function renderIndices(indices) {
-      const container = document.getElementById('indicesTicker');
+      const container = document.getElementById('indicesScrollContainer');
+      if (!container) return;
       container.innerHTML = '';
       (indices || defaultIndices).forEach(idx => {
         const isPos = idx.change_pct >= 0;
-        const colorClass = isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+        const colorClass = isPos
+          ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+          : 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30';
         const icon = isPos ? 'fa-caret-up' : 'fa-caret-down';
-        const item = document.createElement('div');
-        item.className = "flex items-center gap-1.5 whitespace-nowrap";
-        item.innerHTML = `
-          <span class="font-bold text-theme-primary">${idx.symbol}:</span>
-          <span class="font-bold text-theme-primary">₹${idx.value.toLocaleString()}</span>
-          <span class="${colorClass} font-semibold flex items-center gap-0.5">
-            <i class="fa-solid ${icon}"></i> ${isPos ? '+' : ''}${idx.change_pts ? idx.change_pts.toFixed(2) : ''} (${isPos ? '+' : ''}${idx.change_pct.toFixed(2)}%)
-          </span>
+        const card = document.createElement('div');
+        card.className = "sub-card-theme border border-theme rounded-xl px-4 py-2 flex items-center gap-3.5 shrink-0 shadow-sm hover:border-emerald-500/50 transition cursor-default";
+        card.innerHTML = `
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-theme-secondary flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full ${isPos ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
+              ${idx.symbol}
+            </div>
+            <div class="text-sm font-extrabold text-theme-primary mt-0.5">₹${idx.value.toLocaleString()}</div>
+          </div>
+          <div class="border rounded-lg px-2.5 py-1 text-xs font-bold ${colorClass} flex items-center gap-1">
+            <i class="fa-solid ${icon}"></i>
+            <span>${isPos ? '+' : ''}${idx.change_pct.toFixed(2)}%</span>
+            <span class="text-[10px] font-medium opacity-80">(${isPos ? '+' : ''}${idx.change_pts ? idx.change_pts.toFixed(1) : ''})</span>
+          </div>
         `;
-        container.appendChild(item);
+        container.appendChild(card);
       });
+    }
+
+    function scrollIndices(amount) {
+      const el = document.getElementById('indicesScrollContainer');
+      if (el) el.scrollBy({ left: amount, behavior: 'smooth' });
     }
 
     // Switch Tabs
@@ -936,8 +961,9 @@
       }
     }
 
-    // Initialize
+    // Initialize and auto-refresh every 5 seconds
     refreshScan();
+    setInterval(refreshScan, 5000);
   </script>
 </body>
 </html>
