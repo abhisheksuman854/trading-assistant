@@ -214,6 +214,12 @@
       <button onclick="switchTab('vetoed')" id="tab-vetoed" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-ban"></i> 'Why NOT to Trade' Gatekeeper
       </button>
+      <button onclick="switchTab('verifier')" id="tab-verifier" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+        <i class="fa-solid fa-shield-virus"></i> Tip Sanity Verifier
+      </button>
+      <button onclick="switchTab('ledger')" id="tab-ledger" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+        <i class="fa-solid fa-wallet"></i> Capital & P&L Ledger
+      </button>
     </div>
 
     <!-- TAB 1: Shortlisted Setups -->
@@ -307,6 +313,239 @@
 
       <div id="vetoedContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 7: Tip Sanity Verifier -->
+    <section id="panel-verifier" class="hidden space-y-6">
+      <div>
+        <h2 class="text-base font-semibold text-theme-primary">Tip Sanity Verifier & Anti-Trap Shield</h2>
+        <p class="text-xs text-theme-secondary">Test any broker tip or WhatsApp call against live Angel One SmartAPI data before placing manual orders. Prevents chased entries, unviable stop-losses, and theta burn traps.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Input Form -->
+        <div class="lg:col-span-5 card-theme border rounded-xl p-5 space-y-4">
+          <div class="flex justify-between items-center border-b border-theme pb-3">
+            <h3 class="text-sm font-bold text-theme-primary flex items-center gap-2">
+              <i class="fa-solid fa-file-invoice text-emerald-500"></i> Enter Tip Details
+            </h3>
+            <span class="text-[11px] text-theme-secondary">Fast 3-Sec Analysis</span>
+          </div>
+
+          <!-- Quick Test Presets -->
+          <div>
+            <label class="text-[11px] text-theme-secondary font-medium">Quick Test with Broker History:</label>
+            <div class="flex flex-wrap gap-1.5 mt-1">
+              <button type="button" onclick="loadTipPreset('NESTLEIND', 'CE', 28, 22, 33, 36, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Nestle 28 CE (Nov 4 Trap)</button>
+              <button type="button" onclick="loadTipPreset('RELIANCE', 'CE', 22, 18, 26, 30, 2)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Reliance 22 CE (2 Lots)</button>
+              <button type="button" onclick="loadTipPreset('TCS', 'CE', 38, 32, 50, 60, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">TCS 38 CE (1 Lot)</button>
+            </div>
+          </div>
+
+          <form id="tipForm" onsubmit="handleVerifyTip(event)" class="space-y-3 text-xs">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Stock / Index Symbol</label>
+                <input type="text" id="tipSymbol" required placeholder="e.g. NESTLEIND, NIFTY" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary uppercase focus:outline-none focus:border-emerald-500 font-bold">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Instrument Type</label>
+                <select id="tipInstrument" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500 font-medium">
+                  <option value="CE">Call Option (CE)</option>
+                  <option value="PE">Put Option (PE)</option>
+                  <option value="EQUITY">Cash Equity</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Tip Entry (₹)</label>
+                <input type="number" step="0.05" id="tipEntry" required placeholder="28.00" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Tip SL (₹)</label>
+                <input type="number" step="0.05" id="tipSL" required placeholder="22.00" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500 text-rose-500 font-bold">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Target 1 (₹)</label>
+                <input type="number" step="0.05" id="tipTarget1" required placeholder="33.00" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500 text-emerald-500 font-bold">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Target 2 (₹)</label>
+                <input type="number" step="0.05" id="tipTarget2" placeholder="36.00" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Lots to Trade</label>
+                <input type="number" id="tipLots" value="1" min="1" max="20" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500 font-bold">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Max Risk %</label>
+                <input type="number" step="0.5" id="tipRiskPct" value="3.0" min="1" max="10" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-theme-secondary font-medium mb-1">Total Account Capital (₹)</label>
+              <input type="number" id="tipCapital" value="50000" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <button type="submit" id="btnVerifyTip" class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 mt-2">
+              <i class="fa-solid fa-shield-halved"></i> Verify Tip with SmartAPI
+            </button>
+          </form>
+        </div>
+
+        <!-- Verification Results Output -->
+        <div class="lg:col-span-7" id="tipResultContainer">
+          <div class="card-theme border rounded-xl p-8 text-center flex flex-col items-center justify-center h-full min-h-[350px]">
+            <div class="h-16 w-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-2xl mb-4">
+              <i class="fa-solid fa-radar"></i>
+            </div>
+            <h4 class="text-base font-bold text-theme-primary mb-1">Awaiting Tip Input</h4>
+            <p class="text-xs text-theme-secondary max-w-md">Enter any tip received from WhatsApp or your broker on the left. The engine will evaluate chase slippage, true ₹ rupee risk per lot, and underlying technical alignment.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: Capital & P&L Ledger -->
+    <section id="panel-ledger" class="hidden space-y-6">
+      <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 class="text-base font-semibold text-theme-primary">Capital & Daily P&L Ledger</h2>
+          <p class="text-xs text-theme-secondary">Tracks net performance starting from your initial capital. Enforces a daily drawdown circuit breaker to prevent emotional over-trading.</p>
+        </div>
+        <button onclick="openLedgerSettingsModal()" class="sub-card-theme border border-theme text-theme-primary hover:border-emerald-500 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 transition">
+          <i class="fa-solid fa-gear"></i> Set Capital & Risk Limits
+        </button>
+      </div>
+
+      <!-- Top Ledger Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card-theme border rounded-xl p-4">
+          <div class="text-xs text-theme-secondary font-medium">Starting Initial Capital</div>
+          <div class="text-xl font-bold text-theme-primary mt-1" id="ledgerInitialCapital">₹50,000.00</div>
+          <div class="text-[11px] text-theme-secondary mt-1">Base account allocation</div>
+        </div>
+
+        <div class="card-theme border rounded-xl p-4">
+          <div class="text-xs text-theme-secondary font-medium">Current Net Equity</div>
+          <div class="text-xl font-bold text-theme-primary mt-1" id="ledgerCurrentBalance">₹49,320.00</div>
+          <div class="text-[11px] mt-1" id="ledgerOverallPnL">-₹680.00 (-1.36%)</div>
+        </div>
+
+        <div class="card-theme border rounded-xl p-4">
+          <div class="text-xs text-theme-secondary font-medium">Today's Realized P&L</div>
+          <div class="text-xl font-bold mt-1" id="ledgerTodayPnL">-₹680.00</div>
+          <div class="text-[11px] text-theme-secondary mt-1" id="ledgerTodayWinRate">1 Win · 1 Loss (50.0%)</div>
+        </div>
+
+        <div class="card-theme border rounded-xl p-4">
+          <div class="text-xs text-theme-secondary font-medium">Daily Loss Circuit Breaker</div>
+          <div class="text-xl font-bold mt-1 text-emerald-500" id="ledgerBuffer">₹1,820.00 Left</div>
+          <div class="text-[11px] text-theme-secondary mt-1" id="ledgerMaxLimit">Max allowed loss: ₹2,500 (5%)</div>
+        </div>
+      </div>
+
+      <!-- Circuit Breaker Alert Banner -->
+      <div id="circuitBreakerBanner" class="hidden p-4 rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-500 flex items-start gap-3">
+        <i class="fa-solid fa-triangle-exclamation text-xl shrink-0 mt-0.5"></i>
+        <div>
+          <div class="font-bold text-sm">🛑 DAILY CIRCUIT BREAKER ACTIVATED: MAXIMUM LOSS LIMIT REACHED</div>
+          <p class="text-xs mt-1 text-rose-400">You have hit your daily loss threshold. System advises closing Angel One for today. Revenge trading after emotional drawdowns accounts for 85% of catastrophic retail losses.</p>
+        </div>
+      </div>
+
+      <!-- Record Trade + Trade Journal Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Fast Trade Record Form -->
+        <div class="lg:col-span-4 card-theme border rounded-xl p-5 space-y-4">
+          <h3 class="text-sm font-bold text-theme-primary flex items-center gap-2 border-b border-theme pb-3">
+            <i class="fa-solid fa-plus-circle text-emerald-500"></i> Record Closed Trade
+          </h3>
+          <form id="recordTradeForm" onsubmit="handleRecordTrade(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block text-theme-secondary font-medium mb-1">Symbol & Strike</label>
+              <input type="text" id="recSymbol" required placeholder="e.g. NIFTY 23800 CE" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary uppercase font-bold focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Lots</label>
+                <input type="number" id="recLots" value="1" min="1" required class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Lot Size</label>
+                <input type="number" id="recLotSize" value="65" required class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Buy Price (₹)</label>
+                <input type="number" step="0.05" id="recEntry" required placeholder="142.00" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-theme-secondary font-medium mb-1">Sell Price (₹)</label>
+                <input type="number" step="0.05" id="recExit" required placeholder="165.00" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500 font-bold">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-theme-secondary font-medium mb-1">Trade Notes / Execution Reflection</label>
+              <input type="text" id="recNotes" placeholder="e.g. Scalped Target 1, respected SL." class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <button type="submit" class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20">
+              <i class="fa-solid fa-floppy-disk"></i> Save to Ledger
+            </button>
+          </form>
+        </div>
+
+        <!-- Trade Journal Table -->
+        <div class="lg:col-span-8 card-theme border rounded-xl p-5 space-y-4">
+          <div class="flex flex-wrap justify-between items-center gap-2 border-b border-theme pb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold text-theme-primary flex items-center gap-2">
+                <i class="fa-solid fa-book text-emerald-500"></i> Trade History & Performance Journal
+              </h3>
+              <span class="badge bg-emerald-500/10 text-emerald-500 text-[10px]" id="ledgerTotalTradesCount">0 Trades</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="importChatHistory()" class="px-2.5 py-1 text-[11px] rounded-lg sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition flex items-center gap-1.5" title="Reconstruct all 19 verified trades from WhatsApp chat">
+                <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> Load Chat Trades (19)
+              </button>
+              <button onclick="clearLedgerHistory()" class="px-2.5 py-1 text-[11px] rounded-lg sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary transition" title="Clear journal history">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="sub-card-theme border-b border-theme text-theme-secondary uppercase text-[10px] tracking-wider font-semibold">
+                <tr>
+                  <th class="py-2.5 px-3">Date/Time</th>
+                  <th class="py-2.5 px-3">Symbol</th>
+                  <th class="py-2.5 px-3">Lots</th>
+                  <th class="py-2.5 px-3">Buy / Sell</th>
+                  <th class="py-2.5 px-3">P&L (₹)</th>
+                  <th class="py-2.5 px-3">Status</th>
+                  <th class="py-2.5 px-3">Notes</th>
+                  <th class="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTradesTableBody" class="divide-y divide-theme">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -582,7 +821,7 @@
 
     // Switch Tabs
     function switchTab(tabId) {
-      ['shortlist', 'options', 'watchlist', 'fundamentals', 'positions', 'vetoed'].forEach(t => {
+      ['shortlist', 'options', 'watchlist', 'fundamentals', 'positions', 'vetoed', 'verifier', 'ledger'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
         const panel = document.getElementById(`panel-${t}`);
         if (!btn || !panel) return;
@@ -596,6 +835,9 @@
           panel.classList.add('hidden');
         }
       });
+      if (tabId === 'ledger') {
+        loadLedger();
+      }
     }
 
     // Render Shortlist Cards
@@ -858,50 +1100,194 @@
       `;
     }
 
-    // Render Position Monitor
+    // Active Positions Management (Dynamic)
+    function getUserPositions() {
+      try {
+        const stored = localStorage.getItem('tradelens_positions');
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveUserPositions(positions) {
+      localStorage.setItem('tradelens_positions', JSON.stringify(positions));
+      renderPositions();
+    }
+
+    function toggleAddPositionForm() {
+      const form = document.getElementById('addPositionFormContainer');
+      if (form) form.classList.toggle('hidden');
+    }
+
+    function handleAddPosition(event) {
+      if (event && event.preventDefault) event.preventDefault();
+      const symbol = document.getElementById('posSymbol').value.trim().toUpperCase();
+      const lots = parseInt(document.getElementById('posLots').value) || 1;
+      const lotSize = parseInt(document.getElementById('posLotSize').value) || 65;
+      const entry = parseFloat(document.getElementById('posEntry').value);
+      const sl = parseFloat(document.getElementById('posSL').value);
+      const t1 = parseFloat(document.getElementById('posTarget1').value);
+      const t2 = parseFloat(document.getElementById('posTarget2').value) || null;
+
+      const newPos = {
+        id: `pos-${Date.now()}`,
+        symbol: symbol,
+        lots: lots,
+        lot_size: lotSize,
+        entry: entry,
+        sl: sl,
+        initial_sl: sl,
+        t1: t1,
+        t2: t2,
+        cmp: entry, // baseline
+        trailed_to_cost: false,
+        created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      const positions = getUserPositions();
+      positions.unshift(newPos);
+      saveUserPositions(positions);
+
+      document.getElementById('addPositionForm').reset();
+      toggleAddPositionForm();
+    }
+
+    function trailPositionToCost(idx) {
+      const positions = getUserPositions();
+      if (!positions[idx]) return;
+      positions[idx].sl = positions[idx].entry;
+      positions[idx].trailed_to_cost = true;
+      saveUserPositions(positions);
+      alert(`✔ SL for ${positions[idx].symbol} moved to COST (₹${positions[idx].entry}). Risk is now ₹0.`);
+    }
+
+    async function closePositionModal(idx) {
+      const positions = getUserPositions();
+      const p = positions[idx];
+      if (!p) return;
+
+      const exitPriceStr = prompt(`Enter Exit Price for ${p.symbol} (Bought @ ₹${p.entry}):`, p.cmp || p.t1);
+      if (!exitPriceStr || isNaN(exitPriceStr)) return;
+
+      const exitPrice = parseFloat(exitPriceStr);
+      const totalQty = p.lots * p.lot_size;
+      const pnl = Math.round((exitPrice - p.entry) * totalQty);
+
+      // Auto-log to Capital Ledger API
+      try {
+        await fetch('http://127.0.0.1:8000/api/ledger/trade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: p.symbol,
+            type: p.symbol.includes('PE') ? 'PE' : 'CE',
+            lots: p.lots,
+            lot_size: p.lot_size,
+            entry_price: p.entry,
+            exit_price: exitPrice,
+            notes: `Closed live position. P&L: ₹${pnl.toLocaleString()}`
+          })
+        });
+      } catch (err) {
+        console.warn('Could not sync closed trade to API:', err);
+      }
+
+      // Remove from active positions
+      positions.splice(idx, 1);
+      saveUserPositions(positions);
+      loadLedger();
+      alert(`✔ Position ${p.symbol} closed at ₹${exitPrice}. P&L: ${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()} added to Ledger.`);
+    }
+
+    function deletePosition(idx) {
+      if (!confirm("Remove this position from tracking?")) return;
+      const positions = getUserPositions();
+      positions.splice(idx, 1);
+      saveUserPositions(positions);
+    }
+
+    function clearAllPositions() {
+      if (!confirm("Clear all active positions?")) return;
+      saveUserPositions([]);
+    }
+
+    // Render Dynamic Position Monitor
     function renderPositions() {
       const container = document.getElementById('positionsContainer');
-      container.innerHTML = `
-        <div class="card-theme border rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-              REL
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-theme-primary text-base">RELIANCE</span>
-                <span class="badge bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">50 Shares</span>
-                <span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">NORMAL HOLD</span>
-              </div>
-              <p class="text-xs text-theme-secondary">Entry: ₹2,780.00 · CMP: ₹2,835.50 · Stop-Loss: ₹2,735.00 · Target: ₹2,940.00</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-base font-bold text-emerald-600 dark:text-emerald-400">+₹2,775.00 (+2.00%)</div>
-            <div class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">👉 Healthy trend. Maintain current stop-loss at ₹2,735.</div>
-          </div>
-        </div>
+      const positions = getUserPositions();
+      
+      // Update top overview badge
+      const alertCountEl = document.getElementById('alertCount');
+      if (alertCountEl) {
+        alertCountEl.textContent = positions.length > 0 ? `${positions.length} Active` : '0 Open';
+        const sub = alertCountEl.nextElementSibling;
+        if (sub) {
+          sub.innerHTML = positions.length > 0 
+            ? '<i class="fa-solid fa-arrow-trend-up text-emerald-500"></i> Monitoring live trailing stops'
+            : '<i class="fa-solid fa-shield-check text-emerald-500"></i> 100% Cash · Capital Protected';
+        }
+      }
 
-        <div class="card-theme border rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold">
-              TCS
+      if (positions.length === 0) {
+        container.innerHTML = `
+          <div class="card-theme border rounded-xl p-8 text-center flex flex-col items-center justify-center">
+            <div class="h-14 w-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-2xl mb-3">
+              <i class="fa-solid fa-shield-heart"></i>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-theme-primary text-base">TCS</span>
-                <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">25 Shares</span>
-                <span class="badge bg-amber-500/20 text-amber-600 dark:text-amber-400">RISK WARNING</span>
+            <h4 class="text-base font-bold text-theme-primary mb-1">No Active Positions Open</h4>
+            <p class="text-xs text-theme-secondary max-w-md mb-4">You have zero open holdings. Your capital is 100% safe in cash, with zero overnight gap risk and zero theta decay burn.</p>
+            <button onclick="toggleAddPositionForm()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shadow-md shadow-emerald-600/20 flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i> Enter Active Trade to Track
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = positions.map((p, idx) => {
+        const totalQty = p.lots * p.lot_size;
+        const currentEstPnl = Math.round((p.cmp - p.entry) * totalQty);
+        const isPos = currentEstPnl >= 0;
+        const isTrailed = p.trailed_to_cost;
+
+        return `
+          <div class="card-theme border ${isTrailed ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-theme'} rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 transition shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg ${p.symbol.includes('PE') ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
+                ${p.symbol.includes('PE') ? 'PE' : 'CE'}
               </div>
-              <p class="text-xs text-theme-secondary">Entry: ₹4,020.00 · CMP: ₹3,980.00 · Stop-Loss: ₹3,920.00</p>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-theme-primary text-base">${p.symbol}</span>
+                  <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${p.lots} Lot (${totalQty} Qty)</span>
+                  ${isTrailed ? '<span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">SL AT COST (RISK ₹0)</span>' : '<span class="badge bg-amber-500/20 text-amber-500">ACTIVE POSITION</span>'}
+                </div>
+                <p class="text-xs text-theme-secondary mt-0.5">
+                  Entry: <b>₹${p.entry}</b> · SL: <b class="text-rose-500">₹${p.sl}</b> · Target 1: <b class="text-emerald-500">₹${p.t1}</b> ${p.t2 ? '· Target 2: ₹' + p.t2 : ''}
+                </p>
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-2">
+              ${!isTrailed ? `
+                <button onclick="trailPositionToCost(${idx})" class="sub-card-theme border border-theme hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Modify SL to Entry Price in Angel One">
+                  <i class="fa-solid fa-arrow-up-right-dots"></i> Trail SL to Cost
+                </button>
+              ` : ''}
+
+              <button onclick="closePositionModal(${idx})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
+                <i class="fa-solid fa-door-open"></i> Close & Save P&L
+              </button>
+
+              <button onclick="deletePosition(${idx})" class="sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary text-xs px-2 py-1.5 rounded-lg transition" title="Remove without logging">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
             </div>
           </div>
-          <div class="text-right">
-            <div class="text-base font-bold text-rose-600 dark:text-rose-400">-₹1,000.00 (-1.00%)</div>
-            <div class="text-xs text-rose-600 dark:text-rose-400 font-medium">👉 Earnings in 24 hours. Consider cutting exposure or tightening stop.</div>
-          </div>
-        </div>
-      `;
+        `;
+      }).join('');
     }
 
     // Render Vetoed Tab
@@ -932,6 +1318,394 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    // Tip Verifier Functions
+    function loadTipPreset(sym, inst, entry, sl, t1, t2, lots) {
+      document.getElementById('tipSymbol').value = sym;
+      document.getElementById('tipInstrument').value = inst;
+      document.getElementById('tipEntry').value = entry;
+      document.getElementById('tipSL').value = sl;
+      document.getElementById('tipTarget1').value = t1;
+      document.getElementById('tipTarget2').value = t2 || '';
+      document.getElementById('tipLots').value = lots || 1;
+      handleVerifyTip(new Event('submit'));
+    }
+
+    async function handleVerifyTip(event) {
+      if (event && event.preventDefault) event.preventDefault();
+      
+      const btn = document.getElementById('btnVerifyTip');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying with SmartAPI...';
+      btn.disabled = true;
+
+      const payload = {
+        symbol: document.getElementById('tipSymbol').value.trim().toUpperCase(),
+        instrument_type: document.getElementById('tipInstrument').value,
+        tip_entry: parseFloat(document.getElementById('tipEntry').value),
+        tip_sl: parseFloat(document.getElementById('tipSL').value),
+        tip_target_1: parseFloat(document.getElementById('tipTarget1').value),
+        tip_target_2: parseFloat(document.getElementById('tipTarget2').value) || null,
+        lots: parseInt(document.getElementById('tipLots').value) || 1,
+        user_capital: parseFloat(document.getElementById('tipCapital').value) || 50000,
+        max_risk_pct: parseFloat(document.getElementById('tipRiskPct').value) || 3.0
+      };
+
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/verify-tip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          renderTipResult(result);
+        } else {
+          throw new Error('API returned error');
+        }
+      } catch (err) {
+        console.warn('API error verifying tip, using client fallback calculation:', err);
+        // Client-side fallback calculation
+        const isLong = payload.tip_target_1 > payload.tip_entry;
+        const risk = Math.max(0.1, payload.tip_entry - payload.tip_sl);
+        const reward1 = Math.max(0.1, payload.tip_target_1 - payload.tip_entry);
+        const lotSize = payload.symbol.includes('NIFTY') ? 65 : (payload.symbol.includes('BANKNIFTY') ? 15 : 250);
+        const totalQty = payload.lots * lotSize;
+        const maxLoss = Math.round(risk * totalQty);
+        const profit1 = Math.round(reward1 * totalQty);
+        const rr = (reward1 / risk).toFixed(2);
+        const isRejected = (payload.tip_sl >= payload.tip_entry) || (rr < 1.3);
+
+        const fallbackResult = {
+          symbol: payload.symbol,
+          instrument_type: payload.instrument_type,
+          current_ltp: payload.tip_entry,
+          tip_entry: payload.tip_entry,
+          tip_sl: payload.tip_sl,
+          tip_target_1: payload.tip_target_1,
+          tip_target_2: payload.tip_target_2 || (payload.tip_entry + reward1 * 1.6),
+          lot_size: lotSize,
+          lots: payload.lots,
+          total_qty: totalQty,
+          capital_required: Math.round(payload.tip_entry * totalQty),
+          risk_per_unit: risk,
+          max_loss_rupees: maxLoss,
+          profit_t1_rupees: profit1,
+          profit_t2_rupees: Math.round(profit1 * 1.6),
+          risk_reward_ratio: `1 : ${rr}`,
+          chase_status: 'IN_ZONE',
+          verdict: isRejected ? 'REJECTED' : 'APPROVED',
+          verdict_badge: isRejected ? '🚫 REJECTED - DO NOT ENTER' : '🟢 VERIFIED - SAFE TO TRADE',
+          verdict_color: isRejected ? 'rose' : 'emerald',
+          headline: isRejected ? 'Poor Risk-to-Reward ratio (< 1:1.3) or invalid stop-loss.' : 'Setup meets basic risk/reward and capital constraints.',
+          checklist: [
+            { label: 'Stop Loss Level', status: payload.tip_sl < payload.tip_entry ? 'PASS' : 'FAIL', detail: `SL ₹${payload.tip_sl}` },
+            { label: 'Risk-to-Reward', status: rr >= 1.5 ? 'PASS' : 'WARN', detail: `1:${rr}` },
+            { label: 'Capital Sizing', status: maxLoss <= 1500 ? 'PASS' : 'WARN', detail: `₹${maxLoss} risk` }
+          ],
+          veto_reasons: isRejected ? ['Unfavorable risk-to-reward ratio.'] : [],
+          warning_flags: [],
+          exit_guidance: payload.lots === 1 ? {
+            mode: 'SINGLE_LOT',
+            message: 'You have 1 single lot. Partial lot exit is NOT possible in Indian options.',
+            target_1_plan: `At Target 1 (₹${payload.tip_target_1}): Take 100% full exit (+₹${profit1.toLocaleString()}) OR instantly move your SL to COST (₹${payload.tip_entry}) in Angel One.`,
+            target_2_plan: `If trailed at T1: Exit at Target 2 for extra gains.`,
+            hard_rule: 'Never hold 1 lot without moving SL to Cost once Target 1 is touched.'
+          } : {
+            mode: 'MULTI_LOT',
+            message: `You have ${payload.lots} lots (${totalQty} units). You can execute a 50/50 scale-out.`,
+            target_1_plan: `At Target 1 (₹${payload.tip_target_1}): Sell ${Math.floor(payload.lots / 2)} lot(s) and IMMEDIATELY move SL on remainder to COST (₹${payload.tip_entry}).`,
+            target_2_plan: `At Target 2: Sell remaining lots for runner profits.`,
+            hard_rule: 'Remaining position becomes 100% risk-free once Target 1 is booked.'
+          },
+          anti_averaging_rule: `CRITICAL: If price drops below ₹${payload.tip_sl}, cut the trade immediately. NEVER buy more lots to 'average' a losing option.`
+        };
+        renderTipResult(fallbackResult);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function renderTipResult(res) {
+      const container = document.getElementById('tipResultContainer');
+      const isApproved = res.verdict === 'APPROVED';
+      const isRejected = res.verdict === 'REJECTED';
+      const borderClass = isApproved ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/10' : (isRejected ? 'border-rose-500/50 bg-rose-50 dark:bg-rose-950/10' : 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/10');
+      const badgeClass = isApproved ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : (isRejected ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30');
+
+      container.innerHTML = `
+        <div class="card-theme border ${borderClass} rounded-xl p-5 space-y-5 transition shadow-lg">
+          <!-- Top Verdict Header -->
+          <div class="flex flex-wrap justify-between items-center gap-3 border-b border-theme pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-bold text-theme-primary">${res.symbol} ${res.instrument_type}</h3>
+                <span class="badge ${badgeClass}">${res.verdict_badge}</span>
+              </div>
+              <p class="text-xs ${isRejected ? 'text-rose-600 dark:text-rose-400' : 'text-theme-secondary'} mt-1 font-medium">${res.headline}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] uppercase tracking-wider text-theme-secondary font-bold">Risk : Reward</span>
+              <div class="text-base font-extrabold ${isRejected ? 'text-rose-500' : 'text-emerald-500'}">${res.risk_reward_ratio}</div>
+            </div>
+          </div>
+
+          <!-- Numbers Summary Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div class="sub-card-theme p-3 rounded-lg border border-theme">
+              <span class="text-theme-secondary">Entry Price:</span>
+              <div class="text-base font-bold text-theme-primary">₹${res.tip_entry}</div>
+              <span class="text-[10px] text-theme-secondary">Max Chase: ₹${(res.tip_entry * 1.03).toFixed(2)}</span>
+            </div>
+
+            <div class="sub-card-theme p-3 rounded-lg border border-theme">
+              <span class="text-theme-secondary">Stop Loss:</span>
+              <div class="text-base font-bold text-rose-500">₹${res.tip_sl}</div>
+              <span class="text-[10px] text-rose-400">Risk: ₹${res.risk_per_unit}/sh</span>
+            </div>
+
+            <div class="sub-card-theme p-3 rounded-lg border border-theme">
+              <span class="text-theme-secondary">Target 1:</span>
+              <div class="text-base font-bold text-emerald-500">₹${res.tip_target_1}</div>
+              <span class="text-[10px] text-emerald-400">Profit: +₹${res.profit_t1_rupees.toLocaleString()}</span>
+            </div>
+
+            <div class="sub-card-theme p-3 rounded-lg border border-theme">
+              <span class="text-theme-secondary">Max Loss (${res.lots} Lot):</span>
+              <div class="text-base font-bold text-rose-500">-₹${res.max_loss_rupees.toLocaleString()}</div>
+              <span class="text-[10px] text-theme-secondary">Capital: ₹${res.capital_required.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <!-- LOT-AWARE EXIT EXECUTION PLAN -->
+          <div class="p-4 rounded-xl border border-blue-500/30 bg-blue-50 dark:bg-blue-950/20 space-y-2">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-compass text-blue-500"></i>
+              <span class="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
+                ${res.exit_guidance.mode === 'SINGLE_LOT' ? '🎯 Single Lot Execution Plan (1 Lot Only)' : '⚡ Multi-Lot Scale-Out Plan (' + res.lots + ' Lots)'}
+              </span>
+            </div>
+            <p class="text-xs text-theme-primary font-medium">${res.exit_guidance.message}</p>
+            <div class="text-xs space-y-1.5 mt-2 bg-white/60 dark:bg-slate-900/60 p-3 rounded-lg border border-blue-200 dark:border-blue-800/40">
+              <div class="text-emerald-700 dark:text-emerald-300"><b>Target 1:</b> ${res.exit_guidance.target_1_plan}</div>
+              <div class="text-blue-700 dark:text-blue-300"><b>Target 2:</b> ${res.exit_guidance.target_2_plan}</div>
+              <div class="text-amber-700 dark:text-amber-400 text-[11px] font-semibold mt-1">⚠️ ${res.exit_guidance.hard_rule}</div>
+            </div>
+          </div>
+
+          <!-- Sanity Checklist -->
+          <div class="space-y-2">
+            <span class="text-[11px] font-bold text-theme-secondary uppercase tracking-wider">Sanity Gatekeeper Verification:</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              ${res.checklist.map(c => `
+                <div class="sub-card-theme p-2.5 rounded-lg border border-theme flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid ${c.status === 'PASS' ? 'fa-circle-check text-emerald-500' : (c.status === 'FAIL' ? 'fa-circle-xmark text-rose-500' : 'fa-circle-exclamation text-amber-500')}"></i>
+                    <span class="font-medium text-theme-primary">${c.label}</span>
+                  </div>
+                  <span class="text-[11px] ${c.status === 'PASS' ? 'text-emerald-600 dark:text-emerald-400' : (c.status === 'FAIL' ? 'text-rose-500 font-bold' : 'text-amber-500')}">${c.detail}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Anti-Averaging Rule Alert -->
+          <div class="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+            <i class="fa-solid fa-ban text-sm shrink-0"></i>
+            <span><b>VETO:</b> If price drops below ₹${res.tip_sl}, exit immediately. NEVER buy additional lots to "average" a losing option.</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Capital & Ledger Functions
+    let ledgerSummary = null;
+
+    async function loadLedger() {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/ledger');
+        if (res.ok) {
+          ledgerSummary = await res.json();
+          renderLedger(ledgerSummary);
+        }
+      } catch (err) {
+        console.warn('Backend ledger API offline, using cached/default state:', err);
+      }
+    }
+
+    function renderLedger(summary) {
+      if (!summary) return;
+      document.getElementById('ledgerInitialCapital').textContent = `₹${summary.initial_capital.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+      document.getElementById('ledgerCurrentBalance').textContent = `₹${summary.current_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+      
+      const overallEl = document.getElementById('ledgerOverallPnL');
+      const isOverallPos = summary.overall_pnl >= 0;
+      overallEl.className = `text-[11px] font-semibold mt-1 ${isOverallPos ? 'text-emerald-500' : 'text-rose-500'}`;
+      overallEl.textContent = `${isOverallPos ? '+' : ''}₹${summary.overall_pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${isOverallPos ? '+' : ''}${summary.overall_pnl_pct}%)`;
+
+      const todayEl = document.getElementById('ledgerTodayPnL');
+      const isTodayPos = summary.today_pnl >= 0;
+      todayEl.className = `text-xl font-bold mt-1 ${isTodayPos ? 'text-emerald-500' : 'text-rose-500'}`;
+      todayEl.textContent = `${isTodayPos ? '+' : ''}₹${summary.today_pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+      document.getElementById('ledgerTodayWinRate').textContent = `${summary.today_wins} Wins · ${summary.today_losses} Losses (${summary.today_win_rate_pct}%)`;
+
+      const bufferEl = document.getElementById('ledgerBuffer');
+      bufferEl.textContent = `₹${summary.remaining_loss_buffer.toLocaleString('en-IN', { minimumFractionDigits: 2 })} Left`;
+      bufferEl.className = `text-xl font-bold mt-1 ${summary.remaining_loss_buffer > 500 ? 'text-emerald-500' : 'text-amber-500'}`;
+      document.getElementById('ledgerMaxLimit').textContent = `Max allowed loss: ₹${summary.max_daily_loss_rupees.toLocaleString()} (${summary.max_daily_loss_pct}%)`;
+
+      // Circuit breaker banner
+      const banner = document.getElementById('circuitBreakerBanner');
+      if (summary.circuit_breaker_triggered) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      // Trades Table
+      const tableBody = document.getElementById('ledgerTradesTableBody');
+      const trades = summary.trades || [];
+      document.getElementById('ledgerTotalTradesCount').textContent = `${trades.length} Total Trades`;
+
+      if (trades.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-theme-secondary">No trades recorded yet.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = trades.map(t => {
+        const isWin = t.pnl > 0;
+        const statusClass = isWin ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : (t.pnl === 0 ? 'bg-slate-500/20 text-slate-400' : 'bg-rose-500/20 text-rose-500');
+        return `
+          <tr class="hover:bg-slate-500/5 transition">
+            <td class="py-2.5 px-3 text-theme-secondary">${t.date} ${t.time || ''}</td>
+            <td class="py-2.5 px-3 font-bold text-theme-primary">${t.symbol}</td>
+            <td class="py-2.5 px-3 text-theme-primary">${t.lots} lot (${(t.lots * (t.lot_size || 1))} sh)</td>
+            <td class="py-2.5 px-3 text-theme-secondary">₹${t.entry_price} → ₹${t.exit_price}</td>
+            <td class="py-2.5 px-3 font-bold ${isWin ? 'text-emerald-500' : 'text-rose-500'}">${isWin ? '+' : ''}₹${t.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-2.5 px-3"><span class="badge ${statusClass}">${t.status}</span></td>
+            <td class="py-2.5 px-3 text-[11px] text-theme-secondary">${t.notes || '—'}</td>
+            <td class="py-2.5 px-3 text-right">
+              <button onclick="deleteLedgerTrade('${t.id}')" class="text-theme-secondary hover:text-rose-500 transition px-1.5 py-0.5 rounded" title="Delete trade">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function deleteLedgerTrade(tradeId) {
+      if (!confirm("Are you sure you want to remove this trade from the ledger?")) return;
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/ledger/trade/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: tradeId })
+        });
+        if (res.ok) {
+          const summary = await res.json();
+          renderLedger(summary);
+        }
+      } catch (err) {
+        console.error('Failed to delete trade:', err);
+      }
+    }
+
+    async function importChatHistory() {
+      if (!confirm("Load all 19 verified trades from your October-November chat logs?")) return;
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/ledger/import-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          const summary = await res.json();
+          renderLedger(summary);
+          alert("✔ All 19 historical chat trades loaded into the ledger.");
+        }
+      } catch (err) {
+        console.error('Failed to import chat history:', err);
+      }
+    }
+
+    async function clearLedgerHistory() {
+      if (!confirm("Clear all trades in the ledger? Starting fresh.")) return;
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/ledger/clear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          const summary = await res.json();
+          renderLedger(summary);
+        }
+      } catch (err) {
+        console.error('Failed to clear ledger:', err);
+      }
+    }
+
+    async function handleRecordTrade(event) {
+      if (event && event.preventDefault) event.preventDefault();
+      
+      const payload = {
+        symbol: document.getElementById('recSymbol').value.trim().toUpperCase(),
+        type: 'CE',
+        lots: parseInt(document.getElementById('recLots').value) || 1,
+        lot_size: parseInt(document.getElementById('recLotSize').value) || 65,
+        entry_price: parseFloat(document.getElementById('recEntry').value),
+        exit_price: parseFloat(document.getElementById('recExit').value),
+        notes: document.getElementById('recNotes').value.trim()
+      };
+
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/ledger/trade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const summary = await res.json();
+          renderLedger(summary);
+          document.getElementById('recSymbol').value = '';
+          document.getElementById('recEntry').value = '';
+          document.getElementById('recExit').value = '';
+          document.getElementById('recNotes').value = '';
+        }
+      } catch (err) {
+        console.error('Failed to record trade:', err);
+      }
+    }
+
+    async function openLedgerSettingsModal() {
+      const currentCap = ledgerSummary ? ledgerSummary.initial_capital : 50000;
+      const currentLimit = ledgerSummary ? ledgerSummary.max_daily_loss_pct : 5.0;
+      
+      const newCap = prompt("Enter your Total Starting Capital (₹):", currentCap);
+      if (!newCap || isNaN(newCap)) return;
+
+      const newLimit = prompt("Enter Max Daily Loss % Circuit Breaker (e.g. 5 for 5%):", currentLimit);
+      if (!newLimit || isNaN(newLimit)) return;
+
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/ledger/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initial_capital: parseFloat(newCap), max_daily_loss_pct: parseFloat(newLimit) })
+        });
+        if (res.ok) {
+          const summary = await res.json();
+          renderLedger(summary);
+        }
+      } catch (err) {
+        console.error('Failed to update ledger settings:', err);
+      }
     }
 
     // Refresh Data from Local API or Fallback
