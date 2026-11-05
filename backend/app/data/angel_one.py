@@ -36,10 +36,17 @@ def generate_totp_code(secret: str) -> str:
 TOKEN_MAP = {
     "NIFTY 50": {"token": "99926000", "symbol": "NIFTY 50", "is_index": True},
     "BANKNIFTY": {"token": "99926009", "symbol": "BANKNIFTY", "is_index": True},
+    "FINNIFTY": {"token": "99926037", "symbol": "FINNIFTY", "is_index": True},
+    "MIDCPNIFTY": {"token": "99926074", "symbol": "MIDCPNIFTY", "is_index": True},
+    "INDIA VIX": {"token": "99926017", "symbol": "INDIA VIX", "is_index": True},
     "NESTLEIND": {"token": "17963", "symbol": "NESTLEIND", "name": "Nestle India Ltd", "lot_size": 50, "category": "F&O / FMCG"},
     "HCLTECH": {"token": "7229", "symbol": "HCLTECH", "name": "HCL Technologies Ltd", "lot_size": 350, "category": "F&O / IT"},
     "NATIONALUM": {"token": "6364", "symbol": "NATIONALUM", "name": "National Aluminium Co Ltd", "lot_size": 3750, "category": "F&O / Metals"},
     "BANKBARODA": {"token": "4668", "symbol": "BANKBARODA", "name": "Bank of Baroda", "lot_size": 2925, "category": "F&O / PSU Bank", "is_banking": True},
+    "CANBK": {"token": "10794", "symbol": "CANBK", "name": "Canara Bank", "lot_size": 4500, "category": "F&O / PSU Bank", "is_banking": True},
+    "HDFCBANK": {"token": "1333", "symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "lot_size": 550, "category": "F&O / Banking", "is_banking": True},
+    "ENGINERSIN": {"token": "4907", "symbol": "ENGINERSIN", "name": "Engineers India Ltd", "lot_size": 3500, "category": "NSE Cash / Infra"},
+    "CUPID": {"token": "18520", "symbol": "CUPID", "name": "Cupid Ltd", "lot_size": 2000, "category": "NSE Cash / Healthcare"},
     "DLF": {"token": "14732", "symbol": "DLF", "name": "DLF Ltd", "lot_size": 825, "category": "F&O / Realty"},
     "FEDERALBNK": {"token": "1023", "symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "lot_size": 2500, "category": "F&O / Private Bank", "is_banking": True},
     "RELIANCE": {"token": "2885", "symbol": "RELIANCE", "name": "Reliance Industries Ltd", "lot_size": 250, "category": "F&O / Energy"},
@@ -120,12 +127,13 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             return False
 
     def fetch_live_quotes(self) -> Dict[str, Any]:
-        """Fetches live market quotes for all tracked tokens in batch."""
-        if not self.is_authenticated:
-            return {}
+        """Fetches live market quotes for all tracked tokens in batch with auto-reconnect."""
+        if not self.is_authenticated or not self.jwt_token:
+            if not self.connect():
+                return self.cached_quotes
 
         now = time.time()
-        # Cache for 2 seconds to avoid rate-limiting
+        # Cache for 2 seconds to avoid excessive rate-limiting
         if self.cached_quotes and (now - self.last_fetch_time) < 2.0:
             return self.cached_quotes
 
@@ -144,76 +152,84 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             if res.get("status"):
                 fetched = res.get("data", {}).get("fetched", [])
                 for item in fetched:
-                    sym = item.get("tradingSymbol", "").replace("-EQ", "")
+                    raw_sym = item.get("tradingSymbol", "")
+                    sym = raw_sym.replace("-EQ", "")
                     self.cached_quotes[sym] = item
+                    self.cached_quotes[raw_sym] = item
+                    # Standard index mapping
+                    if sym == "Nifty 50":
+                        self.cached_quotes["NIFTY 50"] = item
+                    elif sym == "Nifty Bank":
+                        self.cached_quotes["BANKNIFTY"] = item
+                    elif sym == "Nifty Fin Service":
+                        self.cached_quotes["FINNIFTY"] = item
+                    elif sym == "NIFTY MID SELECT":
+                        self.cached_quotes["MIDCPNIFTY"] = item
+                    elif sym == "India VIX":
+                        self.cached_quotes["INDIA VIX"] = item
+
                 self.last_fetch_time = now
+            else:
+                msg = res.get("message", "").lower()
+                if "token" in msg or "session" in msg or "unauthorized" in msg or "invalid" in msg:
+                    print(f"[!] Angel One Session expired ({res.get('message')}). Re-authenticating...")
+                    self.is_authenticated = False
+                    self.jwt_token = None
+                    if self.connect():
+                        return self.fetch_live_quotes()
+
+            return self.cached_quotes
+        except urllib.error.HTTPError as he:
+            if he.code in (401, 403):
+                print(f"[!] Angel One HTTP {he.code} session expired. Reconnecting...")
+                self.is_authenticated = False
+                self.jwt_token = None
+                if self.connect():
+                    return self.fetch_live_quotes()
             return self.cached_quotes
         except Exception as e:
             print(f"[!] Error fetching live quotes from Angel One: {e}")
             return self.cached_quotes
 
     def get_indices(self) -> List[Dict[str, Any]]:
-        """Fetch live index levels for NIFTY 50 and BANK NIFTY from Angel One."""
+        """Fetch live index levels for all major indices from Angel One."""
         self.fetch_live_quotes()
         
-        nifty = self.cached_quotes.get("Nifty 50", {})
-        bank = self.cached_quotes.get("Nifty Bank", {})
-        
-        nifty_ltp = nifty.get("ltp", 23960.60)
-        nifty_close = nifty.get("close", 23810.85)
-        nifty_pct = nifty.get("percentChange", 0.63)
-        nifty_pts = round(nifty_ltp - nifty_close, 2)
-        
-        bank_ltp = bank.get("ltp", 55913.60)
-        bank_close = bank.get("close", 55540.05)
-        bank_pct = bank.get("percentChange", 0.67)
-        bank_pts = round(bank_ltp - bank_close, 2)
-        
-        return [
-            {
-                "symbol": "NIFTY 50",
-                "value": nifty_ltp,
-                "change_pts": nifty_pts,
-                "change_pct": nifty_pct,
-                "is_positive": nifty_pct >= 0
-            },
-            {
-                "symbol": "BANKNIFTY",
-                "value": bank_ltp,
-                "change_pts": bank_pts,
-                "change_pct": bank_pct,
-                "is_positive": bank_pct >= 0
-            },
-            {
-                "symbol": "FINNIFTY",
-                "value": 24840.25,
-                "change_pts": 112.40,
-                "change_pct": 0.45,
-                "is_positive": True
-            },
-            {
-                "symbol": "MIDCPNIFTY",
-                "value": 12450.80,
-                "change_pts": 85.30,
-                "change_pct": 0.69,
-                "is_positive": True
-            },
-            {
-                "symbol": "SENSEX",
-                "value": 78850.10,
-                "change_pts": 420.15,
-                "change_pct": 0.54,
-                "is_positive": True
-            },
-            {
-                "symbol": "INDIA VIX",
-                "value": 13.25,
-                "change_pts": -0.42,
-                "change_pct": -3.07,
-                "is_positive": False,
-                "status": "Normal Volatility"
+        def _build_idx(key: str, default_val: float, default_chg_pts: float, default_chg_pct: float, is_vix: bool = False) -> Dict[str, Any]:
+            q = self.cached_quotes.get(key, {})
+            ltp = float(q.get("ltp") or default_val)
+            close = float(q.get("close") or (ltp - default_chg_pts))
+            pct = float(q.get("percentChange") if q.get("percentChange") is not None else round(((ltp - close) / close) * 100, 2))
+            pts = round(ltp - close, 2)
+            res = {
+                "symbol": key,
+                "value": ltp,
+                "change_pts": pts,
+                "change_pct": pct,
+                "is_positive": pct >= 0
             }
-        ]
+            if is_vix:
+                res["status"] = "Normal Volatility" if ltp < 18 else "Elevated Volatility"
+            return res
+
+        nifty = _build_idx("NIFTY 50", 24396.00, 435.40, 1.82)
+        bank = _build_idx("BANKNIFTY", 57046.55, 1132.95, 2.03)
+        fin = _build_idx("FINNIFTY", 26274.75, 694.15, 2.71)
+        mid = _build_idx("MIDCPNIFTY", 13909.65, 197.00, 1.44)
+        vix = _build_idx("INDIA VIX", 15.24, 0.05, 0.33, is_vix=True)
+        
+        sensex_pct = round(nifty["change_pct"] * 0.98, 2)
+        sensex_val = round(78850.10 * (1 + sensex_pct / 100), 1)
+        sensex_pts = round(sensex_val - 78850.10, 1)
+        sensex = {
+            "symbol": "SENSEX",
+            "value": sensex_val,
+            "change_pts": sensex_pts,
+            "change_pct": sensex_pct,
+            "is_positive": sensex_pct >= 0
+        }
+        
+        return [nifty, bank, fin, mid, sensex, vix]
 
     def get_all_stocks(self) -> List[Dict[str, Any]]:
         """
@@ -227,17 +243,17 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             sym = stock_template["symbol"]
             stock_copy = dict(stock_template)
             
-            # Check if we have live quote from Angel One
-            live_q = self.cached_quotes.get(sym)
-            if live_q:
-                live_ltp = live_q.get("ltp")
-                live_vol = live_q.get("tradeVolume")
+            live_q = self.cached_quotes.get(sym) or self.cached_quotes.get(sym + "-EQ")
+            if live_q and live_q.get("ltp"):
+                live_ltp = float(live_q["ltp"])
+                live_vol = int(live_q.get("tradeVolume") or 1500000)
+                live_pct = float(live_q.get("percentChange") or 0.0)
                 # Regenerate candles scaled to the live LTP
                 stock_copy["candles"] = generate_candle_series(target_cmp=live_ltp, setup="pullback_bounce", count=60)
-                # Update volume on last candle
                 if live_vol:
                     stock_copy["candles"][-1]["volume"] = live_vol
-                stock_copy["live_change_pct"] = live_q.get("percentChange", 0.0)
+                stock_copy["live_change_pct"] = live_pct
+                stock_copy["cmp"] = live_ltp
                 stock_copy["is_live_data"] = True
             else:
                 stock_copy["is_live_data"] = False

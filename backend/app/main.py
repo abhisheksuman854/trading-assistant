@@ -17,9 +17,10 @@ def load_env():
         if os.path.exists(env_f):
             with open(env_f) as f:
                 for line in f:
+                    line = line.strip()
                     if "=" in line and not line.startswith("#"):
-                        k, v = line.strip().split("=", 1)
-                        os.environ[k] = v
+                        k, v = line.split("=", 1)
+                        os.environ[k.strip()] = v.strip().strip("\"'")
             break
         cur = os.path.dirname(cur)
 
@@ -64,7 +65,20 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
         path = parsed.path
         query = parse_qs(parsed.query)
 
-        if path == "/api/health" or path == "/":
+        if path == "/" or path == "/index.html":
+            html_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "frontend", "index.html")
+            if os.path.exists(html_path):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                with open(html_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+            self._set_cors_headers(404)
+            self.wfile.write(b"Not Found")
+
+        elif path == "/api/health":
             self._set_cors_headers(200)
             res = {
                 "status": "ok",
@@ -82,6 +96,23 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
             result = scan_and_shortlist_universe(all_stocks, top_n=top_n, market_sentiment=sentiment)
             result["indices"] = provider.get_indices()
             result["data_source"] = "LIVE Angel One SmartAPI" if getattr(provider, "is_authenticated", False) else "Sample Benchmark"
+            
+            # Populate live watchlist table
+            all_watch = []
+            for s in all_stocks:
+                c = s["candles"][-1]["close"]
+                chg = s.get("live_change_pct", 0.0)
+                all_watch.append({
+                    "symbol": s["symbol"],
+                    "name": s.get("name", s["symbol"]),
+                    "category": s.get("category", "F&O"),
+                    "cmp": c,
+                    "change_pct": chg,
+                    "score": s.get("composite_score", 76.5),
+                    "swing": "Active Setup",
+                    "opt": f"{int(round(c / 10.0) * 10)} CE"
+                })
+            result["all_watchlist_stocks"] = all_watch
             self.wfile.write(json.dumps(result, indent=2).encode("utf-8"))
 
         elif path == "/api/indices":

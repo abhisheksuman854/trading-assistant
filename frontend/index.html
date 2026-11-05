@@ -105,9 +105,9 @@
       </button>
 
       <!-- Live Feed Indicator Badge -->
-      <div class="shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+      <div id="feedStatusBadge" class="shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
         <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span>Angel One Live Connected</span>
+        <span id="feedStatusText">Angel One Live Connected</span>
       </div>
     </div>
   </div>
@@ -583,12 +583,12 @@
 
     // Live Market Indices (matching real market levels)
     const defaultIndices = [
-      { symbol: "NIFTY 50", value: 23960.60, change_pts: 149.75, change_pct: 0.63, is_positive: true },
-      { symbol: "BANKNIFTY", value: 55913.60, change_pts: 373.55, change_pct: 0.67, is_positive: true },
-      { symbol: "FINNIFTY", value: 24840.25, change_pts: 112.40, change_pct: 0.45, is_positive: true },
-      { symbol: "MIDCPNIFTY", value: 12450.80, change_pts: 85.30, change_pct: 0.69, is_positive: true },
-      { symbol: "SENSEX", value: 78850.10, change_pts: 420.15, change_pct: 0.54, is_positive: true },
-      { symbol: "INDIA VIX", value: 13.25, change_pts: -0.42, change_pct: -3.07, is_positive: false }
+      { symbol: "NIFTY 50", value: 24383.65, change_pts: 423.05, change_pct: 1.77, is_positive: true },
+      { symbol: "BANKNIFTY", value: 57109.10, change_pts: 1195.50, change_pct: 2.14, is_positive: true },
+      { symbol: "FINNIFTY", value: 26290.60, change_pts: 710.00, change_pct: 2.78, is_positive: true },
+      { symbol: "MIDCPNIFTY", value: 13934.30, change_pts: 221.65, change_pct: 1.62, is_positive: true },
+      { symbol: "SENSEX", value: 80214.20, change_pts: 1364.10, change_pct: 1.73, is_positive: true },
+      { symbol: "INDIA VIX", value: 15.43, change_pts: 0.24, change_pct: 1.58, is_positive: true }
     ];
 
     // High-fidelity fallback dataset
@@ -993,7 +993,10 @@
     // Render Watchlist Table
     function renderWatchlist() {
       const container = document.getElementById('watchlistTableBody');
-      const stocks = fallbackData.all_watchlist_stocks;
+      if (!container) return;
+      const stocks = (scanData.all_watchlist_stocks && scanData.all_watchlist_stocks.length)
+        ? scanData.all_watchlist_stocks
+        : fallbackData.all_watchlist_stocks;
       container.innerHTML = '';
 
       stocks.forEach(stk => {
@@ -1711,19 +1714,47 @@
     // Refresh Data from Local API or Fallback
     async function refreshScan() {
       const icon = document.getElementById('refreshIcon');
-      icon.classList.add('fa-spin');
-      try {
-        const res = await fetch('http://127.0.0.1:8000/api/scan');
-        if (res.ok) {
-          scanData = await res.json();
-          console.log("Loaded data from TradeLens API:", scanData);
-        } else {
-          throw new Error("API not reachable");
+      if (icon) icon.classList.add('fa-spin');
+
+      const badge = document.getElementById('feedStatusBadge');
+      const timeStr = new Date().toLocaleTimeString();
+
+      const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+      const endpoints = isLocal
+        ? ['/api/scan', 'http://127.0.0.1:8000/api/scan']
+        : ['http://127.0.0.1:8000/api/scan', '/api/scan'];
+
+      let fetchedOk = false;
+      for (const ep of endpoints) {
+        try {
+          const res = await fetch(ep, { cache: 'no-store' });
+          if (res.ok) {
+            scanData = await res.json();
+            fetchedOk = true;
+            console.log("Loaded data from TradeLens API (" + ep + "):", scanData);
+            break;
+          }
+        } catch (e) {
+          // ignore and try next
         }
-      } catch (err) {
-        console.warn("Backend API offline at 127.0.0.1:8000, using verified dataset:", err);
-        scanData = fallbackData;
-      } finally {
+      }
+
+      if (fetchedOk && scanData.data_source && scanData.data_source.includes('Angel One')) {
+        if (badge) {
+          badge.className = "shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400";
+          badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Angel One Live Streaming</span><span class="text-[10px] opacity-75 font-normal">(${timeStr})</span>`;
+        }
+      } else {
+        if (!fetchedOk) {
+          scanData = fallbackData;
+        }
+        if (badge) {
+          badge.className = "shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400";
+          badge.innerHTML = `<a href="http://127.0.0.1:8000" target="_blank" class="flex items-center gap-2 hover:underline"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>Local Feed Offline · Open http://127.0.0.1:8000</span></a>`;
+        }
+      }
+
+      try {
         renderIndices(scanData.indices);
         renderShortlist(scanData);
         renderOptions(scanData);
@@ -1731,7 +1762,10 @@
         renderFundamentals();
         renderPositions();
         renderVetoed(scanData);
-        icon.classList.remove('fa-spin');
+      } catch (renderErr) {
+        console.error("Error rendering dashboard:", renderErr);
+      } finally {
+        if (icon) icon.classList.remove('fa-spin');
       }
     }
 
