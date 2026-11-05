@@ -135,16 +135,30 @@ def evaluate_single_stock_full_profile(
     if opt_eval and opt_eval.get("oi_alerts"):
         why_shortlisted.append(opt_eval["oi_alerts"][0])
         
+    final_score = stock_record.get("composite_score", composite_score)
+    final_strategy = stock_record.get("strategy_name", setup_name)
+    final_timeframe = stock_record.get("timeframe", "INTRADAY" if tech_eval.get("rvol", 1.0) >= 1.8 else "SWING")
+    final_pcr = stock_record.get("pcr", 0.88)
+    final_rvol = stock_record.get("rvol", round(tech_eval.get("rvol", 1.2), 1))
+    final_rsi = stock_record.get("rsi", round(tech_eval.get("rsi", 55.0), 1))
+
     return {
         "symbol": symbol,
         "name": name,
         "category": stock_record.get("category", "LargeCap"),
         "cmp": cmp_price,
-        "composite_score": composite_score,
+        "live_change_pct": stock_record.get("live_change_pct", 0.0),
+        "composite_score": final_score,
+        "pcr": final_pcr,
+        "rvol": final_rvol,
+        "rsi": final_rsi,
+        "strategy_name": final_strategy,
+        "timeframe": final_timeframe,
+        "option_recommendation": stock_record.get("option_recommendation"),
         "is_vetoed": is_vetoed,
         "veto_reasons": veto_reasons,
         "trade_setup": {
-            "setup_name": setup_name,
+            "setup_name": final_strategy,
             "direction": "LONG",
             "entry_range": [round(cmp_price * 0.998, 2), round(cmp_price * 1.004, 2)],
             "stop_loss": stop_loss,
@@ -189,18 +203,31 @@ def scan_and_shortlist_universe(
     clean_setups = [x for x in evaluated if not x["is_vetoed"]]
     vetoed_setups = [x for x in evaluated if x["is_vetoed"]]
     
-    # Top Swing Setups (Best composite scores & clean fundamentals + technicals)
-    top_swing = [x for x in clean_setups if x["suitability"]["swing"]["status"] == "Active Setup"][:top_n]
+    # Top Opportunities (Best composite scores & momentum)
+    top_swing = sorted(clean_setups, key=lambda x: x.get("composite_score", 0), reverse=True)[:top_n]
     
-    # Top Intraday Setups (Highest RVOL & active intraday long status)
+    # Top Intraday Setups (Highest RVOL)
     top_intraday = sorted(
-        [x for x in clean_setups if x["suitability"]["intraday_long"]["status"] == "Active Opportunity"],
-        key=lambda x: x["technicals"]["rvol"],
+        clean_setups,
+        key=lambda x: x.get("rvol", 1.0),
         reverse=True
     )[:top_n]
     
     # Top F&O Options Setups (Active option recommendation with clean PCR & delta)
-    top_options = [x for x in clean_setups if x["options"] is not None][:3]
+    top_options = [x for x in clean_setups if x.get("options") is not None or x.get("option_recommendation") is not None][:top_n]
+
+    # Live F&O Top Movers (Largest % gainers)
+    top_movers = [
+        {
+            "symbol": m["symbol"],
+            "cmp": m["cmp"],
+            "change_pct": m.get("live_change_pct", 0.0),
+            "rvol": m.get("rvol", 1.2),
+            "pcr": m.get("pcr", 0.88),
+            "strategy": m.get("strategy_name", "Breakout")
+        }
+        for m in sorted(clean_setups, key=lambda x: x.get("live_change_pct", 0.0), reverse=True)[:8]
+    ]
     
     return {
         "market_sentiment": market_sentiment,
@@ -209,6 +236,7 @@ def scan_and_shortlist_universe(
         "top_swing_setups": top_swing,
         "top_intraday_setups": top_intraday,
         "top_options_setups": top_options,
+        "top_movers": top_movers,
         "avoid_or_vetoed": vetoed_setups[:5]
     }
 

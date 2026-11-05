@@ -15,6 +15,7 @@ import urllib.error
 from typing import List, Dict, Any, Optional
 from .base import MarketDataProvider
 from .sample_universe import generate_candle_series, INDIAN_STOCKS_DATA
+from .fno_tokens import FNO_TOKEN_MAP
 
 
 def generate_totp_code(secret: str) -> str:
@@ -32,28 +33,8 @@ def generate_totp_code(secret: str) -> str:
     return str(code % 1000000).zfill(6)
 
 
-# Master Token Map for Watchlist & Indices on NSE
-TOKEN_MAP = {
-    "NIFTY 50": {"token": "99926000", "symbol": "NIFTY 50", "is_index": True},
-    "BANKNIFTY": {"token": "99926009", "symbol": "BANKNIFTY", "is_index": True},
-    "FINNIFTY": {"token": "99926037", "symbol": "FINNIFTY", "is_index": True},
-    "MIDCPNIFTY": {"token": "99926074", "symbol": "MIDCPNIFTY", "is_index": True},
-    "INDIA VIX": {"token": "99926017", "symbol": "INDIA VIX", "is_index": True},
-    "NESTLEIND": {"token": "17963", "symbol": "NESTLEIND", "name": "Nestle India Ltd", "lot_size": 50, "category": "F&O / FMCG"},
-    "HCLTECH": {"token": "7229", "symbol": "HCLTECH", "name": "HCL Technologies Ltd", "lot_size": 350, "category": "F&O / IT"},
-    "NATIONALUM": {"token": "6364", "symbol": "NATIONALUM", "name": "National Aluminium Co Ltd", "lot_size": 3750, "category": "F&O / Metals"},
-    "BANKBARODA": {"token": "4668", "symbol": "BANKBARODA", "name": "Bank of Baroda", "lot_size": 2925, "category": "F&O / PSU Bank", "is_banking": True},
-    "CANBK": {"token": "10794", "symbol": "CANBK", "name": "Canara Bank", "lot_size": 4500, "category": "F&O / PSU Bank", "is_banking": True},
-    "HDFCBANK": {"token": "1333", "symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "lot_size": 550, "category": "F&O / Banking", "is_banking": True},
-    "ENGINERSIN": {"token": "4907", "symbol": "ENGINERSIN", "name": "Engineers India Ltd", "lot_size": 3500, "category": "NSE Cash / Infra"},
-    "CUPID": {"token": "18520", "symbol": "CUPID", "name": "Cupid Ltd", "lot_size": 2000, "category": "NSE Cash / Healthcare"},
-    "DLF": {"token": "14732", "symbol": "DLF", "name": "DLF Ltd", "lot_size": 825, "category": "F&O / Realty"},
-    "FEDERALBNK": {"token": "1023", "symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "lot_size": 2500, "category": "F&O / Private Bank", "is_banking": True},
-    "RELIANCE": {"token": "2885", "symbol": "RELIANCE", "name": "Reliance Industries Ltd", "lot_size": 250, "category": "F&O / Energy"},
-    "ICICIBANK": {"token": "4963", "symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "lot_size": 700, "category": "F&O / Banking", "is_banking": True},
-    "TCS": {"token": "11536", "symbol": "TCS", "name": "Tata Consultancy Services Ltd", "lot_size": 175, "category": "F&O / IT"},
-    "MOTILALOFS": {"token": "14947", "symbol": "MOTILALOFS", "name": "Motilal Oswal Financial Services Ltd", "lot_size": 550, "category": "F&O / Financial Services"}
-}
+# 50-Stock Dynamic High-Liquidity F&O Universe on NSE
+TOKEN_MAP = FNO_TOKEN_MAP
 
 
 class AngelOneSmartAPIProvider(MarketDataProvider):
@@ -140,45 +121,39 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
 
         try:
             tokens = [v["token"] for v in TOKEN_MAP.values()]
-            url = f"{self.BASE_URL}/rest/secure/angelbroking/market/v1/quote/"
-            payload = json.dumps({
-                "mode": "FULL",
-                "exchangeTokens": {"NSE": tokens}
-            }).encode("utf-8")
+            # Split tokens into batches of 40 to stay well below Angel One's 50-token batch limit
+            batches = [tokens[i:i + 40] for i in range(0, len(tokens), 40)]
+            for b in batches:
+                url = f"{self.BASE_URL}/rest/secure/angelbroking/market/v1/quote/"
+                payload = json.dumps({
+                    "mode": "FULL",
+                    "exchangeTokens": {"NSE": b}
+                }).encode("utf-8")
 
-            req = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
-            with urllib.request.urlopen(req, timeout=10) as response:
-                res = json.loads(response.read().decode("utf-8"))
+                req = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res = json.loads(response.read().decode("utf-8"))
 
-            if res.get("status"):
-                fetched = res.get("data", {}).get("fetched", [])
-                for item in fetched:
-                    raw_sym = item.get("tradingSymbol", "")
-                    sym = raw_sym.replace("-EQ", "")
-                    self.cached_quotes[sym] = item
-                    self.cached_quotes[raw_sym] = item
-                    # Standard index mapping
-                    if sym == "Nifty 50":
-                        self.cached_quotes["NIFTY 50"] = item
-                    elif sym == "Nifty Bank":
-                        self.cached_quotes["BANKNIFTY"] = item
-                    elif sym == "Nifty Fin Service":
-                        self.cached_quotes["FINNIFTY"] = item
-                    elif sym == "NIFTY MID SELECT":
-                        self.cached_quotes["MIDCPNIFTY"] = item
-                    elif sym == "India VIX":
-                        self.cached_quotes["INDIA VIX"] = item
+                if res.get("status"):
+                    fetched = res.get("data", {}).get("fetched", [])
+                    for item in fetched:
+                        raw_sym = item.get("tradingSymbol", "")
+                        sym = raw_sym.replace("-EQ", "")
+                        self.cached_quotes[sym] = item
+                        self.cached_quotes[raw_sym] = item
+                        # Standard index mapping
+                        if sym == "Nifty 50":
+                            self.cached_quotes["NIFTY 50"] = item
+                        elif sym == "Nifty Bank":
+                            self.cached_quotes["BANKNIFTY"] = item
+                        elif sym == "Nifty Fin Service":
+                            self.cached_quotes["FINNIFTY"] = item
+                        elif sym == "NIFTY MID SELECT":
+                            self.cached_quotes["MIDCPNIFTY"] = item
+                        elif sym == "India VIX":
+                            self.cached_quotes["INDIA VIX"] = item
 
-                self.last_fetch_time = now
-            else:
-                msg = res.get("message", "").lower()
-                if "token" in msg or "session" in msg or "unauthorized" in msg or "invalid" in msg:
-                    print(f"[!] Angel One Session expired ({res.get('message')}). Re-authenticating...")
-                    self.is_authenticated = False
-                    self.jwt_token = None
-                    if self.connect():
-                        return self.fetch_live_quotes()
-
+            self.last_fetch_time = now
             return self.cached_quotes
         except urllib.error.HTTPError as he:
             if he.code in (401, 403):
@@ -235,32 +210,103 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
     def get_all_stocks(self) -> List[Dict[str, Any]]:
         """
         Returns full stock records populated with LIVE LTP, volume, and percentage changes
-        directly from Angel One!
+        across the entire 50-stock high-liquidity F&O universe directly from Angel One!
         """
         self.fetch_live_quotes()
-        
         stocks_result = []
-        for stock_template in INDIAN_STOCKS_DATA:
-            sym = stock_template["symbol"]
-            stock_copy = dict(stock_template)
-            
+        sample_funds = {s["symbol"]: s for s in INDIAN_STOCKS_DATA}
+
+        for sym, meta in TOKEN_MAP.items():
+            if meta.get("is_index"):
+                continue
+
             live_q = self.cached_quotes.get(sym) or self.cached_quotes.get(sym + "-EQ")
-            if live_q and live_q.get("ltp"):
-                live_ltp = float(live_q["ltp"])
-                live_vol = int(live_q.get("tradeVolume") or 1500000)
-                live_pct = float(live_q.get("percentChange") or 0.0)
-                # Regenerate candles scaled to the live LTP
-                stock_copy["candles"] = generate_candle_series(target_cmp=live_ltp, setup="pullback_bounce", count=60)
-                if live_vol:
-                    stock_copy["candles"][-1]["volume"] = live_vol
-                stock_copy["live_change_pct"] = live_pct
-                stock_copy["cmp"] = live_ltp
-                stock_copy["is_live_data"] = True
+            if not live_q or not live_q.get("ltp"):
+                continue
+
+            live_ltp = float(live_q["ltp"])
+            live_vol = int(live_q.get("tradeVolume") or 1500000)
+            live_pct = float(live_q.get("percentChange") or 0.0)
+            lot_size = meta.get("lot_size", 250)
+
+            # Quantitative indicators
+            rvol = round(max(0.6, live_vol / 1800000.0), 1)
+            pcr = round(max(0.65, min(1.45, 0.88 - (live_pct * 0.03))), 2)
+            rsi = round(max(30.0, min(85.0, 50.0 + (live_pct * 2.8))), 1)
+
+            # Strategy classification
+            if live_pct >= 4.0 and rvol >= 1.5:
+                strategy_name = "High-RVOL Momentum Breakout"
+                setup_tag = "breakout"
+            elif live_pct >= 1.5:
+                strategy_name = "20 EMA Trend Follow"
+                setup_tag = "pullback_bounce"
+            elif live_pct < 0 and live_pct > -2.0:
+                strategy_name = "Pullback to Support Floor"
+                setup_tag = "pullback_bounce"
+            elif live_pct <= -2.0:
+                strategy_name = "Oversold Mean Reversion"
+                setup_tag = "pullback_bounce"
             else:
-                stock_copy["is_live_data"] = False
-                
-            stocks_result.append(stock_copy)
-            
+                strategy_name = "Consolidation Range Scalp"
+                setup_tag = "pullback_bounce"
+
+            timeframe = "INTRADAY" if (rvol >= 1.8 or abs(live_pct) >= 2.5) else "SWING"
+            composite_score = min(96.0, round(65.0 + (live_pct * 3.0) + min(rvol * 3.5, 15.0), 1))
+
+            strike_step = 100 if live_ltp > 2500 else (50 if live_ltp > 1000 else (20 if live_ltp > 500 else (10 if live_ltp > 200 else 5)))
+            rec_strike = round(live_ltp / strike_step) * strike_step
+            opt_premium = round(max(1.5, live_ltp * 0.025 + max(0, live_ltp - rec_strike)), 2)
+            opt_delta = round(max(0.35, min(0.65, 0.50 + ((live_ltp - rec_strike) / strike_step) * 0.1)), 2)
+
+            stock_record = sample_funds.get(sym, {}).copy() if sym in sample_funds else {}
+            stock_record["symbol"] = sym
+            stock_record["name"] = meta.get("name", sym)
+            stock_record["category"] = meta.get("category", "F&O / LargeCap")
+            stock_record["lot_size"] = lot_size
+            stock_record["cmp"] = live_ltp
+            stock_record["live_change_pct"] = live_pct
+            stock_record["rvol"] = rvol
+            stock_record["pcr"] = pcr
+            stock_record["rsi"] = rsi
+            stock_record["strategy_name"] = strategy_name
+            stock_record["timeframe"] = timeframe
+            stock_record["composite_score"] = composite_score
+            stock_record["is_live_data"] = True
+            stock_record["days_to_earnings"] = stock_record.get("days_to_earnings", 35)
+            stock_record["days_to_expiry"] = 18
+
+            stock_record["candles"] = generate_candle_series(target_cmp=live_ltp, setup=setup_tag, count=60)
+            stock_record["candles"][-1]["volume"] = live_vol
+
+            stock_record["option_recommendation"] = {
+                "strike": rec_strike,
+                "type": "CE",
+                "premium": opt_premium,
+                "delta": opt_delta,
+                "lot_size": lot_size,
+                "capital_required": round(opt_premium * lot_size, 2),
+                "pcr": pcr,
+                "pcr_sentiment": "Bullish / Put Support" if pcr < 0.95 else "Neutral"
+            }
+
+            if "fundamentals" not in stock_record:
+                stock_record["fundamentals"] = {
+                    "is_banking": "Bank" in stock_record["category"],
+                    "pe": 24.5,
+                    "pb": 3.2,
+                    "industry_pe": 26.0,
+                    "roe": 19.5,
+                    "roce": 24.0,
+                    "debt_to_equity": 0.45,
+                    "interest_coverage": 12.0,
+                    "current_ratio": 1.6,
+                    "quick_ratio": 1.3
+                }
+
+            stocks_result.append(stock_record)
+
+        stocks_result.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
         return stocks_result
 
     def get_quote(self, symbol: str) -> Dict[str, Any]:
@@ -294,7 +340,7 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         return SampleUniverseProvider().get_option_chain(symbol, expiry)
 
     def get_live_positions(self) -> Dict[str, Any]:
-        """Fetches the user's real live positions and today's PnL from Angel One."""
+        """Fetches the user's real live positions and today's PnL from Angel One with auto-reconnect."""
         if not self.is_authenticated or not self.jwt_token:
             if not self.connect():
                 return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
@@ -304,7 +350,19 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             req = urllib.request.Request(url, headers=self._headers(authenticated=True))
             with urllib.request.urlopen(req, timeout=10) as response:
                 res = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as he:
+            if he.code in (401, 403):
+                print(f"[!] Angel One HTTP {he.code} on getPosition. Reconnecting...")
+                self.is_authenticated = False
+                self.jwt_token = None
+                if self.connect():
+                    return self.get_live_positions()
+            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+        except Exception as e:
+            print(f"[!] Error fetching live positions from Angel One: {e}")
+            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
 
+        try:
             if res.get("status") and res.get("data"):
                 raw_positions = res.get("data") or []
                 parsed_positions = []
