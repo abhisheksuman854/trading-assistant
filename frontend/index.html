@@ -240,20 +240,25 @@
           <p class="text-xs text-theme-secondary">Multi-factor quantitative setups filtered by PCR ratio, RVOL volume surges, RSI momentum, and Black-Scholes Greeks.</p>
         </div>
         
-        <!-- Timeframe / Strategy Filter Pills -->
-        <div class="flex items-center gap-1.5 bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-lg border border-theme text-xs font-semibold">
-          <button onclick="setShortlistFilter('ALL')" id="filterBtn-ALL" class="px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition">
-            All Setups (<span id="filterCount-ALL">5</span>)
-          </button>
-          <button onclick="setShortlistFilter('INTRADAY')" id="filterBtn-INTRADAY" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
-            ⚡ Intraday 15m (<span id="filterCount-INTRADAY">3</span>)
-          </button>
-          <button onclick="setShortlistFilter('SWING')" id="filterBtn-SWING" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
-            📈 Swing 1D (<span id="filterCount-SWING">4</span>)
-          </button>
-          <button onclick="setShortlistFilter('OPTIONS')" id="filterBtn-OPTIONS" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
-            🎯 Options Scalp (<span id="filterCount-OPTIONS">3</span>)
-          </button>
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="text-xs text-theme-secondary">
+            Showing <span class="text-emerald-600 dark:text-emerald-400 font-bold" id="shortlistBadgeCount">5</span> Opportunities
+          </div>
+          <!-- Timeframe / Strategy Filter Pills -->
+          <div class="flex items-center gap-1.5 bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-lg border border-theme text-xs font-semibold">
+            <button onclick="setShortlistFilter('ALL')" id="filterBtn-ALL" class="px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition">
+              All Setups (<span id="filterCount-ALL">5</span>)
+            </button>
+            <button onclick="setShortlistFilter('INTRADAY')" id="filterBtn-INTRADAY" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
+              ⚡ Intraday 15m (<span id="filterCount-INTRADAY">3</span>)
+            </button>
+            <button onclick="setShortlistFilter('SWING')" id="filterBtn-SWING" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
+              📈 Swing 1D (<span id="filterCount-SWING">4</span>)
+            </button>
+            <button onclick="setShortlistFilter('OPTIONS')" id="filterBtn-OPTIONS" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
+              🎯 Options Scalp (<span id="filterCount-OPTIONS">3</span>)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1217,8 +1222,10 @@
         if (specific.length) setups = specific;
       }
 
-      document.getElementById('shortlistBadgeCount').textContent = setups.length;
-      document.getElementById('shortlistCount').textContent = `${setups.length} Setups`;
+      const badgeCountEl = document.getElementById('shortlistBadgeCount');
+      if (badgeCountEl) badgeCountEl.textContent = setups.length;
+      const shortlistCountEl = document.getElementById('shortlistCount');
+      if (shortlistCountEl) shortlistCountEl.textContent = `${setups.length} Setups`;
 
       if (setups.length === 0) {
         container.innerHTML = `
@@ -1873,7 +1880,8 @@
       container.innerHTML = '';
       
       const vetoed = data.avoid_or_vetoed || [];
-      document.getElementById('vetoCount').textContent = `${vetoed.length} Blocked`;
+      const vetoCountEl = document.getElementById('vetoCount');
+      if (vetoCountEl) vetoCountEl.textContent = `${vetoed.length} Blocked`;
 
       vetoed.forEach((v) => {
         const card = document.createElement('div');
