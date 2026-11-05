@@ -51,7 +51,8 @@ TOKEN_MAP = {
     "FEDERALBNK": {"token": "1023", "symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "lot_size": 2500, "category": "F&O / Private Bank", "is_banking": True},
     "RELIANCE": {"token": "2885", "symbol": "RELIANCE", "name": "Reliance Industries Ltd", "lot_size": 250, "category": "F&O / Energy"},
     "ICICIBANK": {"token": "4963", "symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "lot_size": 700, "category": "F&O / Banking", "is_banking": True},
-    "TCS": {"token": "11536", "symbol": "TCS", "name": "Tata Consultancy Services Ltd", "lot_size": 175, "category": "F&O / IT"}
+    "TCS": {"token": "11536", "symbol": "TCS", "name": "Tata Consultancy Services Ltd", "lot_size": 175, "category": "F&O / IT"},
+    "MOTILALOFS": {"token": "14947", "symbol": "MOTILALOFS", "name": "Motilal Oswal Financial Services Ltd", "lot_size": 550, "category": "F&O / Financial Services"}
 }
 
 
@@ -291,3 +292,70 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
     def get_option_chain(self, symbol: str, expiry: Optional[str] = None) -> Optional[Dict[float, Dict[str, Any]]]:
         from .sample_universe import SampleUniverseProvider
         return SampleUniverseProvider().get_option_chain(symbol, expiry)
+
+    def get_live_positions(self) -> Dict[str, Any]:
+        """Fetches the user's real live positions and today's PnL from Angel One."""
+        if not self.is_authenticated or not self.jwt_token:
+            if not self.connect():
+                return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+
+        try:
+            url = f"{self.BASE_URL}/rest/secure/angelbroking/order/v1/getPosition"
+            req = urllib.request.Request(url, headers=self._headers(authenticated=True))
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res = json.loads(response.read().decode("utf-8"))
+
+            if res.get("status") and res.get("data"):
+                raw_positions = res.get("data") or []
+                parsed_positions = []
+                total_realised = 0.0
+                total_unrealised = 0.0
+
+                for item in raw_positions:
+                    net_qty = int(item.get("netqty", 0))
+                    realised = float(item.get("realised", 0.0) or item.get("netvalue", 0.0))
+                    unrealised = float(item.get("unrealised", 0.0))
+                    pnl = float(item.get("pnl", 0.0) or realised)
+                    buy_avg = float(item.get("buyavgprice", 0.0) or item.get("totalbuyavgprice", 0.0))
+                    sell_avg = float(item.get("sellavgprice", 0.0) or item.get("totalsellavgprice", 0.0))
+                    ltp = float(item.get("ltp", 0.0))
+                    lotsize = int(item.get("lotsize", 1))
+
+                    total_realised += realised
+                    total_unrealised += unrealised
+
+                    is_open = (net_qty != 0)
+                    status_text = "OPEN HOLD" if is_open else "CLOSED (All Targets Hit)"
+                    
+                    parsed_positions.append({
+                        "symbol": item.get("symbolname", item.get("tradingsymbol")),
+                        "tradingsymbol": item.get("tradingsymbol"),
+                        "instrument": item.get("instrumenttype", "EQ"),
+                        "product": item.get("producttype", "INTRADAY"),
+                        "exchange": item.get("exchange", "NSE"),
+                        "lotsize": lotsize,
+                        "net_qty": net_qty,
+                        "is_open": is_open,
+                        "buy_price": buy_avg,
+                        "sell_price": sell_avg,
+                        "ltp": ltp,
+                        "pnl": pnl,
+                        "realised": realised,
+                        "unrealised": unrealised,
+                        "status": status_text,
+                        "strike": item.get("strikeprice"),
+                        "option_type": item.get("optiontype"),
+                        "advice": "Trade successfully executed and closed. Target profit locked." if not is_open else "Active holding. Trail stop loss at cost."
+                    })
+
+                return {
+                    "positions": parsed_positions,
+                    "total_pnl": round(total_realised + total_unrealised, 2),
+                    "realised_pnl": round(total_realised, 2),
+                    "unrealised_pnl": round(total_unrealised, 2),
+                    "has_live_positions": True
+                }
+            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+        except Exception as e:
+            print(f"[!] Error fetching live positions from Angel One: {e}")
+            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}

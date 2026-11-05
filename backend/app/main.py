@@ -96,6 +96,7 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
             result = scan_and_shortlist_universe(all_stocks, top_n=top_n, market_sentiment=sentiment)
             result["indices"] = provider.get_indices()
             result["data_source"] = "LIVE Angel One SmartAPI" if getattr(provider, "is_authenticated", False) else "Sample Benchmark"
+            result["live_portfolio"] = getattr(provider, "get_live_positions", lambda: {})()
             
             # Populate live watchlist table
             all_watch = []
@@ -114,6 +115,11 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
                 })
             result["all_watchlist_stocks"] = all_watch
             self.wfile.write(json.dumps(result, indent=2).encode("utf-8"))
+
+        elif path == "/api/positions":
+            self._set_cors_headers(200)
+            live_pos = getattr(provider, "get_live_positions", lambda: {})()
+            self.wfile.write(json.dumps(live_pos, indent=2).encode("utf-8"))
 
         elif path == "/api/indices":
             self._set_cors_headers(200)

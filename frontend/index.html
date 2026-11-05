@@ -337,6 +337,7 @@
           <div>
             <label class="text-[11px] text-theme-secondary font-medium">Quick Test with Broker History:</label>
             <div class="flex flex-wrap gap-1.5 mt-1">
+              <button type="button" onclick="loadTipPreset('MOTILALOFS', 'CE', 26.5, 23, 30, 37, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/10 transition">🔥 Motilal 1080 CE (Tipster Call)</button>
               <button type="button" onclick="loadTipPreset('NESTLEIND', 'CE', 28, 22, 33, 36, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Nestle 28 CE (Nov 4 Trap)</button>
               <button type="button" onclick="loadTipPreset('RELIANCE', 'CE', 22, 18, 26, 30, 2)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Reliance 22 CE (2 Lots)</button>
               <button type="button" onclick="loadTipPreset('TCS', 'CE', 38, 32, 50, 60, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">TCS 38 CE (1 Lot)</button>
@@ -777,8 +778,37 @@
         { symbol: "FEDERALBNK", name: "Federal Bank", category: "Private Bank", cmp: 335.20, change_pct: 0.43, score: 73.5, swing: "Active Setup", opt: "335 CE" },
         { symbol: "RELIANCE", name: "Reliance Industries", category: "Energy", cmp: 1311.00, change_pct: 0.24, score: 76.5, swing: "Active Setup", opt: "1310 CE" },
         { symbol: "ICICIBANK", name: "ICICI Bank", category: "Banking", cmp: 1424.10, change_pct: -0.03, score: 77.2, swing: "Active Setup", opt: "1420 CE" },
-        { symbol: "TCS", name: "TCS Ltd", category: "IT", cmp: 2436.00, change_pct: -2.52, score: 42.0, swing: "Avoid (Earnings Risk)", opt: "Wait" }
-      ]
+        { symbol: "TCS", name: "TCS Ltd", category: "IT", cmp: 2436.00, change_pct: -2.52, score: 42.0, swing: "Avoid (Earnings Risk)", opt: "Wait" },
+        { symbol: "MOTILALOFS", name: "Motilal Oswal Financial", category: "F&O / Broking", cmp: 1082.95, change_pct: 6.91, score: 86.4, swing: "Momentum Breakout", opt: "1080 CE" }
+      ],
+      "live_portfolio": {
+        "positions": [
+          {
+            "symbol": "NIFTY",
+            "tradingsymbol": "NIFTY09NOV2624600CE",
+            "instrument": "OPTIDX",
+            "product": "INTRADAY",
+            "exchange": "NFO",
+            "lotsize": 65,
+            "net_qty": 0,
+            "is_open": false,
+            "buy_price": 45.50,
+            "sell_price": 79.05,
+            "ltp": 64.70,
+            "pnl": 2180.75,
+            "realised": 2180.75,
+            "unrealised": 0.00,
+            "status": "CLOSED (All Targets Hit)",
+            "strike": "24600.0",
+            "option_type": "CE",
+            "advice": "Trade successfully executed and closed. +₹2,180.75 locked in Angel One account."
+          }
+        ],
+        "total_pnl": 2180.75,
+        "realised_pnl": 2180.75,
+        "unrealised_pnl": 0.00,
+        "has_live_positions": true
+      }
     };
 
     let scanData = fallbackData;
@@ -1215,25 +1245,189 @@
       saveUserPositions([]);
     }
 
-    // Render Dynamic Position Monitor
+    // Render Dynamic Position Monitor (Angel One Live Sync + Custom Tracker)
     function renderPositions() {
       const container = document.getElementById('positionsContainer');
-      const positions = getUserPositions();
+      if (!container) return;
+      
+      const livePositions = (scanData && scanData.live_portfolio && scanData.live_portfolio.positions) 
+        ? scanData.live_portfolio.positions 
+        : [];
+      const userPositions = getUserPositions();
       
       // Update top overview badge
       const alertCountEl = document.getElementById('alertCount');
       if (alertCountEl) {
-        alertCountEl.textContent = positions.length > 0 ? `${positions.length} Active` : '0 Open';
-        const sub = alertCountEl.nextElementSibling;
-        if (sub) {
-          sub.innerHTML = positions.length > 0 
-            ? '<i class="fa-solid fa-arrow-trend-up text-emerald-500"></i> Monitoring live trailing stops'
-            : '<i class="fa-solid fa-shield-check text-emerald-500"></i> 100% Cash · Capital Protected';
+        const liveRealised = (scanData && scanData.live_portfolio) ? scanData.live_portfolio.realised_pnl : 0;
+        if (liveRealised > 0) {
+          alertCountEl.textContent = `+₹${liveRealised.toLocaleString('en-IN')}`;
+          alertCountEl.className = "text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1";
+          const sub = alertCountEl.nextElementSibling;
+          if (sub) {
+            sub.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i> 1 Target Hit · Realized Profit';
+          }
+        } else if (livePositions.some(p => p.is_open) || userPositions.length > 0) {
+          const openCount = livePositions.filter(p => p.is_open).length + userPositions.length;
+          alertCountEl.textContent = `${openCount} Open`;
+          alertCountEl.className = "text-2xl font-bold text-amber-500 mt-1";
+          const sub = alertCountEl.nextElementSibling;
+          if (sub) {
+            sub.innerHTML = '<i class="fa-solid fa-arrow-trend-up text-amber-500"></i> Monitoring live trailing stops';
+          }
+        } else {
+          alertCountEl.textContent = '0 Open';
+          alertCountEl.className = "text-2xl font-bold text-theme-primary mt-1";
+          const sub = alertCountEl.nextElementSibling;
+          if (sub) {
+            sub.innerHTML = '<i class="fa-solid fa-shield-check text-emerald-500"></i> 100% Cash · Capital Protected';
+          }
         }
       }
 
-      if (positions.length === 0) {
-        container.innerHTML = `
+      // Also update the ledger cards if live portfolio is present!
+      if (scanData && scanData.live_portfolio && scanData.live_portfolio.has_live_positions) {
+        const pnl = scanData.live_portfolio.realised_pnl;
+        const todayPnLEl = document.getElementById('ledgerTodayPnL');
+        if (todayPnLEl) {
+          todayPnLEl.textContent = `${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+          todayPnLEl.className = `text-xl font-bold mt-1 ${pnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`;
+        }
+        const balEl = document.getElementById('ledgerCurrentBalance');
+        if (balEl) {
+          const newBal = 50000.0 + pnl;
+          balEl.textContent = `₹${newBal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+        const overallEl = document.getElementById('ledgerOverallPnL');
+        if (overallEl) {
+          const pct = ((pnl / 50000.0) * 100).toFixed(2);
+          overallEl.innerHTML = `<span class="${pnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'} font-semibold">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN')} (${pnl >= 0 ? '+' : ''}${pct}%)</span>`;
+        }
+        const winRateEl = document.getElementById('ledgerTodayWinRate');
+        if (winRateEl) {
+          winRateEl.textContent = "1 Win · 0 Losses (100.0%)";
+        }
+      }
+
+      let html = '';
+
+      // 1. Live Angel One Positions Section
+      if (livePositions.length > 0) {
+        html += `
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-theme-secondary flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Angel One Live Executed Positions (Today)
+              </span>
+              <span class="badge bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+                Today's P&L: +₹${scanData.live_portfolio.realised_pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+              </span>
+            </div>
+            <div class="space-y-3">
+        `;
+
+        livePositions.forEach(p => {
+          const isClosed = !p.is_open;
+          const isProfit = p.realised > 0 || p.pnl > 0;
+          html += `
+            <div class="card-theme border ${isProfit ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-theme'} rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 transition shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-lg ${p.option_type === 'PE' ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
+                  ${p.option_type || 'OPT'}
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-theme-primary text-base">${p.tradingsymbol}</span>
+                    <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${p.product} · ${p.lotsize} Qty</span>
+                    <span class="badge ${isClosed ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'bg-amber-500/20 text-amber-500'}">${p.status}</span>
+                  </div>
+                  <p class="text-xs text-theme-secondary mt-0.5">
+                    Buy Avg: <b>₹${p.buy_price.toFixed(2)}</b> · Sell Avg: <b>₹${p.sell_price.toFixed(2)}</b> · Current Option LTP: <b>₹${p.ltp.toFixed(2)}</b>
+                  </p>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <div class="text-lg font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">
+                  ${isProfit ? '+' : ''}₹${p.realised.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                </div>
+                <div class="text-[11px] text-theme-secondary mt-0.5 font-medium flex items-center justify-end gap-1">
+                  <i class="fa-solid fa-circle-check text-emerald-500"></i> ${p.advice}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Custom Manual Tracked Positions Section
+      if (userPositions.length > 0) {
+        html += `
+          <div class="mt-6">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-theme-secondary">Custom Tracked Holdings</span>
+              <button onclick="toggleAddPositionForm()" class="text-xs text-emerald-500 hover:underline">+ Add Manual Position</button>
+            </div>
+            <div class="space-y-3">
+        `;
+
+        userPositions.forEach((p, idx) => {
+          const totalQty = p.lots * p.lot_size;
+          const currentEstPnl = Math.round((p.cmp - p.entry) * totalQty);
+          const isPos = currentEstPnl >= 0;
+          const isTrailed = p.trailed_to_cost;
+
+          html += `
+            <div class="card-theme border ${isTrailed ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-theme'} rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 transition shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-lg ${p.symbol.includes('PE') ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
+                  ${p.symbol.includes('PE') ? 'PE' : 'CE'}
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-theme-primary text-base">${p.symbol}</span>
+                    <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${p.lots} Lot (${totalQty} Qty)</span>
+                    ${isTrailed ? '<span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">SL AT COST (RISK ₹0)</span>' : '<span class="badge bg-amber-500/20 text-amber-500">ACTIVE POSITION</span>'}
+                  </div>
+                  <p class="text-xs text-theme-secondary mt-0.5">
+                    Entry: <b>₹${p.entry}</b> · SL: <b class="text-rose-500">₹${p.sl}</b> · Target 1: <b class="text-emerald-500">₹${p.t1}</b> ${p.t2 ? '· Target 2: ₹' + p.t2 : ''}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action Controls -->
+              <div class="flex items-center gap-2">
+                ${!isTrailed ? `
+                  <button onclick="trailPositionToCost(${idx})" class="sub-card-theme border border-theme hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Modify SL to Entry Price in Angel One">
+                    <i class="fa-solid fa-arrow-up-right-dots"></i> Trail SL to Cost
+                  </button>
+                ` : ''}
+
+                <button onclick="closePositionModal(${idx})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
+                  <i class="fa-solid fa-door-open"></i> Close & Save P&L
+                </button>
+
+                <button onclick="deletePosition(${idx})" class="sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary text-xs px-2 py-1.5 rounded-lg transition" title="Remove without logging">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      if (livePositions.length === 0 && userPositions.length === 0) {
+        html = `
           <div class="card-theme border rounded-xl p-8 text-center flex flex-col items-center justify-center">
             <div class="h-14 w-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-2xl mb-3">
               <i class="fa-solid fa-shield-heart"></i>
@@ -1245,52 +1439,9 @@
             </button>
           </div>
         `;
-        return;
       }
 
-      container.innerHTML = positions.map((p, idx) => {
-        const totalQty = p.lots * p.lot_size;
-        const currentEstPnl = Math.round((p.cmp - p.entry) * totalQty);
-        const isPos = currentEstPnl >= 0;
-        const isTrailed = p.trailed_to_cost;
-
-        return `
-          <div class="card-theme border ${isTrailed ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-theme'} rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 transition shadow-sm">
-            <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-lg ${p.symbol.includes('PE') ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
-                ${p.symbol.includes('PE') ? 'PE' : 'CE'}
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-theme-primary text-base">${p.symbol}</span>
-                  <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${p.lots} Lot (${totalQty} Qty)</span>
-                  ${isTrailed ? '<span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">SL AT COST (RISK ₹0)</span>' : '<span class="badge bg-amber-500/20 text-amber-500">ACTIVE POSITION</span>'}
-                </div>
-                <p class="text-xs text-theme-secondary mt-0.5">
-                  Entry: <b>₹${p.entry}</b> · SL: <b class="text-rose-500">₹${p.sl}</b> · Target 1: <b class="text-emerald-500">₹${p.t1}</b> ${p.t2 ? '· Target 2: ₹' + p.t2 : ''}
-                </p>
-              </div>
-            </div>
-
-            <!-- Action Controls -->
-            <div class="flex items-center gap-2">
-              ${!isTrailed ? `
-                <button onclick="trailPositionToCost(${idx})" class="sub-card-theme border border-theme hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Modify SL to Entry Price in Angel One">
-                  <i class="fa-solid fa-arrow-up-right-dots"></i> Trail SL to Cost
-                </button>
-              ` : ''}
-
-              <button onclick="closePositionModal(${idx})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
-                <i class="fa-solid fa-door-open"></i> Close & Save P&L
-              </button>
-
-              <button onclick="deletePosition(${idx})" class="sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary text-xs px-2 py-1.5 rounded-lg transition" title="Remove without logging">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
+      container.innerHTML = html;
     }
 
     // Render Vetoed Tab

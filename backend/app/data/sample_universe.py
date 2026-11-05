@@ -487,6 +487,37 @@ INDIAN_STOCKS_DATA: List[Dict[str, Any]] = [
             "promoter_holding": 71.8,
             "promoter_pledge": 0.0
         }
+    },
+    {
+        "symbol": "MOTILALOFS",
+        "name": "Motilal Oswal Financial Services Ltd",
+        "category": "F&O / Financial Services & Broking",
+        "lot_size": 550,
+        "days_to_earnings": 38,
+        "days_to_expiry": 18,
+        "candles": generate_candle_series(target_cmp=1082.95, setup="breakout", count=60),
+        "fundamentals": {
+            "is_banking": False,
+            "eps": 42.5,
+            "bvps": 420.0,
+            "pe": 25.4,
+            "pb": 2.57,
+            "industry_pe": 28.0,
+            "shares_cr": 14.8,
+            "fcf_cr": 1200.0,
+            "cfo_cr": 1600.0,
+            "net_profit_cr": 1450.0,
+            "revenue_growth_3yr": 24.5,
+            "profit_growth_3yr": 32.0,
+            "roe": 24.8,
+            "roce": 28.5,
+            "debt_to_equity": 0.65,
+            "interest_coverage": 8.5,
+            "current_ratio": 1.85,
+            "quick_ratio": 1.60,
+            "promoter_holding": 69.2,
+            "promoter_pledge": 0.0
+        }
     }
 ]
 
