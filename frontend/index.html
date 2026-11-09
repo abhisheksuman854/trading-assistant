@@ -104,10 +104,10 @@
         <i class="fa-solid fa-chevron-right text-xs"></i>
       </button>
 
-      <!-- Live Feed Indicator Badge -->
-      <div id="feedStatusBadge" class="shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="feedStatusText">Angel One Live Connected</span>
+      <!-- Feed Indicator Badge (Accurately reflects LIVE vs SIMULATED) -->
+      <div id="feedStatusBadge" class="shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+        <span id="feedStatusDot" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+        <span id="feedStatusText">Connecting Market Feed...</span>
       </div>
     </div>
   </div>
@@ -620,10 +620,11 @@
       { symbol: "INDIA VIX", value: 15.20, change_pts: -0.15, change_pct: -0.98, is_positive: false }
     ];
 
-    // High-fidelity fallback dataset (Dynamically updated from live Angel One F&O universe)
+    // Verified benchmark fallback dataset (Used only when broker API is disconnected)
     const fallbackData = {
       "market_sentiment": "BULLISH",
-      "data_source": "LIVE Angel One SmartAPI",
+      "data_source": "SIMULATED Benchmark Universe (Broker Offline)",
+      "data_status": "SIMULATED",
       "indices": defaultIndices,
       "top_movers": [
         { "symbol": "SBIN", "change_pct": 2.00, "cmp": 1036.30, "rvol": 6.8, "pcr": 0.82, "strategy": "20 EMA Trend Follow" },
@@ -2456,7 +2457,8 @@
         }
       }
 
-      if (fetchedOk && scanData.data_source && scanData.data_source.includes('Angel One')) {
+      const isLiveFeed = fetchedOk && scanData.data_status === 'LIVE';
+      if (isLiveFeed) {
         if (badge) {
           badge.className = "shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400";
           badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Angel One Live Streaming</span><span class="text-[10px] opacity-75 font-normal">(${timeStr})</span>`;
@@ -2467,7 +2469,7 @@
         }
         if (badge) {
           badge.className = "shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400";
-          badge.innerHTML = `<a href="http://127.0.0.1:8000" target="_blank" class="flex items-center gap-2 hover:underline"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>Local Feed Offline · Open http://127.0.0.1:8000</span></a>`;
+          badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>SIMULATED Benchmark Feed (Broker Offline)</span>`;
         }
       }
 

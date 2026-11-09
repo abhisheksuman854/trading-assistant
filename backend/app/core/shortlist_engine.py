@@ -11,13 +11,117 @@ from .suitability import determine_instrument_suitability
 from .probability import compute_setup_probability_metrics
 
 
+def calculate_risk_reward(
+    entry: float,
+    stop_loss: float,
+    target: Optional[float],
+    direction: str = "LONG"
+) -> Dict[str, Any]:
+    """
+    Computes genuine, mathematically independent risk/reward metrics.
+    Does NOT derive target from risk or vice versa.
+    Handles both LONG (Bullish) and SHORT (Bearish) setups.
+    Returns status 'UNAVAILABLE' if structural target is not identified.
+    """
+    dir_clean = direction.strip().upper()
+    is_long = dir_clean in ["LONG", "BUY", "BULLISH", "CE"]
+    
+    if entry <= 0:
+        return {
+            "status": "INVALID_INPUT",
+            "is_valid": False,
+            "risk_reward_ratio": None,
+            "risk_reward_str": "INVALID_ENTRY",
+            "risk_distance": None,
+            "reward_distance": None,
+            "reason": "Entry price must be strictly positive"
+        }
+        
+    if is_long:
+        if stop_loss >= entry:
+            return {
+                "status": "INVALID_STOP_LOSS",
+                "is_valid": False,
+                "risk_reward_ratio": None,
+                "risk_reward_str": "INVALID_SL",
+                "risk_distance": None,
+                "reward_distance": None,
+                "reason": f"Long setup requires Stop Loss ({stop_loss}) < Entry ({entry})"
+            }
+        risk_dist = round(entry - stop_loss, 2)
+        
+        if target is None or target <= entry:
+            return {
+                "status": "UNAVAILABLE",
+                "is_valid": False,
+                "risk_reward_ratio": None,
+                "risk_reward_str": "UNAVAILABLE",
+                "risk_distance": risk_dist,
+                "reward_distance": None,
+                "reason": "Structural resistance target above entry price is unavailable"
+            }
+        reward_dist = round(target - entry, 2)
+    else:
+        # Short / Bearish setup
+        if stop_loss <= entry:
+            return {
+                "status": "INVALID_STOP_LOSS",
+                "is_valid": False,
+                "risk_reward_ratio": None,
+                "risk_reward_str": "INVALID_SL",
+                "risk_distance": None,
+                "reward_distance": None,
+                "reason": f"Short setup requires Stop Loss ({stop_loss}) > Entry ({entry})"
+            }
+        risk_dist = round(stop_loss - entry, 2)
+        
+        if target is None or target >= entry:
+            return {
+                "status": "UNAVAILABLE",
+                "is_valid": False,
+                "risk_reward_ratio": None,
+                "risk_reward_str": "UNAVAILABLE",
+                "risk_distance": risk_dist,
+                "reward_distance": None,
+                "reason": "Structural support target below entry price is unavailable"
+            }
+        reward_dist = round(entry - target, 2)
+        
+    if risk_dist <= 0:
+        return {
+            "status": "INVALID_RISK",
+            "is_valid": False,
+            "risk_reward_ratio": None,
+            "risk_reward_str": "ZERO_RISK",
+            "risk_distance": risk_dist,
+            "reward_distance": reward_dist,
+            "reason": "Risk distance must be strictly greater than zero"
+        }
+        
+    rr_num = round(reward_dist / risk_dist, 2)
+    return {
+        "status": "VALID",
+        "is_valid": True,
+        "direction": "LONG" if is_long else "SHORT",
+        "entry": entry,
+        "stop_loss": stop_loss,
+        "target": target,
+        "risk_distance": risk_dist,
+        "reward_distance": reward_dist,
+        "risk_reward_ratio": rr_num,
+        "risk_reward_str": f"1 : {rr_num}",
+        "is_favorable": rr_num >= 1.5,
+        "reason": "Structural risk/reward successfully verified"
+    }
+
+
 def evaluate_single_stock_full_profile(
     stock_record: Dict[str, Any],
     market_sentiment: str = "BULLISH"
 ) -> Dict[str, Any]:
     """
     Runs technical, fundamental, option chain, and suitability evaluations on a stock.
-    Calculates exact trade setup (Entry, Stop Loss, Target 1, Target 2, Risk/Reward).
+    Calculates exact trade setup using independent structural targets and stop-losses.
     """
     symbol = stock_record["symbol"]
     name = stock_record.get("name", symbol)
@@ -34,6 +138,10 @@ def evaluate_single_stock_full_profile(
     ema50 = tech_eval["ema"]["ema50"]
     pivots = tech_eval["pivots"]
     
+    # Directional bias
+    is_bearish = market_sentiment == "BEARISH" or (tech_eval["score"] < 40 and cmp_price < ema50)
+    direction = "SHORT" if is_bearish else "LONG"
+    
     # 2. Fundamental Evaluation
     fund_data["cmp"] = cmp_price
     fund_eval = evaluate_fundamentals(fund_data)
@@ -47,7 +155,8 @@ def evaluate_single_stock_full_profile(
             available_strikes=list(option_chain.keys()) if option_chain else None,
             chain_data=option_chain or {},
             days_to_expiry=stock_record.get("days_to_expiry", 7),
-            expected_direction="BULLISH" if tech_eval["score"] >= 50 else "BEARISH"
+            expected_direction="BEARISH" if is_bearish else "BULLISH",
+            symbol=symbol
         )
         
     # 4. Suitability Classification
@@ -58,17 +167,51 @@ def evaluate_single_stock_full_profile(
         market_sentiment=market_sentiment
     )
     
-    # 5. Trade Setup Calculations (Entry, Stop Loss, Targets)
-    # Stop-Loss placed below recent swing low or 1.5 * ATR below 20 EMA
-    stop_loss = round(max(cmp_price - 2.0 * atr, min(ema20 - 0.5 * atr, cmp_price * 0.965)), 2)
-    risk_per_share = round(cmp_price - stop_loss, 2)
-    
-    # Target 1 (1.8x risk) & Target 2 (2.8x risk or R2 pivot)
-    target_1 = round(cmp_price + (1.8 * risk_per_share), 2)
-    target_2 = round(cmp_price + (2.8 * risk_per_share), 2)
-    
-    risk_reward_num = round((target_1 - cmp_price) / max(0.1, risk_per_share), 2)
-    risk_reward_str = f"1 : {risk_reward_num}"
+    # 5. Independent Structural Trade Setup Calculations
+    if direction == "LONG":
+        # Stop-Loss: Structural (below Pivot S1 or 1.5 ATR below 20 EMA)
+        stop_loss = round(max(cmp_price - 2.5 * atr, min(ema20 - 0.5 * atr, pivots.get("s1", cmp_price * 0.97))), 2)
+        if stop_loss >= cmp_price:
+            stop_loss = round(cmp_price - max(1.0, 1.5 * atr), 2)
+            
+        # Target 1: Structural Resistance (Next unreached pivot level above CMP)
+        if pivots.get("r1", 0) > cmp_price + 0.2 * atr:
+            target_1 = pivots["r1"]
+            target_2 = pivots.get("r2") if pivots.get("r2", 0) > target_1 else None
+        elif pivots.get("r2", 0) > cmp_price + 0.2 * atr:
+            target_1 = pivots["r2"]
+            target_2 = pivots.get("r3") if pivots.get("r3", 0) > target_1 else None
+        elif pivots.get("r3", 0) > cmp_price:
+            target_1 = pivots["r3"]
+            target_2 = None
+        else:
+            target_1 = None
+            target_2 = None
+    else:
+        # SHORT setup
+        stop_loss = round(min(cmp_price + 2.5 * atr, max(ema20 + 0.5 * atr, pivots.get("r1", cmp_price * 1.03))), 2)
+        if stop_loss <= cmp_price:
+            stop_loss = round(cmp_price + max(1.0, 1.5 * atr), 2)
+            
+        # Target 1: Structural Support (Next unreached pivot level below CMP)
+        if pivots.get("s1", 0) < cmp_price - 0.2 * atr:
+            target_1 = pivots["s1"]
+            target_2 = pivots.get("s2") if pivots.get("s2", 0) < target_1 else None
+        elif pivots.get("s2", 0) < cmp_price - 0.2 * atr:
+            target_1 = pivots["s2"]
+            target_2 = pivots.get("s3") if pivots.get("s3", 0) < target_1 else None
+        elif pivots.get("s3", 0) < cmp_price:
+            target_1 = pivots["s3"]
+            target_2 = None
+        else:
+            target_1 = None
+            target_2 = None
+            
+    # Calculate mathematically independent Risk/Reward
+    rr_res = calculate_risk_reward(entry=cmp_price, stop_loss=stop_loss, target=target_1, direction=direction)
+    risk_per_share = rr_res["risk_distance"] or round(abs(cmp_price - stop_loss), 2)
+    risk_reward_str = rr_res["risk_reward_str"]
+    risk_reward_num = rr_res["risk_reward_ratio"]
     
     # 6. Hard Veto 'Why NOT to Trade' Gatekeeper
     veto_reasons = []
@@ -82,24 +225,26 @@ def evaluate_single_stock_full_profile(
     if tech_eval["is_overextended"]:
         veto_reasons.append(f"OVEREXTENDED: Price is {tech_eval['dist_from_ema20_pct']}% above 20 EMA. High risk of chasing near local top.")
         
-    # Filter 3: Poor Risk-to-Reward
-    if risk_reward_num < 1.4:
-        veto_reasons.append(f"UNFAVORABLE RISK/REWARD: Ratio is {risk_reward_str} (requires minimum 1:1.5).")
+    # Filter 3: Unfavorable or Unavailable Structural Risk-to-Reward
+    if rr_res["status"] == "UNAVAILABLE":
+        veto_reasons.append("TARGET UNAVAILABLE: No structural resistance/support obstacle identified beyond entry price.")
+    elif risk_reward_num is not None and risk_reward_num < 1.4:
+        veto_reasons.append(f"UNFAVORABLE RISK/REWARD: Structural ratio is {risk_reward_str} (requires minimum 1:1.5 to next obstacle).")
         
     # Filter 4: Severe Fundamental Distress
     if fund_eval["score"] < 35 and not stock_record.get("is_intraday_only", False):
         veto_reasons.append(f"FUNDAMENTAL RED FLAG: Score {fund_eval['score']}/100 with high debt or negative solvency.")
         
-    # Filter 5: Volume Trap
-    if tech_eval["rvol"] < 0.7:
+    # Filter 5: Volume Trap (only for equity where volume is applicable)
+    if tech_eval["rvol"] is not None and tech_eval["rvol"] < 0.7:
         veto_reasons.append(f"VOLUME TRAP: RVOL is only {tech_eval['rvol']}x average. Lack of institutional participation.")
         
     is_vetoed = len(veto_reasons) > 0
     
-    # 7. Probability Engine Assessment
+    # 7. Probability Engine Assessment (Objective Rule Confluence)
     setup_name = (
         "Pullback to 20 EMA + Support" if abs(cmp_price - ema20) <= 0.8 * atr
-        else ("Breakout with Volume Confirmation" if tech_eval["rvol"] >= 1.6 and cmp_price > pivots["r1"]
+        else ("Breakout with Volume Confirmation" if (tech_eval["rvol"] or 1.0) >= 1.6 and cmp_price > pivots["r1"]
               else "Momentum Trend Follow")
     )
     
@@ -112,12 +257,13 @@ def evaluate_single_stock_full_profile(
     )
     
     # 8. Composite Ranking Score (0 - 100)
-    # Weights: 35% Tech, 30% Fund, 20% Volume/Momentum, 15% Probability/Expectancy
+    # Weights: 40% Tech, 30% Fund, 15% Volume/Momentum, 15% Rule Confluence
+    vol_component = min(100.0, tech_eval["rvol"] * 50.0) if tech_eval["rvol"] is not None else 50.0
     composite_score = round(
-        (0.35 * tech_eval["score"]) +
+        (0.40 * tech_eval["score"]) +
         (0.30 * fund_eval["score"]) +
-        (0.20 * min(100, tech_eval["rvol"] * 50)) +
-        (0.15 * prob_metrics["target_first_rate_pct"]),
+        (0.15 * vol_component) +
+        (0.15 * prob_metrics["confluence_score"]),
         1
     )
     
@@ -130,17 +276,17 @@ def evaluate_single_stock_full_profile(
         why_shortlisted.extend(tech_eval["bullish_factors"][:2])
     if fund_eval["score"] >= 65:
         why_shortlisted.extend(fund_eval["bullish_factors"][:2])
-    if prob_metrics["is_positive_expectancy"]:
-        why_shortlisted.append(f"Positive historical expectancy: {prob_metrics['target_first_rate_pct']}% target-first rate across {prob_metrics['sample_size']} setups.")
+    if prob_metrics.get("confluence_level") == "HIGH":
+        why_shortlisted.append(f"High technical rule confluence: {prob_metrics['confluence_score']}/100")
     if opt_eval and opt_eval.get("oi_alerts"):
         why_shortlisted.append(opt_eval["oi_alerts"][0])
         
     final_score = stock_record.get("composite_score", composite_score)
     final_strategy = stock_record.get("strategy_name", setup_name)
-    final_timeframe = stock_record.get("timeframe", "INTRADAY" if tech_eval.get("rvol", 1.0) >= 1.8 else "SWING")
-    final_pcr = stock_record.get("pcr", 0.88)
-    final_rvol = stock_record.get("rvol", round(tech_eval.get("rvol", 1.2), 1))
-    final_rsi = stock_record.get("rsi", round(tech_eval.get("rsi", 55.0), 1))
+    final_timeframe = stock_record.get("timeframe", "INTRADAY" if (tech_eval.get("rvol") or 1.0) >= 1.8 else "SWING")
+    final_pcr = stock_record.get("pcr") or (opt_eval.get("pcr") if opt_eval else None)
+    final_rvol = stock_record.get("rvol") if stock_record.get("rvol") is not None else tech_eval.get("rvol")
+    final_rsi = stock_record.get("rsi") if stock_record.get("rsi") is not None else round(tech_eval.get("rsi", 50.0), 1)
 
     return {
         "symbol": symbol,
@@ -159,14 +305,15 @@ def evaluate_single_stock_full_profile(
         "veto_reasons": veto_reasons,
         "trade_setup": {
             "setup_name": final_strategy,
-            "direction": "LONG",
+            "direction": direction,
             "entry_range": [round(cmp_price * 0.998, 2), round(cmp_price * 1.004, 2)],
             "stop_loss": stop_loss,
             "target_1": target_1,
             "target_2": target_2,
             "risk_per_share": risk_per_share,
-            "reward_target_1": round(target_1 - cmp_price, 2),
+            "reward_target_1": rr_res["reward_distance"],
             "risk_reward_ratio": risk_reward_str,
+            "risk_reward_status": rr_res["status"],
             "invalidation_level": stop_loss
         },
         "technicals": tech_eval,

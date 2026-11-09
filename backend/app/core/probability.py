@@ -1,7 +1,8 @@
 """
-TradeLens AI - Probability & Historical Expectancy Engine
-Computes honest, statistically calibrated win rates, sample sizes, and net expectancy
-after accounting for brokerage, taxes (STT), and execution slippage.
+TradeLens AI - Probability & Confluence Evaluation Engine
+Computes objective rule-based technical confluence scores and net expectancy.
+Strictly distinguishes between rule-based confluence, unvalidated estimates, and actual backtested statistics.
+Never displays fabricated historical sample sizes or win rates.
 """
 from typing import Dict, Any, List, Optional
 import math
@@ -40,68 +41,85 @@ def compute_setup_probability_metrics(
     setup_name: str,
     rsi: float,
     price_above_ema50: bool,
-    rvol: float,
-    risk_reward_ratio: float,
+    rvol: Optional[float],
+    risk_reward_ratio: Optional[float],
     historical_dataset_stats: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
-    Returns empirical backtested success rates for standard setups with sample sizes.
-    Never invents ungrounded 99% figures; returns realistic market distributions.
+    Evaluates rule-based technical confluence.
+    If historical backtest statistics are provided, returns actual empirical stats.
+    Otherwise, explicitly marks figures as 'UNVALIDATED_RULE_ESTIMATE' without inventing sample sizes.
     """
-    # Baseline statistical distributions calibrated from Indian market (NSE 500) historical studies
-    if setup_name == "Pullback to 20 EMA + Support":
-        base_samples = 428
-        base_target_first = 265
-        avg_win = 3.6
-        avg_loss = 1.6
-    elif setup_name == "Breakout with Volume Confirmation":
-        base_samples = 512
-        base_target_first = 318
-        avg_win = 4.8
-        avg_loss = 2.1
-    elif setup_name == "Oversold RSI Mean Reversion":
-        base_samples = 310
-        base_target_first = 170
-        avg_win = 3.2
-        avg_loss = 1.9
-    else:
-        base_samples = 350
-        base_target_first = 195
-        avg_win = 3.5
-        avg_loss = 1.8
+    # 1. If genuine backtested dataset stats are supplied by the caller/engine:
+    if historical_dataset_stats and "sample_size" in historical_dataset_stats:
+        samples = int(historical_dataset_stats["sample_size"])
+        target_first_rate = float(historical_dataset_stats.get("target_first_rate_pct", 50.0))
+        stop_first_rate = float(historical_dataset_stats.get("stop_first_rate_pct", 45.0))
+        unresolved_rate = float(historical_dataset_stats.get("unresolved_rate_pct", 5.0))
+        avg_win = float(historical_dataset_stats.get("avg_win_pct", 2.5))
+        avg_loss = float(historical_dataset_stats.get("avg_loss_pct", 1.5))
         
-    # Adjust for current quality factors
-    factor_multiplier = 1.0
+        exp_data = calculate_expectancy(target_first_rate, avg_win, avg_loss)
+        return {
+            "setup_type": setup_name,
+            "sample_size": samples,
+            "target_first_rate_pct": target_first_rate,
+            "stop_first_rate_pct": stop_first_rate,
+            "unresolved_rate_pct": unresolved_rate,
+            "avg_win_pct": avg_win,
+            "avg_loss_pct": avg_loss,
+            "net_expectancy_pct": exp_data["expected_value_pct"],
+            "profit_factor": exp_data["profit_factor"],
+            "is_positive_expectancy": exp_data["is_positive_expectancy"],
+            "assessment": exp_data["expectancy_assessment"],
+            "backtest_status": "VALIDATED_HISTORICAL_DATA"
+        }
+
+    # 2. In the absence of completed event-driven backtesting, evaluate rule confluence:
+    confluence_score = 50.0
+    drivers = []
+    
     if price_above_ema50:
-        factor_multiplier += 0.04
-    if rvol >= 1.8:
-        factor_multiplier += 0.05
-    elif rvol < 1.0:
-        factor_multiplier -= 0.08
-    if 55 <= rsi <= 68:
-        factor_multiplier += 0.03
+        confluence_score += 15.0
+        drivers.append("Trend alignment with 50 EMA (+15 pts)")
         
-    adjusted_wins = int(base_target_first * factor_multiplier)
-    sample_size = base_samples
-    target_first_rate = round((adjusted_wins / sample_size) * 100, 1)
-    target_first_rate = min(74.0, max(42.0, target_first_rate)) # Realistic bounds
-    
-    stop_first_rate = round(100.0 - target_first_rate - 6.0, 1) # ~6% timeout/unresolved
-    unresolved_rate = 6.0
-    
-    exp_data = calculate_expectancy(target_first_rate, avg_win, avg_loss)
+    if 55 <= rsi <= 68:
+        confluence_score += 15.0
+        drivers.append(f"RSI in momentum expansion zone ({rsi}) (+15 pts)")
+    elif rsi > 72 or rsi < 35:
+        confluence_score -= 10.0
+        drivers.append(f"RSI extreme ({rsi}) (-10 pts)")
+        
+    if rvol is not None:
+        if rvol >= 1.5:
+            confluence_score += 15.0
+            drivers.append(f"Institutional volume surge ({rvol}x) (+15 pts)")
+        elif rvol < 0.8:
+            confluence_score -= 10.0
+            drivers.append(f"Subdued volume ({rvol}x) (-10 pts)")
+            
+    if risk_reward_ratio is not None and risk_reward_ratio >= 1.5:
+        confluence_score += 15.0
+        drivers.append(f"Favorable structural R:R (1:{risk_reward_ratio}) (+15 pts)")
+        
+    confluence_score = min(95.0, max(20.0, confluence_score))
     
     return {
         "setup_type": setup_name,
-        "sample_size": sample_size,
-        "target_first_rate_pct": target_first_rate,
-        "stop_first_rate_pct": stop_first_rate,
-        "unresolved_rate_pct": unresolved_rate,
-        "avg_win_pct": avg_win,
-        "avg_loss_pct": avg_loss,
-        "net_expectancy_pct": exp_data["expected_value_pct"],
-        "profit_factor": exp_data["profit_factor"],
-        "is_positive_expectancy": exp_data["is_positive_expectancy"],
-        "assessment": exp_data["expectancy_assessment"]
+        "confluence_score": round(confluence_score, 1),
+        "confluence_level": "HIGH" if confluence_score >= 75 else ("MODERATE" if confluence_score >= 50 else "LOW"),
+        "confluence_drivers": drivers,
+        # Explicit honesty: No fabricated sample sizes or win rates
+        "sample_size": None,
+        "target_first_rate_pct": None,
+        "stop_first_rate_pct": None,
+        "unresolved_rate_pct": None,
+        "net_expectancy_pct": None,
+        "profit_factor": None,
+        "is_positive_expectancy": False,
+        "assessment": f"Rule Confluence Score: {confluence_score}/100",
+        "backtest_status": "UNVALIDATED_RULE_ESTIMATE",
+        "disclaimer": "Rule-based confluence only. Historical win rate requires systematic event-driven backtesting."
     }
+
 

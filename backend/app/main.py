@@ -6,6 +6,7 @@ Automatically connects to Angel One SmartAPI for 100% real-time streaming data.
 import json
 import os
 import sys
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -36,6 +37,7 @@ from app.core.shortlist_engine import (
     evaluate_single_stock_full_profile,
     monitor_open_positions
 )
+from app.core.options_analytics import get_strike_step
 from app.core.tip_verifier import verify_tip_setup
 from app.core.ledger import ledger_manager
 
@@ -81,10 +83,13 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
 
         elif path == "/api/health":
             self._set_cors_headers(200)
+            is_live = getattr(provider, "is_authenticated", False)
             res = {
                 "status": "ok",
                 "service": "TradeLens AI Market Engine",
-                "data_source": "LIVE Angel One SmartAPI" if getattr(provider, "is_authenticated", False) else "Sample Benchmark",
+                "data_source": "LIVE Angel One SmartAPI" if is_live else "SIMULATED Benchmark Universe",
+                "data_status": "LIVE" if is_live else "SIMULATED",
+                "server_time": datetime.now().isoformat(),
                 "version": "1.0.0"
             }
             self.wfile.write(json.dumps(res).encode("utf-8"))
@@ -96,14 +101,20 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
             all_stocks = provider.get_all_stocks()
             result = scan_and_shortlist_universe(all_stocks, top_n=top_n, market_sentiment=sentiment)
             result["indices"] = provider.get_indices()
-            result["data_source"] = "LIVE Angel One SmartAPI" if getattr(provider, "is_authenticated", False) else "Sample Benchmark"
+            is_live = getattr(provider, "is_authenticated", False)
+            result["data_source"] = "LIVE Angel One SmartAPI" if is_live else "SIMULATED Benchmark Universe"
+            result["data_status"] = "LIVE" if is_live else "SIMULATED"
+            result["server_time"] = datetime.now().isoformat()
             result["live_portfolio"] = getattr(provider, "get_live_positions", lambda: {})()
             
             # Populate live watchlist table
             all_watch = []
             for s in all_stocks:
-                c = s["candles"][-1]["close"]
+                c = s["candles"][-1]["close"] if s.get("candles") else s.get("cmp", 0.0)
                 chg = s.get("live_change_pct", 0.0)
+                step = get_strike_step(c, symbol=s["symbol"])
+                atm_s = round(c / step) * step
+                atm_label = f"{int(atm_s) if atm_s.is_integer() else atm_s} CE"
                 all_watch.append({
                     "symbol": s["symbol"],
                     "name": s.get("name", s["symbol"]),
@@ -112,7 +123,8 @@ class TradeLensAPIHandler(BaseHTTPRequestHandler):
                     "change_pct": chg,
                     "score": s.get("composite_score", 76.5),
                     "swing": "Active Setup",
-                    "opt": f"{int(round(c / 10.0) * 10)} CE"
+                    "opt": atm_label,
+                    "data_status": s.get("data_status", "LIVE" if is_live else "SIMULATED")
                 })
             result["all_watchlist_stocks"] = all_watch
             self.wfile.write(json.dumps(result, indent=2).encode("utf-8"))

@@ -4,16 +4,22 @@ Contains rich, realistic datasets matching real-time Indian indices (NIFTY 23,96
 and the user's live watchlist (Nestle India, HCL Tech, National Aluminium, Bank of Baroda, DLF, etc.).
 """
 from typing import List, Dict, Any, Optional
-from .base import MarketDataProvider
+from datetime import datetime, timedelta
+from .base import MarketDataProvider, DataStatus
 
 
-def generate_candle_series(target_cmp: float, setup: str = "pullback_bounce", count: int = 60) -> List[Dict[str, float]]:
-    """Generates realistic market candles scaled so the last close equals target_cmp."""
+def generate_candle_series(target_cmp: float, setup: str = "pullback_bounce", count: int = 60) -> List[Dict[str, Any]]:
+    """
+    Generates deterministic benchmark/sample market candles for testing and offline fallback.
+    Explicitly tags every candle with 'candle_status': DataStatus.SIMULATED.
+    """
     candles = []
     p = target_cmp * 0.95
     vol = 1400000
+    base_time = datetime.now() - timedelta(days=count)
     
     for i in range(count):
+        candle_time = (base_time + timedelta(days=i)).strftime("%Y-%m-%dT%H:%M:%S")
         if setup == "pullback_bounce":
             # 0 to 45: steady uptrend
             # 46 to 55: healthy pullback towards 20 EMA on declining volume
@@ -50,11 +56,13 @@ def generate_candle_series(target_cmp: float, setup: str = "pullback_bounce", co
         low_p = round(min(open_p, close_p) * 0.996, 2)
         
         candles.append({
+            "timestamp": candle_time,
             "open": open_p,
             "high": high_p,
             "low": low_p,
             "close": close_p,
-            "volume": c_vol
+            "volume": c_vol,
+            "candle_status": DataStatus.SIMULATED
         })
         p = close_p
         
@@ -528,12 +536,29 @@ class SampleUniverseProvider(MarketDataProvider):
         self.indices = INDIAN_INDICES
 
     def get_indices(self) -> List[Dict[str, Any]]:
-        return self.indices
+        now_iso = datetime.now().isoformat()
+        enriched = []
+        for idx in self.indices:
+            item = idx.copy()
+            item["data_status"] = DataStatus.SIMULATED
+            item["volume_status"] = "NOT_APPLICABLE_FOR_SPOT_INDEX"
+            item["last_updated_at"] = now_iso
+            enriched.append(item)
+        return enriched
 
     def get_all_stocks(self) -> List[Dict[str, Any]]:
-        return self.stocks
+        now_iso = datetime.now().isoformat()
+        enriched = []
+        for s in self.stocks:
+            item = s.copy()
+            item["data_status"] = DataStatus.SIMULATED
+            item["volume_status"] = DataStatus.SIMULATED
+            item["last_updated_at"] = now_iso
+            enriched.append(item)
+        return enriched
 
     def get_quote(self, symbol: str) -> Dict[str, Any]:
+        now_iso = datetime.now().isoformat()
         for s in self.stocks:
             if s["symbol"] == symbol:
                 last_c = s["candles"][-1]
@@ -543,11 +568,31 @@ class SampleUniverseProvider(MarketDataProvider):
                     "open": last_c["open"],
                     "high": last_c["high"],
                     "low": last_c["low"],
-                    "volume": last_c["volume"]
+                    "volume": last_c["volume"],
+                    "volume_status": DataStatus.SIMULATED,
+                    "data_status": DataStatus.SIMULATED,
+                    "last_updated_at": now_iso
                 }
-        return {}
+        for idx in self.get_indices():
+            if idx["symbol"] == symbol:
+                return {
+                    "symbol": symbol,
+                    "ltp": idx["value"],
+                    "open": idx["value"],
+                    "high": idx["value"],
+                    "low": idx["value"],
+                    "volume": None,
+                    "volume_status": "NOT_APPLICABLE_FOR_SPOT_INDEX",
+                    "data_status": DataStatus.SIMULATED,
+                    "last_updated_at": now_iso
+                }
+        return {
+            "symbol": symbol,
+            "data_status": DataStatus.UNAVAILABLE,
+            "last_updated_at": now_iso
+        }
 
-    def get_candles(self, symbol: str, interval: str = "1d", limit: int = 100) -> List[Dict[str, float]]:
+    def get_candles(self, symbol: str, interval: str = "1d", limit: int = 100) -> List[Dict[str, Any]]:
         for s in self.stocks:
             if s["symbol"] == symbol:
                 return s["candles"][-limit:]

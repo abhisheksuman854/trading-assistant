@@ -4,7 +4,9 @@ Black-Scholes pricing, Option Greeks (Delta, Gamma, Theta, Vega),
 Strike selection (ATM, ITM, OTM), Open Interest buildup classification, and Payoff matrix.
 """
 from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime
 import math
+from app.data.base import DataStatus
 
 
 def standard_normal_cdf(x: float) -> float:
@@ -80,20 +82,163 @@ def classify_oi_buildup(price_change_pct: float, oi_change_pct: float) -> str:
     return "Neutral / Indecisive"
 
 
-def get_strike_step(spot: float) -> float:
-    """Returns standard NSE strike interval step size based on underlying price."""
-    if spot >= 20000:
-        return 100.0  # Indices like NIFTY / BANKNIFTY
-    elif spot >= 5000:
+def get_strike_step(spot: float, symbol: Optional[str] = None) -> float:
+    """
+    Returns standard NSE strike interval step size based on instrument and price tier.
+    NIFTY 50 and FINNIFTY options trade with 50-point strike intervals.
+    BANKNIFTY options trade with 100-point strike intervals.
+    MIDCPNIFTY options trade with 25-point strike intervals.
+    """
+    sym = (symbol or "").strip().upper()
+    if "BANKNIFTY" in sym or "NIFTY BANK" in sym:
+        return 100.0
+    elif "MIDCPNIFTY" in sym or "NIFTY MID SELECT" in sym:
+        return 25.0
+    elif "NIFTY" in sym or "FINNIFTY" in sym:
         return 50.0
+        
+    # Equities:
+    if spot >= 5000:
+        return 50.0
+    elif spot >= 2500:
+        return 20.0
     elif spot >= 1000:
-        return 20.0   # Large-caps like Reliance, HDFC Bank, ICICI Bank, Nestle
+        return 20.0
     elif spot >= 500:
-        return 10.0   # Mid-range like DLF, Tata Motors
+        return 10.0
     elif spot >= 200:
-        return 5.0    # Bank of Baroda, National Aluminium
+        return 5.0
     else:
-        return 2.5    # Small-range like Canara Bank
+        return 2.5
+
+
+def verify_option_contract_tradability(
+    contract_info: Dict[str, Any],
+    min_oi: int = 50000,
+    min_volume: int = 5000,
+    max_spread_pct: float = 4.0,
+    max_quote_age_seconds: int = 180,
+    current_dt: Optional[datetime] = None
+) -> Dict[str, Any]:
+    """
+    Validates option contract tradability:
+    1. Contract pricing and counterparty presence (bid/ask).
+    2. Bid-Ask spread percentage (execution friction).
+    3. Minimum open interest and daily volume.
+    4. Quote freshness (detects stale prices during market hours).
+    Returns strict tradability classification and rejection reasons.
+    """
+    rejection_reasons = []
+    warnings = []
+    
+    ltp = contract_info.get("ltp")
+    bid = contract_info.get("bid")
+    ask = contract_info.get("ask")
+    oi = contract_info.get("oi")
+    volume = contract_info.get("volume")
+    last_trade_time = contract_info.get("last_trade_time")
+    
+    # 1. Price check
+    if ltp is None or ltp <= 0:
+        return {
+            "is_tradable": False,
+            "tradability_status": "UNAVAILABLE",
+            "bid": None,
+            "ask": None,
+            "bid_ask_spread": None,
+            "spread_pct": None,
+            "liquidity_status": "UNAVAILABLE",
+            "quote_freshness": "UNAVAILABLE",
+            "rejection_reasons": ["No active trade price or quote available from broker."]
+        }
+        
+    # 2. Bid-Ask Spread check
+    spread = None
+    spread_pct = None
+    bid_ask_status = "UNKNOWN"
+    
+    if bid is not None and ask is not None:
+        if bid > ask:
+            rejection_reasons.append(f"Crossed bid/ask anomaly: Bid price (₹{bid}) > Ask price (₹{ask}). Corrupted quote feed.")
+            bid_ask_status = "CROSSED_ORDERBOOK_ANOMALY"
+        elif bid <= 0 or ask <= 0:
+            rejection_reasons.append("Zero bid or ask counterparty quotes available (Illiquid book).")
+            bid_ask_status = "NO_COUNTERPARTY_LIQUIDITY"
+        else:
+            spread = round(ask - bid, 2)
+            spread_pct = round((spread / max(0.05, ltp)) * 100.0, 2)
+            if spread_pct > max_spread_pct:
+                rejection_reasons.append(
+                    f"Excessive bid-ask spread: {spread_pct}% (₹{spread}) exceeds threshold ({max_spread_pct}%). Execution friction will destroy edge."
+                )
+                bid_ask_status = "WIDE_SPREAD_EXCESSIVE_FRICTION"
+            elif spread_pct > (max_spread_pct / 2.0):
+                warnings.append(f"Moderate spread: {spread_pct}%. Use limit orders only.")
+                bid_ask_status = "MODERATE_SPREAD"
+            else:
+                bid_ask_status = "TIGHT_SPREAD_OPTIMAL"
+    else:
+        bid_ask_status = "BID_ASK_DATA_MISSING"
+        warnings.append("Bid/Ask depth unavailable; monitor order book liquidity.")
+
+    # 3. Liquidity check (OI & Volume)
+    liquidity_status = "LIQUID"
+    if oi is None:
+        warnings.append("Open Interest metric is missing from broker feed.")
+    elif min_oi is not None and oi < min_oi:
+        warnings.append(f"Open Interest ({oi:,}) is below institutional threshold ({min_oi:,}).")
+        liquidity_status = "MARGINAL_OI"
+
+    if volume is None:
+        warnings.append("Traded volume metric is missing from broker feed.")
+    elif min_volume is not None and volume < min_volume:
+        warnings.append(f"Session volume ({volume:,}) is below threshold ({min_volume:,}).")
+        liquidity_status = "LOW_VOLUME"
+
+    if (oi is not None and oi == 0) and (volume is not None and volume == 0):
+        rejection_reasons.append("Zero open interest and zero session volume on contract.")
+        liquidity_status = "ILLIQUID_GHOST_STRIKE"
+
+    # 4. Quote Freshness check
+    quote_freshness = "NOT_ASSESSED"
+    if last_trade_time:
+        try:
+            # Parse timestamp if ISO or string format
+            if isinstance(last_trade_time, str):
+                ts = datetime.fromisoformat(last_trade_time.replace("Z", "+00:00"))
+            else:
+                ts = last_trade_time
+            now = current_dt or datetime.now(ts.tzinfo)
+            age_sec = (now - ts).total_seconds()
+            if age_sec > max_quote_age_seconds:
+                rejection_reasons.append(f"Stale quote: last trade occurred {int(age_sec)}s ago. Slippage risk high.")
+                quote_freshness = "STALE_QUOTE"
+            else:
+                quote_freshness = "FRESH_LIVE_QUOTE"
+        except Exception:
+            quote_freshness = "PARSE_ERROR"
+
+    is_tradable = len(rejection_reasons) == 0
+    if not is_tradable:
+        tradability_status = "UNTRADABLE_ILLIQUID"
+    elif len(warnings) > 0:
+        tradability_status = "TRADABLE_CAUTION"
+    else:
+        tradability_status = "TRADABLE_LIQUID"
+
+    return {
+        "is_tradable": is_tradable,
+        "tradability_status": tradability_status,
+        "bid": bid,
+        "ask": ask,
+        "bid_ask_spread": spread,
+        "spread_pct": spread_pct,
+        "bid_ask_status": bid_ask_status,
+        "liquidity_status": liquidity_status,
+        "quote_freshness": quote_freshness,
+        "rejection_reasons": rejection_reasons,
+        "warnings": warnings
+    }
 
 
 def evaluate_option_chain_for_underlying(
@@ -102,39 +247,59 @@ def evaluate_option_chain_for_underlying(
     available_strikes: Optional[List[float]] = None,
     chain_data: Optional[Dict[float, Dict[str, Any]]] = None,
     days_to_expiry: int = 7,
-    expected_direction: str = "BULLISH"
+    expected_direction: str = "BULLISH",
+    symbol: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Selects distinct ITM, ATM, and OTM strikes, calculates Greeks, payoffs, and PCR.
-    Guarantees unique strike spacing and realistic Delta distributions (~0.68 ITM, ~0.50 ATM, ~0.35 OTM).
+    Selects verified ITM, ATM, and OTM strikes, calculates Greeks, payoffs, and PCR.
+    Does NOT fabricate simulated OI or volume if broker option chain data is unavailable.
     """
-    step = get_strike_step(spot_price)
+    step = get_strike_step(spot_price, symbol=symbol)
     chain_data = chain_data or {}
+    has_real_chain = len(chain_data) > 0
     
     # Calculate pure ATM strike rounded to step
-    atm_strike = round(spot_price / step) * step
+    raw_atm = round(spot_price / step) * step
     
-    if expected_direction == "BULLISH":
-        itm_strike = atm_strike - step
-        otm_strike = atm_strike + step
-        target_option_type = "CE"
+    # If available_strikes is provided, snap to verified tradable contracts
+    if available_strikes:
+        sorted_strikes = sorted(available_strikes)
+        atm_strike = min(sorted_strikes, key=lambda x: abs(x - raw_atm))
+        atm_idx = sorted_strikes.index(atm_strike)
+        if expected_direction == "BULLISH":
+            itm_strike = sorted_strikes[max(0, atm_idx - 1)]
+            otm_strike = sorted_strikes[min(len(sorted_strikes) - 1, atm_idx + 1)]
+            target_option_type = "CE"
+        else:
+            itm_strike = sorted_strikes[min(len(sorted_strikes) - 1, atm_idx + 1)]
+            otm_strike = sorted_strikes[max(0, atm_idx - 1)]
+            target_option_type = "PE"
     else:
-        itm_strike = atm_strike + step
-        otm_strike = atm_strike - step
-        target_option_type = "PE"
+        atm_strike = raw_atm
+        if expected_direction == "BULLISH":
+            itm_strike = atm_strike - step
+            otm_strike = atm_strike + step
+            target_option_type = "CE"
+        else:
+            itm_strike = atm_strike + step
+            otm_strike = atm_strike - step
+            target_option_type = "PE"
         
     t_years = max(1, days_to_expiry) / 365.0
     
     # PCR Calculation
-    if chain_data:
-        total_pe_oi = sum(metrics.get("pe_oi", 0) for metrics in chain_data.values())
-        total_ce_oi = sum(metrics.get("ce_oi", 0) for metrics in chain_data.values())
-        pcr = round(total_pe_oi / max(1, total_ce_oi), 2)
+    if has_real_chain:
+        total_pe_oi = sum(metrics.get("pe_oi", 0) for metrics in chain_data.values() if metrics.get("pe_oi"))
+        total_ce_oi = sum(metrics.get("ce_oi", 0) for metrics in chain_data.values() if metrics.get("ce_oi"))
+        pcr = round(total_pe_oi / max(1, total_ce_oi), 2) if (total_pe_oi or total_ce_oi) else None
+        pcr_sentiment = (
+            "Bullish / Oversold" if (pcr and pcr < 0.75)
+            else ("Bearish / Overbought" if (pcr and pcr > 1.35) else "Neutral")
+        )
     else:
-        pcr = 0.92  # Default healthy PCR
+        pcr = None
+        pcr_sentiment = "UNAVAILABLE"
         
-    pcr_sentiment = "Bullish / Oversold" if pcr < 0.75 else ("Bearish / Overbought" if pcr > 1.35 else "Neutral")
-    
     candidates = [
         {"role": "ITM (Higher Delta / Low Decay)", "strike": itm_strike, "base_iv": 0.17},
         {"role": "ATM (Balanced Delta / High Volume)", "strike": atm_strike, "base_iv": 0.18},
@@ -157,11 +322,33 @@ def evaluate_option_chain_for_underlying(
             option_type=target_option_type
         )
         
-        # Use live LTP if provided, or Black-Scholes theoretical price
+        # Real broker market data if available, or theoretical Black-Scholes estimate
         ltp = data_s.get(f"{opt_key}_ltp") or greeks["theoretical_price"]
-        oi = data_s.get(f"{opt_key}_oi") or int(1800000 * (1.3 if cand["role"].startswith("ATM") else 0.9))
-        oi_chg = data_s.get(f"{opt_key}_oi_chg_pct") or (32.0 if cand["role"].startswith("ATM") else 14.5)
-        vol = data_s.get(f"{opt_key}_vol") or int(950000 * (1.5 if cand["role"].startswith("ATM") else 0.8))
+        oi = data_s.get(f"{opt_key}_oi")
+        oi_chg = data_s.get(f"{opt_key}_oi_chg_pct")
+        vol = data_s.get(f"{opt_key}_vol")
+        
+        contract_quote = {
+            "ltp": data_s.get(f"{opt_key}_ltp"),
+            "bid": data_s.get(f"{opt_key}_bid"),
+            "ask": data_s.get(f"{opt_key}_ask"),
+            "oi": oi,
+            "volume": vol,
+            "last_trade_time": data_s.get(f"{opt_key}_last_trade_time")
+        }
+        tradability = verify_option_contract_tradability(contract_quote) if has_real_chain else {
+            "is_tradable": False,
+            "tradability_status": "UNAVAILABLE",
+            "bid": None,
+            "ask": None,
+            "bid_ask_spread": None,
+            "spread_pct": None,
+            "bid_ask_status": "DATA_UNAVAILABLE",
+            "liquidity_status": "UNAVAILABLE",
+            "quote_freshness": "UNAVAILABLE",
+            "rejection_reasons": ["Broker option chain data unavailable."],
+            "warnings": []
+        }
         
         total_premium_invested = round(ltp * lot_size, 2)
         break_even = round(s + ltp, 2) if target_option_type == "CE" else round(s - ltp, 2)
@@ -177,6 +364,16 @@ def evaluate_option_chain_for_underlying(
             "oi": oi,
             "oi_change_pct": oi_chg,
             "volume": vol,
+            "data_status": DataStatus.LIVE if (has_real_chain and data_s.get(f"{opt_key}_ltp")) else DataStatus.UNAVAILABLE,
+            "is_tradable": tradability["is_tradable"],
+            "tradability_status": tradability["tradability_status"],
+            "bid": tradability["bid"],
+            "ask": tradability["ask"],
+            "bid_ask_spread": tradability["bid_ask_spread"],
+            "spread_pct": tradability["spread_pct"],
+            "liquidity_status": tradability["liquidity_status"],
+            "quote_freshness": tradability["quote_freshness"],
+            "tradability_rejection_reasons": tradability["rejection_reasons"],
             "iv_pct": round(iv * 100, 1),
             "delta": greeks["delta"],
             "gamma": greeks["gamma"],
@@ -190,22 +387,22 @@ def evaluate_option_chain_for_underlying(
         })
         
     alerts = []
-    if chain_data:
+    if has_real_chain:
         for s, metrics in chain_data.items():
-            if metrics.get("ce_oi_chg_pct", 0) > 35:
+            if metrics.get("ce_oi_chg_pct") and metrics["ce_oi_chg_pct"] > 35:
                 alerts.append(f"Heavy Call Writing at {s} CE (+{metrics['ce_oi_chg_pct']}% OI): Resistance capping upside")
-            if metrics.get("pe_oi_chg_pct", 0) > 35:
+            if metrics.get("pe_oi_chg_pct") and metrics["pe_oi_chg_pct"] > 35:
                 alerts.append(f"Heavy Put Writing at {s} PE (+{metrics['pe_oi_chg_pct']}% OI): Strong support floor established")
-    else:
-        alerts.append(f"Heavy Put Writing at {itm_strike} PE (+34% OI): Strong support floor established")
         
     return {
         "spot_price": spot_price,
         "atm_strike": atm_strike,
         "recommended_strike": atm_strike,
+        "strike_step": step,
         "pcr": pcr,
         "pcr_sentiment": pcr_sentiment,
         "strike_matrix": strike_comparisons,
-        "oi_alerts": alerts
+        "oi_alerts": alerts,
+        "option_chain_status": "LIVE" if has_real_chain else "UNAVAILABLE"
     }
 

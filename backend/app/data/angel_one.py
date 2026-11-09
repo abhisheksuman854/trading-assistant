@@ -13,9 +13,12 @@ import struct
 import urllib.request
 import urllib.error
 from typing import List, Dict, Any, Optional
-from .base import MarketDataProvider
-from .sample_universe import generate_candle_series, INDIAN_STOCKS_DATA
+from datetime import datetime
+from .base import MarketDataProvider, DataStatus
+from .sample_universe import INDIAN_STOCKS_DATA
 from .fno_tokens import FNO_TOKEN_MAP
+from .session_clock import IndianMarketSessionClock, IST_ZONE
+from .candle_store import determine_candle_closure
 
 
 def generate_totp_code(secret: str) -> str:
@@ -167,9 +170,120 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             print(f"[!] Error fetching live quotes from Angel One: {e}")
             return self.cached_quotes
 
+    INTERVAL_MAP = {
+        "1m": "ONE_MINUTE", "1min": "ONE_MINUTE", "ONE_MINUTE": "ONE_MINUTE",
+        "3m": "THREE_MINUTE", "3min": "THREE_MINUTE", "THREE_MINUTE": "THREE_MINUTE",
+        "5m": "FIVE_MINUTE", "5min": "FIVE_MINUTE", "FIVE_MINUTE": "FIVE_MINUTE",
+        "10m": "TEN_MINUTE", "TEN_MINUTE": "TEN_MINUTE",
+        "15m": "FIFTEEN_MINUTE", "15min": "FIFTEEN_MINUTE", "FIFTEEN_MINUTE": "FIFTEEN_MINUTE",
+        "30m": "THIRTY_MINUTE", "THIRTY_MINUTE": "THIRTY_MINUTE",
+        "1h": "ONE_HOUR", "ONE_HOUR": "ONE_HOUR",
+        "1d": "ONE_DAY", "1D": "ONE_DAY", "D": "ONE_DAY", "ONE_DAY": "ONE_DAY"
+    }
+
+    def fetch_historical_candles(
+        self,
+        token: str,
+        exchange: str = "NSE",
+        interval: str = "ONE_DAY",
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+        current_exchange_time: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetches genuine historical OHLCV candles from Angel One historical API:
+        POST /rest/secure/angelbroking/historical/v1/getCandleData
+        Guarantees:
+        - Normalizes interval strings to Angel One standard format.
+        - Accurately distinguishes completed (is_closed=True, HISTORICAL) from forming (is_closed=False, LIVE) bars.
+        - Handles token expiration (reconnects) and rate limits safely.
+        - Returns [] with no fabricated data on failure.
+        """
+        if not self.is_authenticated or not self.jwt_token:
+            if not self.connect():
+                return []
+
+        if interval in ("15s", "15sec", "15_SECOND"):
+            print("[!] Angel One SmartAPI getCandleData does NOT support 15-second intervals. 15s candles must be built from timestamped live ticks.")
+            return []
+
+        api_interval = self.INTERVAL_MAP.get(interval, "ONE_DAY")
+        now = datetime.now()
+        to_str = to_date or now.strftime("%Y-%m-%d %H:%M")
+        if not from_date:
+            from_dt = now.replace(hour=9, minute=15) if "MINUTE" in api_interval else datetime.fromtimestamp(now.timestamp() - 60 * 86400)
+            from_str = from_dt.strftime("%Y-%m-%d %H:%M")
+        else:
+            from_str = from_date
+
+        try:
+            url = f"{self.BASE_URL}/rest/secure/angelbroking/historical/v1/getCandleData"
+            payload = json.dumps({
+                "exchange": exchange,
+                "symboltoken": str(token),
+                "interval": api_interval,
+                "fromdate": from_str,
+                "todate": to_str
+            }).encode("utf-8")
+
+            req = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res = json.loads(response.read().decode("utf-8"))
+
+            errorcode = res.get("errorcode", "")
+            if errorcode in ("AG8001", "AG8002"):
+                # Session expired; reconnect once
+                print(f"[!] Angel One JWT expired ({errorcode}). Re-authenticating...")
+                self.jwt_token = ""
+                self.is_authenticated = False
+                if self.connect():
+                    req2 = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
+                    with urllib.request.urlopen(req2, timeout=10) as resp2:
+                        res = json.loads(resp2.read().decode("utf-8"))
+
+            if res.get("status") and "data" in res and res["data"]:
+                candles = []
+                now_ist = current_exchange_time or IndianMarketSessionClock.now_ist()
+                for row in res["data"]:
+                    ts_str = str(row[0])
+                    try:
+                        if "T" in ts_str:
+                            dt_bar = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                        else:
+                            dt_bar = datetime.strptime(ts_str[:16], "%Y-%m-%d %H:%M")
+                    except Exception:
+                        dt_bar = now_ist
+
+                    dt_bar_ist = IndianMarketSessionClock.to_ist(dt_bar)
+                    is_closed, end_dt = determine_candle_closure(dt_bar_ist, interval, current_exchange_time=now_ist)
+                    candle_status = DataStatus.HISTORICAL if is_closed else DataStatus.LIVE
+
+                    candles.append({
+                        "timestamp": ts_str,
+                        "start_time": dt_bar_ist.isoformat(),
+                        "end_time": end_dt.isoformat(),
+                        "open": float(row[1]),
+                        "high": float(row[2]),
+                        "low": float(row[3]),
+                        "close": float(row[4]),
+                        "volume": int(row[5]) if row[5] is not None else 0,
+                        "is_closed": is_closed,
+                        "timeframe": interval,
+                        "candle_status": candle_status
+                    })
+                return candles
+            elif errorcode == "AB1004":
+                print(f"[!] Angel One rate limit reached for token {token}.")
+                return []
+            return []
+        except Exception as e:
+            print(f"[!] Error fetching historical candles from Angel One for token {token}: {e}")
+            return []
+
     def get_indices(self) -> List[Dict[str, Any]]:
         """Fetch live index levels for all major indices from Angel One."""
         self.fetch_live_quotes()
+        now_iso = datetime.now().isoformat()
         
         def _build_idx(key: str, default_val: float, default_chg_pts: float, default_chg_pct: float, is_vix: bool = False) -> Dict[str, Any]:
             q = self.cached_quotes.get(key, {})
@@ -177,12 +291,17 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             close = float(q.get("close") or (ltp - default_chg_pts))
             pct = float(q.get("percentChange") if q.get("percentChange") is not None else round(((ltp - close) / close) * 100, 2))
             pts = round(ltp - close, 2)
+            has_live = bool(q.get("ltp"))
             res = {
                 "symbol": key,
                 "value": ltp,
                 "change_pts": pts,
                 "change_pct": pct,
-                "is_positive": pct >= 0
+                "is_positive": pct >= 0,
+                "data_status": DataStatus.LIVE if has_live else DataStatus.UNAVAILABLE,
+                "volume": None,
+                "volume_status": "NOT_APPLICABLE_FOR_SPOT_INDEX",
+                "last_updated_at": now_iso
             }
             if is_vix:
                 res["status"] = "Normal Volatility" if ltp < 18 else "Elevated Volatility"
@@ -202,19 +321,24 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             "value": sensex_val,
             "change_pts": sensex_pts,
             "change_pct": sensex_pct,
-            "is_positive": sensex_pct >= 0
+            "is_positive": sensex_pct >= 0,
+            "data_status": nifty["data_status"],
+            "volume": None,
+            "volume_status": "NOT_APPLICABLE_FOR_SPOT_INDEX",
+            "last_updated_at": now_iso
         }
         
         return [nifty, bank, fin, mid, sensex, vix]
 
     def get_all_stocks(self) -> List[Dict[str, Any]]:
         """
-        Returns full stock records populated with LIVE LTP, volume, and percentage changes
-        across the entire 50-stock high-liquidity F&O universe directly from Angel One!
+        Returns stock records populated with genuine broker quote data from Angel One.
+        Does NOT fabricate synthetic candles, RSI, PCR, or option recommendations.
         """
         self.fetch_live_quotes()
         stocks_result = []
         sample_funds = {s["symbol"]: s for s in INDIAN_STOCKS_DATA}
+        now_iso = datetime.now().isoformat()
 
         for sym, meta in TOKEN_MAP.items():
             if meta.get("is_index"):
@@ -225,39 +349,9 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
                 continue
 
             live_ltp = float(live_q["ltp"])
-            live_vol = int(live_q.get("tradeVolume") or 1500000)
+            live_vol = int(live_q.get("tradeVolume") or 0)
             live_pct = float(live_q.get("percentChange") or 0.0)
             lot_size = meta.get("lot_size", 250)
-
-            # Quantitative indicators
-            rvol = round(max(0.6, live_vol / 1800000.0), 1)
-            pcr = round(max(0.65, min(1.45, 0.88 - (live_pct * 0.03))), 2)
-            rsi = round(max(30.0, min(85.0, 50.0 + (live_pct * 2.8))), 1)
-
-            # Strategy classification
-            if live_pct >= 4.0 and rvol >= 1.5:
-                strategy_name = "High-RVOL Momentum Breakout"
-                setup_tag = "breakout"
-            elif live_pct >= 1.5:
-                strategy_name = "20 EMA Trend Follow"
-                setup_tag = "pullback_bounce"
-            elif live_pct < 0 and live_pct > -2.0:
-                strategy_name = "Pullback to Support Floor"
-                setup_tag = "pullback_bounce"
-            elif live_pct <= -2.0:
-                strategy_name = "Oversold Mean Reversion"
-                setup_tag = "pullback_bounce"
-            else:
-                strategy_name = "Consolidation Range Scalp"
-                setup_tag = "pullback_bounce"
-
-            timeframe = "INTRADAY" if (rvol >= 1.8 or abs(live_pct) >= 2.5) else "SWING"
-            composite_score = min(96.0, round(65.0 + (live_pct * 3.0) + min(rvol * 3.5, 15.0), 1))
-
-            strike_step = 100 if live_ltp > 2500 else (50 if live_ltp > 1000 else (20 if live_ltp > 500 else (10 if live_ltp > 200 else 5)))
-            rec_strike = round(live_ltp / strike_step) * strike_step
-            opt_premium = round(max(1.5, live_ltp * 0.025 + max(0, live_ltp - rec_strike)), 2)
-            opt_delta = round(max(0.35, min(0.65, 0.50 + ((live_ltp - rec_strike) / strike_step) * 0.1)), 2)
 
             stock_record = sample_funds.get(sym, {}).copy() if sym in sample_funds else {}
             stock_record["symbol"] = sym
@@ -266,29 +360,41 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
             stock_record["lot_size"] = lot_size
             stock_record["cmp"] = live_ltp
             stock_record["live_change_pct"] = live_pct
-            stock_record["rvol"] = rvol
-            stock_record["pcr"] = pcr
-            stock_record["rsi"] = rsi
-            stock_record["strategy_name"] = strategy_name
-            stock_record["timeframe"] = timeframe
-            stock_record["composite_score"] = composite_score
-            stock_record["is_live_data"] = True
+            stock_record["volume"] = live_vol
+            stock_record["volume_status"] = DataStatus.LIVE
+            stock_record["data_status"] = DataStatus.LIVE
+            stock_record["last_updated_at"] = now_iso
             stock_record["days_to_earnings"] = stock_record.get("days_to_earnings", 35)
             stock_record["days_to_expiry"] = 18
 
-            stock_record["candles"] = generate_candle_series(target_cmp=live_ltp, setup=setup_tag, count=60)
-            stock_record["candles"][-1]["volume"] = live_vol
+            # Genuine historical candles fetched if available
+            token = meta.get("token")
+            real_candles = self.fetch_historical_candles(token=token, exchange="NSE", interval="ONE_DAY") if token else []
+            if real_candles:
+                real_candles.append({
+                    "timestamp": now_iso,
+                    "open": float(live_q.get("open") or live_ltp),
+                    "high": float(live_q.get("high") or live_ltp),
+                    "low": float(live_q.get("low") or live_ltp),
+                    "close": live_ltp,
+                    "volume": live_vol,
+                    "candle_status": "INCOMPLETE_LIVE_BAR"
+                })
+                stock_record["candles"] = real_candles
+                stock_record["candle_status"] = DataStatus.HISTORICAL
+            else:
+                # If historical candles are not yet loaded from broker, leave empty with UNAVAILABLE status
+                # NEVER fabricate synthetic candles!
+                stock_record["candles"] = []
+                stock_record["candle_status"] = DataStatus.UNAVAILABLE
 
-            stock_record["option_recommendation"] = {
-                "strike": rec_strike,
-                "type": "CE",
-                "premium": opt_premium,
-                "delta": opt_delta,
-                "lot_size": lot_size,
-                "capital_required": round(opt_premium * lot_size, 2),
-                "pcr": pcr,
-                "pcr_sentiment": "Bullish / Put Support" if pcr < 0.95 else "Neutral"
-            }
+            # Quantitative fields must be calculated by the deterministic technicals engine, NOT fabricated
+            stock_record["rvol"] = None
+            stock_record["pcr"] = None
+            stock_record["rsi"] = None
+            stock_record["strategy_name"] = None
+            stock_record["timeframe"] = "INTRADAY"
+            stock_record["option_recommendation"] = None
 
             if "fundamentals" not in stock_record:
                 stock_record["fundamentals"] = {
@@ -306,29 +412,36 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
 
             stocks_result.append(stock_record)
 
-        stocks_result.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
         return stocks_result
 
     def get_quote(self, symbol: str) -> Dict[str, Any]:
         self.fetch_live_quotes()
         q = self.cached_quotes.get(symbol)
-        if q:
+        now_iso = datetime.now().isoformat()
+        is_idx = any(meta.get("is_index") for s, meta in TOKEN_MAP.items() if s == symbol)
+        if q and q.get("ltp"):
             return {
                 "symbol": symbol,
-                "ltp": q.get("ltp"),
-                "open": q.get("open"),
-                "high": q.get("high"),
-                "low": q.get("low"),
-                "volume": q.get("tradeVolume"),
-                "change_pct": q.get("percentChange")
+                "ltp": float(q.get("ltp")),
+                "open": float(q.get("open") or q.get("ltp")),
+                "high": float(q.get("high") or q.get("ltp")),
+                "low": float(q.get("low") or q.get("ltp")),
+                "volume": None if is_idx else int(q.get("tradeVolume") or 0),
+                "volume_status": "NOT_APPLICABLE_FOR_SPOT_INDEX" if is_idx else DataStatus.LIVE,
+                "change_pct": float(q.get("percentChange") or 0.0),
+                "data_status": DataStatus.LIVE,
+                "last_updated_at": now_iso
             }
-        from .sample_universe import SampleUniverseProvider
-        return SampleUniverseProvider().get_quote(symbol)
+        return {
+            "symbol": symbol,
+            "data_status": DataStatus.UNAVAILABLE,
+            "last_updated_at": now_iso
+        }
 
-    def get_candles(self, symbol: str, interval: str = "ONE_DAY", limit: int = 60) -> List[Dict[str, float]]:
-        for s in self.get_all_stocks():
-            if s["symbol"] == symbol:
-                return s["candles"][-limit:]
+    def get_candles(self, symbol: str, interval: str = "ONE_DAY", limit: int = 60) -> List[Dict[str, Any]]:
+        meta = TOKEN_MAP.get(symbol)
+        if meta and meta.get("token"):
+            return self.fetch_historical_candles(token=meta["token"], exchange="NSE", interval=interval)[-limit:]
         return []
 
     def get_fundamentals(self, symbol: str) -> Dict[str, Any]:

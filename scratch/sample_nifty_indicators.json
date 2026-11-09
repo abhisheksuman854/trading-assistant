@@ -1,0 +1,1622 @@
+{
+  "closed_indicators": {
+    "symbol": "NIFTY 50",
+    "multi_timeframe_indicators": {
+      "15s": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15s",
+        "timestamp": "2026-11-09T11:19:45+05:30",
+        "is_closed": true,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:19:45+05:30",
+          "is_closed": true,
+          "values": {
+            "ema9": 24372.37,
+            "ema15": 24368.61,
+            "ema20": 24364.48,
+            "ema50": 24343.63,
+            "ema200": 24318.16,
+            "dema9": 24375.9,
+            "tema9": 24373.52
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:19:45+05:30",
+          "is_closed": true,
+          "rsi": {
+            "value": 91.82,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.44,
+            "signal": 13.24,
+            "hist": -1.8,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": true,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-09T11:19:45+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.04,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:19:45+05:30",
+          "is_closed": true,
+          "adx": 87.81,
+          "plus_di": 5.62,
+          "minus_di": 0.5,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:19:45+05:30",
+          "is_closed": true,
+          "atr": 22.0,
+          "bollinger": {
+            "middle": 24367.59,
+            "upper": 24381.84,
+            "lower": 24353.35,
+            "bandwidth": 0.0012,
+            "pct_b": 0.6933,
+            "sigma": 7.12,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24364.48,
+            "upper": 24397.48,
+            "lower": 24331.48,
+            "atr": 22.0,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0012,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:19:45+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "1m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "1m",
+        "timestamp": "2026-11-09T17:34:00+05:30",
+        "is_closed": true,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:34:00+05:30",
+          "is_closed": true,
+          "values": {
+            "ema9": 24372.37,
+            "ema15": 24368.61,
+            "ema20": 24364.48,
+            "ema50": 24343.63,
+            "ema200": 24318.16,
+            "dema9": 24375.9,
+            "tema9": 24373.52
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:34:00+05:30",
+          "is_closed": true,
+          "rsi": {
+            "value": 91.82,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.44,
+            "signal": 13.24,
+            "hist": -1.8,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": true,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-09T17:34:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.04,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:34:00+05:30",
+          "is_closed": true,
+          "adx": 87.81,
+          "plus_di": 5.62,
+          "minus_di": 0.5,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:34:00+05:30",
+          "is_closed": true,
+          "atr": 22.0,
+          "bollinger": {
+            "middle": 24367.59,
+            "upper": 24381.84,
+            "lower": 24353.35,
+            "bandwidth": 0.0012,
+            "pct_b": 0.6933,
+            "sigma": 7.12,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24364.48,
+            "upper": 24397.48,
+            "lower": 24331.48,
+            "atr": 22.0,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0012,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:34:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "3m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "3m",
+        "timestamp": "2026-11-10T10:12:00+05:30",
+        "is_closed": true,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:12:00+05:30",
+          "is_closed": true,
+          "values": {
+            "ema9": 24372.37,
+            "ema15": 24368.61,
+            "ema20": 24364.48,
+            "ema50": 24343.63,
+            "ema200": 24318.16,
+            "dema9": 24375.9,
+            "tema9": 24373.52
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:12:00+05:30",
+          "is_closed": true,
+          "rsi": {
+            "value": 91.82,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.44,
+            "signal": 13.24,
+            "hist": -1.8,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": true,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-10T10:12:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.04,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:12:00+05:30",
+          "is_closed": true,
+          "adx": 87.81,
+          "plus_di": 5.62,
+          "minus_di": 0.5,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:12:00+05:30",
+          "is_closed": true,
+          "atr": 22.0,
+          "bollinger": {
+            "middle": 24367.59,
+            "upper": 24381.84,
+            "lower": 24353.35,
+            "bandwidth": 0.0012,
+            "pct_b": 0.6933,
+            "sigma": 7.12,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24364.48,
+            "upper": 24397.48,
+            "lower": 24331.48,
+            "atr": 22.0,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0012,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:12:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "5m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "5m",
+        "timestamp": "2026-11-11T02:50:00+05:30",
+        "is_closed": true,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:50:00+05:30",
+          "is_closed": true,
+          "values": {
+            "ema9": 24372.37,
+            "ema15": 24368.61,
+            "ema20": 24364.48,
+            "ema50": 24343.63,
+            "ema200": 24318.16,
+            "dema9": 24375.9,
+            "tema9": 24373.52
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:50:00+05:30",
+          "is_closed": true,
+          "rsi": {
+            "value": 91.82,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.44,
+            "signal": 13.24,
+            "hist": -1.8,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": true,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-11T02:50:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.04,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:50:00+05:30",
+          "is_closed": true,
+          "adx": 87.81,
+          "plus_di": 5.62,
+          "minus_di": 0.5,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:50:00+05:30",
+          "is_closed": true,
+          "atr": 22.0,
+          "bollinger": {
+            "middle": 24367.59,
+            "upper": 24381.84,
+            "lower": 24353.35,
+            "bandwidth": 0.0012,
+            "pct_b": 0.6933,
+            "sigma": 7.12,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24364.48,
+            "upper": 24397.48,
+            "lower": 24331.48,
+            "atr": 22.0,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0012,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:50:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "15m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15m",
+        "timestamp": "2026-11-14T14:00:00+05:30",
+        "is_closed": true,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:00:00+05:30",
+          "is_closed": true,
+          "values": {
+            "ema9": 24372.37,
+            "ema15": 24368.61,
+            "ema20": 24364.48,
+            "ema50": 24343.63,
+            "ema200": 24318.16,
+            "dema9": 24375.9,
+            "tema9": 24373.52
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:00:00+05:30",
+          "is_closed": true,
+          "rsi": {
+            "value": 91.82,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.44,
+            "signal": 13.24,
+            "hist": -1.8,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": true,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-14T14:00:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.04,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:00:00+05:30",
+          "is_closed": true,
+          "adx": 87.81,
+          "plus_di": 5.62,
+          "minus_di": 0.5,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:00:00+05:30",
+          "is_closed": true,
+          "atr": 22.0,
+          "bollinger": {
+            "middle": 24367.59,
+            "upper": 24381.84,
+            "lower": 24353.35,
+            "bandwidth": 0.0012,
+            "pct_b": 0.6933,
+            "sigma": 7.12,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24364.48,
+            "upper": 24397.48,
+            "lower": 24331.48,
+            "atr": 22.0,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0012,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:00:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      }
+    }
+  },
+  "developing_active_indicators": {
+    "symbol": "NIFTY 50",
+    "multi_timeframe_indicators": {
+      "15s": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15s",
+        "timestamp": "2026-11-09T11:20:00+05:30",
+        "is_closed": false,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:20:00+05:30",
+          "is_closed": false,
+          "values": {
+            "ema9": 24373.41,
+            "ema15": 24369.74,
+            "ema20": 24365.73,
+            "ema50": 24344.96,
+            "ema200": 24318.75,
+            "dema9": 24377.08,
+            "tema9": 24375.28
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:20:00+05:30",
+          "is_closed": false,
+          "rsi": {
+            "value": 93.49,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.14,
+            "signal": 12.82,
+            "hist": -1.68,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": false,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-09T11:19:45+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.05,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:20:00+05:30",
+          "is_closed": false,
+          "adx": 87.58,
+          "plus_di": 5.75,
+          "minus_di": 0.48,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:20:00+05:30",
+          "is_closed": false,
+          "atr": 21.21,
+          "bollinger": {
+            "middle": 24368.88,
+            "upper": 24381.79,
+            "lower": 24355.98,
+            "bandwidth": 0.0011,
+            "pct_b": 0.8378,
+            "sigma": 6.45,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24365.73,
+            "upper": 24397.08,
+            "lower": 24334.38,
+            "atr": 20.9,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0011,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "timestamp": "2026-11-09T11:19:45+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "1m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "1m",
+        "timestamp": "2026-11-09T17:35:00+05:30",
+        "is_closed": false,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:35:00+05:30",
+          "is_closed": false,
+          "values": {
+            "ema9": 24373.41,
+            "ema15": 24369.74,
+            "ema20": 24365.73,
+            "ema50": 24344.96,
+            "ema200": 24318.75,
+            "dema9": 24377.08,
+            "tema9": 24375.28
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:35:00+05:30",
+          "is_closed": false,
+          "rsi": {
+            "value": 93.49,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.14,
+            "signal": 12.82,
+            "hist": -1.68,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": false,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-09T17:34:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.05,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:35:00+05:30",
+          "is_closed": false,
+          "adx": 87.58,
+          "plus_di": 5.75,
+          "minus_di": 0.48,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:35:00+05:30",
+          "is_closed": false,
+          "atr": 21.21,
+          "bollinger": {
+            "middle": 24368.88,
+            "upper": 24381.79,
+            "lower": 24355.98,
+            "bandwidth": 0.0011,
+            "pct_b": 0.8378,
+            "sigma": 6.45,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24365.73,
+            "upper": 24397.08,
+            "lower": 24334.38,
+            "atr": 20.9,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0011,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "timestamp": "2026-11-09T17:34:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "3m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "3m",
+        "timestamp": "2026-11-10T10:15:00+05:30",
+        "is_closed": false,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:15:00+05:30",
+          "is_closed": false,
+          "values": {
+            "ema9": 24373.41,
+            "ema15": 24369.74,
+            "ema20": 24365.73,
+            "ema50": 24344.96,
+            "ema200": 24318.75,
+            "dema9": 24377.08,
+            "tema9": 24375.28
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:15:00+05:30",
+          "is_closed": false,
+          "rsi": {
+            "value": 93.49,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.14,
+            "signal": 12.82,
+            "hist": -1.68,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": false,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-10T10:12:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.05,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:15:00+05:30",
+          "is_closed": false,
+          "adx": 87.58,
+          "plus_di": 5.75,
+          "minus_di": 0.48,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:15:00+05:30",
+          "is_closed": false,
+          "atr": 21.21,
+          "bollinger": {
+            "middle": 24368.88,
+            "upper": 24381.79,
+            "lower": 24355.98,
+            "bandwidth": 0.0011,
+            "pct_b": 0.8378,
+            "sigma": 6.45,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24365.73,
+            "upper": 24397.08,
+            "lower": 24334.38,
+            "atr": 20.9,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0011,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "timestamp": "2026-11-10T10:12:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "5m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "5m",
+        "timestamp": "2026-11-11T02:55:00+05:30",
+        "is_closed": false,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:55:00+05:30",
+          "is_closed": false,
+          "values": {
+            "ema9": 24373.41,
+            "ema15": 24369.74,
+            "ema20": 24365.73,
+            "ema50": 24344.96,
+            "ema200": 24318.75,
+            "dema9": 24377.08,
+            "tema9": 24375.28
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:55:00+05:30",
+          "is_closed": false,
+          "rsi": {
+            "value": 93.49,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.14,
+            "signal": 12.82,
+            "hist": -1.68,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": false,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-11T02:50:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.05,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:55:00+05:30",
+          "is_closed": false,
+          "adx": 87.58,
+          "plus_di": 5.75,
+          "minus_di": 0.48,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:55:00+05:30",
+          "is_closed": false,
+          "atr": 21.21,
+          "bollinger": {
+            "middle": 24368.88,
+            "upper": 24381.79,
+            "lower": 24355.98,
+            "bandwidth": 0.0011,
+            "pct_b": 0.8378,
+            "sigma": 6.45,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24365.73,
+            "upper": 24397.08,
+            "lower": 24334.38,
+            "atr": 20.9,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0011,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "timestamp": "2026-11-11T02:50:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      },
+      "15m": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15m",
+        "timestamp": "2026-11-14T14:15:00+05:30",
+        "is_closed": false,
+        "moving_averages": {
+          "indicator_name": "MOVING_AVERAGES",
+          "parameters": {
+            "periods": [
+              9,
+              15,
+              20,
+              50,
+              200
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:15:00+05:30",
+          "is_closed": false,
+          "values": {
+            "ema9": 24373.41,
+            "ema15": 24369.74,
+            "ema20": 24365.73,
+            "ema50": 24344.96,
+            "ema200": 24318.75,
+            "dema9": 24377.08,
+            "tema9": 24375.28
+          },
+          "alignment": "BULLISH_STACK",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "momentum": {
+          "indicator_name": "MOMENTUM",
+          "parameters": {
+            "rsi_period": 14,
+            "macd": [
+              12,
+              26,
+              9
+            ],
+            "roc_period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:15:00+05:30",
+          "is_closed": false,
+          "rsi": {
+            "value": 93.49,
+            "warmup_status": "WARMUP_COMPLETE",
+            "calculation_status": "VALID"
+          },
+          "macd": {
+            "macd": 11.14,
+            "signal": 12.82,
+            "hist": -1.68,
+            "is_confirmed_bullish_cross": false,
+            "is_confirmed_bearish_cross": false,
+            "is_developing_bullish_cross": false,
+            "is_developing_bearish_cross": false,
+            "last_bar_is_closed": false,
+            "confirmed_candle_index": 499,
+            "confirmed_candle_timestamp": "2026-11-14T14:00:00+05:30",
+            "crossover_status": "NO_CROSSOVER",
+            "calculation_status": "VALID"
+          },
+          "roc": {
+            "value": 0.05,
+            "period": 14,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID"
+        },
+        "trend_strength": {
+          "indicator_name": "ADX",
+          "parameters": {
+            "period": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:15:00+05:30",
+          "is_closed": false,
+          "adx": 87.58,
+          "plus_di": 5.75,
+          "minus_di": 0.48,
+          "trend_strength": "STRONG_TREND",
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "volatility": {
+          "indicator_name": "VOLATILITY",
+          "parameters": {
+            "bollinger": [
+              20,
+              2.0
+            ],
+            "keltner": [
+              20,
+              1.5,
+              10
+            ],
+            "atr": 14
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:15:00+05:30",
+          "is_closed": false,
+          "atr": 21.21,
+          "bollinger": {
+            "middle": 24368.88,
+            "upper": 24381.79,
+            "lower": 24355.98,
+            "bandwidth": 0.0011,
+            "pct_b": 0.8378,
+            "sigma": 6.45,
+            "calculation_status": "VALID"
+          },
+          "keltner": {
+            "middle": 24365.73,
+            "upper": 24397.08,
+            "lower": 24334.38,
+            "atr": 20.9,
+            "calculation_status": "VALID"
+          },
+          "squeeze": {
+            "is_squeeze_on": true,
+            "is_squeeze_release": false,
+            "squeeze_state": "SQUEEZE_ON",
+            "bandwidth": 0.0011,
+            "calculation_status": "VALID"
+          },
+          "calculation_status": "VALID",
+          "warmup_status": "WARMUP_COMPLETE"
+        },
+        "session_vwap": {
+          "indicator_name": "SESSION_VWAP",
+          "parameters": {
+            "bands_sigma": [
+              1.0,
+              2.0
+            ]
+          },
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "timestamp": "2026-11-14T14:00:00+05:30",
+          "is_closed": true,
+          "vwap": 24351.54,
+          "upper_band_1": 24389.25,
+          "lower_band_1": 24313.83,
+          "upper_band_2": 24426.95,
+          "lower_band_2": 24276.12,
+          "sigma": 37.71,
+          "total_session_volume": 17269576,
+          "vwap_name": "NIFTY Futures VWAP",
+          "volume_source": "FUTURES_TRADED_PROXY",
+          "underlying_contract": "NIFTY26NOVFUT",
+          "is_spot_proxy": true,
+          "calculation_status": "VALID"
+        }
+      }
+    }
+  }
+}
