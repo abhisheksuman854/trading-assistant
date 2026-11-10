@@ -483,11 +483,16 @@ class TestClosingSettlementAudit(unittest.TestCase):
         # Critical integrity assertions:
         self.assertEqual(rec.outcome_classification, SpotOutcomeType.UNRESOLVED.value)
         self.assertEqual(rec.exit_reason, ExitReason.DATASET_END_UNRESOLVED.value)
-        # Exit price MUST be the continuous 15:15 close (24190.0), NOT 24350.0!
-        self.assertEqual(rec.exit_price, 24190.0)
-        # Exit timestamp MUST be 15:15:00
-        self.assertEqual(rec.exit_timestamp, "2026-11-02T15:15:00+05:30")
+        # Under Phase 3E.3: No actual exit occurred, so exit_price and exit_timestamp must be None
+        self.assertIsNone(rec.exit_price)
+        self.assertIsNone(rec.exit_timestamp)
+        # Reference price MUST be the continuous 15:15 close (24190.0), NOT 24350.0!
+        self.assertEqual(rec.last_observed_reference_price, 24190.0)
+        self.assertEqual(rec.last_observed_timestamp, "2026-11-02T15:15:00+05:30")
+        self.assertIsNone(rec.underlying_points_pnl)
+        self.assertIsNotNone(rec.unrealized_reference_points_pnl)
         self.assertTrue(rec.execution_metadata.get("isolated_post_gap_excluded"))
+        self.assertFalse(rec.execution_metadata.get("actual_exit_occurred"))
 
     # ------------------------------------------------------------------------
     # 11. Preservation of Phase 3D.2 Cohort Separation

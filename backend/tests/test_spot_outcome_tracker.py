@@ -638,7 +638,7 @@ class TestSpotOutcomeTrackerAudit(unittest.TestCase):
                 failed_gates=[],
                 gate_rejection_reasons=[],
                 data_quality_flags=[],
-                execution_metadata={"underlying_signal_only": True}
+                execution_metadata={"underlying_signal_only": True, "actual_exit_occurred": True}
             ),
             SpotOutcomeRecord(
                 record_id="rec_acc_2",
@@ -672,7 +672,7 @@ class TestSpotOutcomeTrackerAudit(unittest.TestCase):
                 failed_gates=[],
                 gate_rejection_reasons=[],
                 data_quality_flags=[],
-                execution_metadata={"underlying_signal_only": True}
+                execution_metadata={"underlying_signal_only": True, "actual_exit_occurred": True}
             )
         ]
 
@@ -710,7 +710,7 @@ class TestSpotOutcomeTrackerAudit(unittest.TestCase):
                 failed_gates=["GATE_1_SQUEEZE_COMPRESSION"],
                 gate_rejection_reasons=["Squeeze active"],
                 data_quality_flags=[],
-                execution_metadata={"underlying_signal_only": True}
+                execution_metadata={"underlying_signal_only": True, "actual_exit_occurred": True}
             )
             for i in range(3)
         ]
@@ -749,7 +749,7 @@ class TestSpotOutcomeTrackerAudit(unittest.TestCase):
                 failed_gates=["GATE_1_SQUEEZE_COMPRESSION"],
                 gate_rejection_reasons=["Squeeze active"],
                 data_quality_flags=[],
-                execution_metadata={"underlying_signal_only": True}
+                execution_metadata={"underlying_signal_only": True, "actual_exit_occurred": True}
             )
             for i in range(3)
         ]
@@ -811,7 +811,7 @@ class TestSpotOutcomeTrackerAudit(unittest.TestCase):
                 terminal_candle_max_favourable_bound=100.0, terminal_candle_max_adverse_bound=10.0,
                 underlying_points_pnl=100.0, bars_held=1, setup_score=80.0,
                 canonical_gates_passed=True, is_counterfactual=False, failed_gates=[], gate_rejection_reasons=[],
-                data_quality_flags=[], execution_metadata={"underlying_signal_only": True}
+                data_quality_flags=[], execution_metadata={"underlying_signal_only": True, "actual_exit_occurred": True}
             )
         ]
         rep = SpotOutcomeAttributor.generate_full_attribution_report(accepted)
@@ -834,15 +834,18 @@ class TestSpotOutcomeTrackerAudit(unittest.TestCase):
                 direction="BULLISH", entry_reference_price=24000.0, entry_timestamp="2026-11-09T09:30:00+05:30",
                 entry_convention="NEXT_BAR_OPEN", slippage_points=0.0, structural_stop_loss=23950.0,
                 structural_target=24100.0, initial_risk_points=50.0,
-                first_eligible_candle_timestamp="2026-11-09T09:30:00+05:30", exit_timestamp="2026-11-09T09:35:00+05:30",
-                exit_price=24020.0, exit_reason=ExitReason.DATASET_END_UNRESOLVED.value,
+                first_eligible_candle_timestamp="2026-11-09T09:30:00+05:30", exit_timestamp=None,
+                exit_price=None, exit_reason=ExitReason.DATASET_END_UNRESOLVED.value,
                 outcome_classification=SpotOutcomeType.UNRESOLVED.value,
                 mfe_points=25.0, mae_points=10.0, mfe_r_multiple=0.5, mae_r_multiple=0.2,
                 terminal_candle_excursion_status=TerminalCandleExcursionStatus.CONFIRMED_PRE_EXIT.value,
                 terminal_candle_max_favourable_bound=25.0, terminal_candle_max_adverse_bound=10.0,
-                underlying_points_pnl=20.0, bars_held=5, setup_score=75.0,
+                underlying_points_pnl=None, bars_held=5, setup_score=75.0,
                 canonical_gates_passed=True, is_counterfactual=False, failed_gates=[], gate_rejection_reasons=[],
-                data_quality_flags=[], execution_metadata={"underlying_signal_only": True}
+                data_quality_flags=[], execution_metadata={"underlying_signal_only": True, "actual_exit_occurred": False},
+                last_observed_reference_price=24020.0,
+                last_observed_timestamp="2026-11-09T09:35:00+05:30",
+                unrealized_reference_points_pnl=20.0
             )
         ]
         metrics = SpotOutcomeAttributor.calculate_metrics(records)

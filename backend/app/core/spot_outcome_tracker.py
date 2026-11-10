@@ -162,6 +162,17 @@ class SpotOutcomeRecord:
     data_quality_flags: List[str]
     execution_metadata: Dict[str, Any]
 
+    # Phase 3E.3: Explicit Reference Valuation for Unresolved Observations
+    last_observed_reference_price: Optional[float] = None
+    last_observed_timestamp: Optional[str] = None
+    unrealized_reference_points_pnl: Optional[float] = None
+
+    @property
+    def actual_exit_occurred(self) -> bool:
+        if isinstance(self.execution_metadata, dict):
+            return bool(self.execution_metadata.get("actual_exit_occurred", False))
+        return False
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
@@ -251,6 +262,7 @@ class SpotOutcomeTracker:
         self.resolved_eligible_count: int = 0
         self.unresolved_count: int = 0
         self.dataset_end_unresolved_count: int = 0
+        self.session_end_unresolved_count: int = 0
 
     @property
     def completed_records(self) -> List[SpotOutcomeRecord]:
@@ -320,6 +332,8 @@ class SpotOutcomeTracker:
                     gate_rejection_reasons=list(event.rejection_reasons),
                     data_quality_flags=list(event.data_quality_flags),
                     execution_metadata={
+                        "actual_exit_occurred": False,
+                        "outcome_type": "EXCLUDED_NON_ELIGIBLE",
                         "exclusion_reason": "SINGLE_ACTIVE_SEQUENCE policy active; prior trade in flight",
                         "overlapping_policy": self.overlapping_policy.value
                     }
@@ -381,6 +395,8 @@ class SpotOutcomeTracker:
                 gate_rejection_reasons=list(event.rejection_reasons),
                 data_quality_flags=list(event.data_quality_flags),
                 execution_metadata={
+                    "actual_exit_occurred": False,
+                    "outcome_type": "EXCLUDED_NON_ELIGIBLE",
                     "exclusion_reason": "Structural levels absent or geometrically invalid in Phase 2C",
                     "overlapping_policy": self.overlapping_policy.value
                 }
@@ -426,7 +442,7 @@ class SpotOutcomeTracker:
             for trade in self._active_trades:
                 if trade.entry_timestamp.date() < c_start.date():
                     self._record_counter += 1
-                    self.dataset_end_unresolved_count += 1
+                    self.session_end_unresolved_count += 1
                     rec_id = f"spot_out_{trade.signal_id}_{self._record_counter:06d}"
                     pnl = (prev_close - trade.entry_reference_price) if trade.direction == "BULLISH" else (trade.entry_reference_price - prev_close)
                     r_val = trade.initial_risk_points if trade.initial_risk_points > 0 else 1.0
@@ -444,8 +460,8 @@ class SpotOutcomeTracker:
                         structural_target=trade.structural_target,
                         initial_risk_points=trade.initial_risk_points,
                         first_eligible_candle_timestamp=trade.first_eligible_candle_timestamp.isoformat(),
-                        exit_timestamp=prev_end.isoformat(),
-                        exit_price=round(prev_close, 2),
+                        exit_timestamp=None,                          # Strictly None: No actual simulated exit occurred
+                        exit_price=None,                              # Strictly None: No actual simulated fill occurred
                         exit_reason=ExitReason.SESSION_END_UNRESOLVED.value,
                         outcome_classification=SpotOutcomeType.UNRESOLVED.value,
                         mfe_points=round(trade.confirmed_pre_exit_mfe, 2),
@@ -455,7 +471,7 @@ class SpotOutcomeTracker:
                         terminal_candle_excursion_status=TerminalCandleExcursionStatus.CONFIRMED_PRE_EXIT.value,
                         terminal_candle_max_favourable_bound=round(trade.confirmed_pre_exit_mfe, 2),
                         terminal_candle_max_adverse_bound=round(trade.confirmed_pre_exit_mae, 2),
-                        underlying_points_pnl=round(pnl, 2),
+                        underlying_points_pnl=None,                   # Strictly None: No realized P&L on unresolved positions
                         bars_held=trade.bars_held,
                         setup_score=trade.setup_score,
                         canonical_gates_passed=trade.canonical_gates_passed,
@@ -469,13 +485,23 @@ class SpotOutcomeTracker:
                             "option_execution_status": "UNAVAILABLE",
                             "overlapping_policy": self.overlapping_policy.value,
                             "data_source": "ANGEL_ONE_HISTORICAL_SPOT",
-                            "exit_candle_start": prev_start.isoformat(),
-                            "exit_candle_end": prev_end.isoformat(),
+                            "outcome_type": "UNRESOLVED_OBSERVATION",
+                            "actual_exit_occurred": False,
+                            "reference_price_source": "LAST_CONTINUOUS_SESSION_CLOSE",
+                            "reference_observation_candle_start": prev_start.isoformat(),
+                            "reference_observation_candle_end": prev_end.isoformat(),
+                            "last_observed_reference_price": round(prev_close, 2),
+                            "last_observed_timestamp": prev_end.isoformat(),
+                            "unrealized_reference_points_pnl": round(pnl, 2),
                             "configured_time_exit": str(self.intraday_time_exit),
                             "cutoff_cause": "CONFIGURED_TIME_EXIT_NOT_REACHED_IN_SESSION_DATA",
                             "isolated_post_gap_excluded": True,
-                            "disclaimer": "Simulated underlying spot tracking. Untradable index; not option P&L."
-                        }
+                            "description": "Unresolved position retained the last observed continuous-session reference price.",
+                            "disclaimer": "Unresolved position. Reference valuation only; not an actual simulated exit or realized P&L."
+                        },
+                        last_observed_reference_price=round(prev_close, 2),
+                        last_observed_timestamp=prev_end.isoformat(),
+                        unrealized_reference_points_pnl=round(pnl, 2)
                     )
                     newly_completed.append(rec)
                     self._completed_records.append(rec)
@@ -606,8 +632,8 @@ class SpotOutcomeTracker:
                 structural_target=trade.structural_target,
                 initial_risk_points=trade.initial_risk_points,
                 first_eligible_candle_timestamp=trade.first_eligible_candle_timestamp.isoformat(),
-                exit_timestamp=c_end.isoformat(),
-                exit_price=c_close,
+                exit_timestamp=None,                          # Strictly None: No actual simulated exit occurred
+                exit_price=None,                              # Strictly None: No actual simulated fill occurred
                 exit_reason=ExitReason.DATASET_END_UNRESOLVED.value,
                 outcome_classification=SpotOutcomeType.UNRESOLVED.value,
                 mfe_points=round(trade.confirmed_pre_exit_mfe, 2),
@@ -617,7 +643,7 @@ class SpotOutcomeTracker:
                 terminal_candle_excursion_status=TerminalCandleExcursionStatus.CONFIRMED_PRE_EXIT.value,
                 terminal_candle_max_favourable_bound=round(trade.confirmed_pre_exit_mfe, 2),
                 terminal_candle_max_adverse_bound=round(trade.confirmed_pre_exit_mae, 2),
-                underlying_points_pnl=round(pnl, 2),
+                underlying_points_pnl=None,                   # Strictly None: No realized P&L on unresolved positions
                 bars_held=trade.bars_held,
                 setup_score=trade.setup_score,
                 canonical_gates_passed=trade.canonical_gates_passed,
@@ -631,13 +657,23 @@ class SpotOutcomeTracker:
                     "option_execution_status": "UNAVAILABLE",
                     "overlapping_policy": self.overlapping_policy.value,
                     "data_source": "ANGEL_ONE_HISTORICAL_SPOT",
-                    "exit_candle_start": c_start_iso,
-                    "exit_candle_end": c_end.isoformat(),
+                    "outcome_type": "UNRESOLVED_OBSERVATION",
+                    "actual_exit_occurred": False,
+                    "reference_price_source": "LAST_CONTINUOUS_SESSION_CLOSE",
+                    "reference_observation_candle_start": c_start_iso,
+                    "reference_observation_candle_end": c_end.isoformat(),
+                    "last_observed_reference_price": round(c_close, 2),
+                    "last_observed_timestamp": c_end.isoformat(),
+                    "unrealized_reference_points_pnl": round(pnl, 2),
                     "configured_time_exit": str(self.intraday_time_exit),
                     "cutoff_cause": "CONFIGURED_TIME_EXIT_NOT_REACHED_IN_DATASET",
                     "isolated_post_gap_excluded": True,
-                    "disclaimer": "Simulated underlying spot tracking. Untradable index; not option P&L."
-                }
+                    "description": "Unresolved position retained the last observed continuous-session reference price.",
+                    "disclaimer": "Unresolved position. Reference valuation only; not an actual simulated exit or realized P&L."
+                },
+                last_observed_reference_price=round(c_close, 2),
+                last_observed_timestamp=c_end.isoformat(),
+                unrealized_reference_points_pnl=round(pnl, 2)
             )
             finalized.append(record)
             self._completed_records.append(record)
@@ -773,6 +809,8 @@ class SpotOutcomeTracker:
                 data_quality_flags=list(event.data_quality_flags),
                 execution_metadata={
                     "underlying_signal_only": True,
+                    "actual_exit_occurred": False,
+                    "outcome_type": outcome_type.value,
                     "option_execution_eligible": False,
                     "option_execution_status": "UNAVAILABLE",
                     "invalidation_detail": f"Candle open {c_open} failed entry geometry at {c_start.isoformat()}",
@@ -1003,8 +1041,13 @@ class SpotOutcomeTracker:
                 "exit_candle_start": c_start.isoformat(),
                 "exit_candle_end": c_end.isoformat(),
                 "configured_time_exit": str(self.intraday_time_exit),
+                "outcome_type": "RESOLVED_EXIT",
+                "actual_exit_occurred": True,
                 "disclaimer": "Simulated underlying spot tracking. Untradable index; not option P&L."
-            }
+            },
+            last_observed_reference_price=round(exit_price, 2),
+            last_observed_timestamp=c_end.isoformat(),
+            unrealized_reference_points_pnl=None
         )
 
 
@@ -1019,8 +1062,51 @@ class SpotOutcomeAttributor:
     - Explicit denominators and separated counts for invalidated, missed, unresolved, and dataset-end.
     """
 
-    @staticmethod
-    def calculate_metrics(records: List[SpotOutcomeRecord]) -> Dict[str, Any]:
+    @classmethod
+    def check_record_contradictions(cls, record: SpotOutcomeRecord) -> List[str]:
+        """
+        Validates internal consistency between outcome_classification and execution fields.
+        Detects contradictions between metadata and classification.
+        """
+        issues: List[str] = []
+        is_actual_exit = (
+            getattr(record, "actual_exit_occurred", False) is True or
+            (isinstance(record.execution_metadata, dict) and record.execution_metadata.get("actual_exit_occurred") is True)
+        )
+        is_terminal_exit = record.outcome_classification in (
+            SpotOutcomeType.TARGET_REACHED.value,
+            SpotOutcomeType.STOP_LOSS_HIT.value,
+            SpotOutcomeType.TIME_EXIT.value
+        )
+        is_non_exec = record.outcome_classification in (
+            SpotOutcomeType.UNRESOLVED.value,
+            SpotOutcomeType.ENTRY_INVALIDATED.value,
+            SpotOutcomeType.MISSED_ENTRY.value,
+            SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value
+        )
+
+        if is_terminal_exit:
+            if not is_actual_exit:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but actual_exit_occurred is not True")
+            if record.exit_price is None:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but exit_price is None")
+            if record.exit_timestamp is None:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but exit_timestamp is None")
+            if record.underlying_points_pnl is None:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but underlying_points_pnl is None")
+
+        if is_non_exec:
+            if is_actual_exit:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but actual_exit_occurred is True")
+            if record.exit_price is not None:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but exit_price is not None ({record.exit_price})")
+            if record.underlying_points_pnl is not None:
+                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but underlying_points_pnl is not None ({record.underlying_points_pnl})")
+
+        return issues
+
+    @classmethod
+    def calculate_metrics(cls, records: List[SpotOutcomeRecord]) -> Dict[str, Any]:
         """Calculates core statistical attribution metrics with explicit denominators."""
         total_observed = len(records)
         if total_observed == 0:
@@ -1028,14 +1114,18 @@ class SpotOutcomeAttributor:
                 "total_observations": 0,
                 "eligible_observations": 0,
                 "resolved_observations": 0,
+                "actual_resolved_exits_count": 0,
                 "target_reached_count": 0,
                 "stop_loss_hit_count": 0,
                 "time_exit_count": 0,
                 "unresolved_count": 0,
+                "session_end_unresolved_count": 0,
                 "dataset_end_unresolved_count": 0,
                 "entry_invalidated_count": 0,
                 "missed_entry_count": 0,
                 "excluded_non_eligible_count": 0,
+                "contradiction_count": 0,
+                "contradictions": [],
                 "target_rate_pct_of_resolved": 0.0,
                 "target_rate_pct_of_eligible": 0.0,
                 "stop_rate_pct_of_resolved": 0.0,
@@ -1044,6 +1134,8 @@ class SpotOutcomeAttributor:
                 "avg_confirmed_mfe_points": 0.0,
                 "avg_confirmed_mae_points": 0.0,
                 "total_points_pnl": 0.0,
+                "total_realized_points_pnl": 0.0,
+                "total_unrealized_reference_points_pnl": 0.0,
                 "expectancy_per_resolved_pts": 0.0,
                 "expectancy_per_eligible_pts": 0.0,
                 "avg_bars_held_resolved": 0.0,
@@ -1058,11 +1150,20 @@ class SpotOutcomeAttributor:
         invalid_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.ENTRY_INVALIDATED.value)
         missed_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.MISSED_ENTRY.value)
         excluded_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value)
+        
+        session_end_cnt = sum(
+            1 for r in records
+            if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value
+            and r.exit_reason == ExitReason.SESSION_END_UNRESOLVED.value
+        )
         dataset_end_cnt = sum(
             1 for r in records
-            if r.exit_reason in (ExitReason.DATASET_END_UNRESOLVED.value, ExitReason.SESSION_END_UNRESOLVED.value)
+            if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value
+            and r.exit_reason == ExitReason.DATASET_END_UNRESOLVED.value
         )
+        unresolved_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value)
 
+        # Eligible observations: signals that entered active tracking (excludes invalidated, missed, excluded)
         eligible_records = [
             r for r in records
             if r.outcome_classification not in (
@@ -1073,23 +1174,45 @@ class SpotOutcomeAttributor:
         ]
         n_eligible = len(eligible_records)
 
+        # Contradiction Detection across all records
+        contradictions: List[str] = []
+        for r in records:
+            issues = cls.check_record_contradictions(r)
+            if issues:
+                contradictions.extend(issues)
+
+        # Actual Resolved Simulated Exits (Audit Item 1: Mandatory Eligibility Conditions)
+        # 1. actual_exit_occurred is True
+        # 2. exit_price is not None
+        # 3. exit_timestamp is not None
+        # 4. underlying_points_pnl is not None
+        # 5. Outcome classification is a genuine resolved simulated exit (TARGET_REACHED, STOP_LOSS_HIT, TIME_EXIT)
+        # 6. Zero internal contradictions
         resolved_records = [
             r for r in eligible_records
-            if r.outcome_classification in (
-                SpotOutcomeType.TARGET_REACHED.value,
-                SpotOutcomeType.STOP_LOSS_HIT.value,
-                SpotOutcomeType.TIME_EXIT.value
+            if (
+                (getattr(r, "actual_exit_occurred", False) is True or
+                 (isinstance(r.execution_metadata, dict) and r.execution_metadata.get("actual_exit_occurred") is True)) and
+                r.exit_price is not None and
+                r.exit_timestamp is not None and
+                r.underlying_points_pnl is not None and
+                r.outcome_classification in (
+                    SpotOutcomeType.TARGET_REACHED.value,
+                    SpotOutcomeType.STOP_LOSS_HIT.value,
+                    SpotOutcomeType.TIME_EXIT.value
+                ) and
+                len(cls.check_record_contradictions(r)) == 0
             )
         ]
         n_resolved = len(resolved_records)
-        unresolved_cnt = sum(1 for r in eligible_records if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value)
 
         target_cnt = sum(1 for r in resolved_records if r.outcome_classification == SpotOutcomeType.TARGET_REACHED.value)
         stop_cnt = sum(1 for r in resolved_records if r.outcome_classification == SpotOutcomeType.STOP_LOSS_HIT.value)
         time_cnt = sum(1 for r in resolved_records if r.outcome_classification == SpotOutcomeType.TIME_EXIT.value)
 
-        tot_resolved_pnl = sum(r.underlying_points_pnl or 0.0 for r in resolved_records)
-        tot_eligible_pnl = sum(r.underlying_points_pnl or 0.0 for r in eligible_records)
+        tot_resolved_pnl = sum(r.underlying_points_pnl for r in resolved_records)
+        unresolved_records = [r for r in eligible_records if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value]
+        tot_unrealized_reference_pnl = sum(r.unrealized_reference_points_pnl or 0.0 for r in unresolved_records)
         tot_mfe = sum(r.mfe_points for r in eligible_records)
         tot_mae = sum(r.mae_points for r in eligible_records)
         tot_bars = sum(r.bars_held for r in resolved_records)
@@ -1098,14 +1221,18 @@ class SpotOutcomeAttributor:
             "total_observations": total_observed,
             "eligible_observations": n_eligible,
             "resolved_observations": n_resolved,
+            "actual_resolved_exits_count": n_resolved,
             "target_reached_count": target_cnt,
             "stop_loss_hit_count": stop_cnt,
             "time_exit_count": time_cnt,
             "unresolved_count": unresolved_cnt,
+            "session_end_unresolved_count": session_end_cnt,
             "dataset_end_unresolved_count": dataset_end_cnt,
             "entry_invalidated_count": invalid_cnt,
             "missed_entry_count": missed_cnt,
             "excluded_non_eligible_count": excluded_cnt,
+            "contradiction_count": len(contradictions),
+            "contradictions": contradictions,
             "target_rate_pct_of_resolved": round((target_cnt / n_resolved) * 100.0, 2) if n_resolved > 0 else 0.0,
             "target_rate_pct_of_eligible": round((target_cnt / n_eligible) * 100.0, 2) if n_eligible > 0 else 0.0,
             "stop_rate_pct_of_resolved": round((stop_cnt / n_resolved) * 100.0, 2) if n_resolved > 0 else 0.0,
@@ -1114,8 +1241,10 @@ class SpotOutcomeAttributor:
             "avg_confirmed_mfe_points": round(tot_mfe / n_eligible, 2) if n_eligible > 0 else 0.0,
             "avg_confirmed_mae_points": round(tot_mae / n_eligible, 2) if n_eligible > 0 else 0.0,
             "total_points_pnl": round(tot_resolved_pnl, 2),
+            "total_realized_points_pnl": round(tot_resolved_pnl, 2),
+            "total_unrealized_reference_points_pnl": round(tot_unrealized_reference_pnl, 2),
             "expectancy_per_resolved_pts": round(tot_resolved_pnl / n_resolved, 2) if n_resolved > 0 else 0.0,
-            "expectancy_per_eligible_pts": round(tot_eligible_pnl / n_eligible, 2) if n_eligible > 0 else 0.0,
+            "expectancy_per_eligible_pts": round(tot_resolved_pnl / n_eligible, 2) if n_eligible > 0 else 0.0,
             "avg_bars_held_resolved": round(tot_bars / n_resolved, 1) if n_resolved > 0 else 0.0,
             "denominators": {
                 "resolved_denominator": n_resolved,

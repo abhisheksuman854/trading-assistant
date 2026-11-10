@@ -272,8 +272,11 @@ class TestHistoricalCoverageAudit(unittest.TestCase):
         rec = finalized[0]
         self.assertEqual(rec.outcome_classification, SpotOutcomeType.UNRESOLVED.value)
         self.assertEqual(rec.exit_reason, ExitReason.DATASET_END_UNRESOLVED.value)
-        self.assertEqual(rec.exit_timestamp, "2026-11-02T15:15:00+05:30")
-        self.assertEqual(rec.exit_price, 24005.0)  # Actual 15:14-15:15 bar close, not fabricated
+        self.assertIsNone(rec.exit_timestamp)
+        self.assertIsNone(rec.exit_price)
+        self.assertEqual(rec.last_observed_reference_price, 24005.0)  # Actual 15:14-15:15 bar close reference
+        self.assertEqual(rec.last_observed_timestamp, "2026-11-02T15:15:00+05:30")
+        self.assertIsNone(rec.underlying_points_pnl)
 
         # Case B: Multi-day session transition
         tracker_multi = SpotOutcomeTracker(intraday_time_exit=time(15, 25))
@@ -293,8 +296,11 @@ class TestHistoricalCoverageAudit(unittest.TestCase):
         rec_day1 = completed_multi[0]
         self.assertEqual(rec_day1.outcome_classification, SpotOutcomeType.UNRESOLVED.value)
         self.assertEqual(rec_day1.exit_reason, ExitReason.SESSION_END_UNRESOLVED.value)
-        self.assertEqual(rec_day1.exit_timestamp, "2026-11-02T15:15:00+05:30")
-        self.assertEqual(rec_day1.exit_price, 24005.0)
+        self.assertIsNone(rec_day1.exit_timestamp)
+        self.assertIsNone(rec_day1.exit_price)
+        self.assertEqual(rec_day1.last_observed_reference_price, 24005.0)
+        self.assertEqual(rec_day1.last_observed_timestamp, "2026-11-02T15:15:00+05:30")
+        self.assertIsNone(rec_day1.underlying_points_pnl)
 
     # -------------------------------------------------------------------------
     # 6. Incomplete Session Coverage Reporting
