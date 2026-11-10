@@ -167,11 +167,23 @@ class SpotOutcomeRecord:
     last_observed_timestamp: Optional[str] = None
     unrealized_reference_points_pnl: Optional[float] = None
 
+    # Phase 3E.4.1: Separate observation timestamp for non-execution / rejected-entry records
+    # so `exit_timestamp` remains strictly None unless an actual simulated exit occurred.
+    observation_timestamp: Optional[str] = None
+
     @property
-    def actual_exit_occurred(self) -> bool:
-        if isinstance(self.execution_metadata, dict):
-            return bool(self.execution_metadata.get("actual_exit_occurred", False))
-        return False
+    def actual_exit_occurred(self) -> Optional[bool]:
+        """
+        Canonical read-only accessor for the record's actual-exit state.
+        Authoritative representation is `execution_metadata["actual_exit_occurred"]`
+        stored as a strict `bool` (`True` or `False`). Returns `None` if missing or
+        non-boolean rather than silently defaulting to `False`.
+        """
+        if isinstance(self.execution_metadata, dict) and "actual_exit_occurred" in self.execution_metadata:
+            val = self.execution_metadata["actual_exit_occurred"]
+            if type(val) is bool:
+                return val
+        return None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -312,7 +324,7 @@ class SpotOutcomeTracker:
                     structural_target=event.structural_target,
                     initial_risk_points=None,
                     first_eligible_candle_timestamp=None,
-                    exit_timestamp=event.replay_timestamp,
+                    exit_timestamp=None,
                     exit_price=None,
                     exit_reason=ExitReason.SKIPPED_DUE_TO_ACTIVE_POSITION.value,
                     outcome_classification=SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value,
@@ -334,9 +346,11 @@ class SpotOutcomeTracker:
                     execution_metadata={
                         "actual_exit_occurred": False,
                         "outcome_type": "EXCLUDED_NON_ELIGIBLE",
+                        "observation_timestamp": event.replay_timestamp,
                         "exclusion_reason": "SINGLE_ACTIVE_SEQUENCE policy active; prior trade in flight",
                         "overlapping_policy": self.overlapping_policy.value
-                    }
+                    },
+                    observation_timestamp=event.replay_timestamp
                 )
                 self._completed_records.append(rec)
                 return False
@@ -375,7 +389,7 @@ class SpotOutcomeTracker:
                 structural_target=event.structural_target,
                 initial_risk_points=None,
                 first_eligible_candle_timestamp=None,
-                exit_timestamp=event.replay_timestamp,
+                exit_timestamp=None,
                 exit_price=None,
                 exit_reason=ExitReason.MISSING_STRUCTURAL_LEVELS.value,
                 outcome_classification=SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value,
@@ -397,9 +411,11 @@ class SpotOutcomeTracker:
                 execution_metadata={
                     "actual_exit_occurred": False,
                     "outcome_type": "EXCLUDED_NON_ELIGIBLE",
+                    "observation_timestamp": event.replay_timestamp,
                     "exclusion_reason": "Structural levels absent or geometrically invalid in Phase 2C",
                     "overlapping_policy": self.overlapping_policy.value
-                }
+                },
+                observation_timestamp=event.replay_timestamp
             )
             self._completed_records.append(rec)
             return False
@@ -501,7 +517,8 @@ class SpotOutcomeTracker:
                         },
                         last_observed_reference_price=round(prev_close, 2),
                         last_observed_timestamp=prev_end.isoformat(),
-                        unrealized_reference_points_pnl=round(pnl, 2)
+                        unrealized_reference_points_pnl=round(pnl, 2),
+                        observation_timestamp=prev_end.isoformat()
                     )
                     newly_completed.append(rec)
                     self._completed_records.append(rec)
@@ -673,7 +690,8 @@ class SpotOutcomeTracker:
                 },
                 last_observed_reference_price=round(c_close, 2),
                 last_observed_timestamp=c_end.isoformat(),
-                unrealized_reference_points_pnl=round(pnl, 2)
+                unrealized_reference_points_pnl=round(pnl, 2),
+                observation_timestamp=c_end.isoformat()
             )
             finalized.append(record)
             self._completed_records.append(record)
@@ -788,7 +806,7 @@ class SpotOutcomeTracker:
                 structural_target=round(target_price, 2),
                 initial_risk_points=None,
                 first_eligible_candle_timestamp=c_start.isoformat(),
-                exit_timestamp=c_start.isoformat(),
+                exit_timestamp=None,
                 exit_price=None,
                 exit_reason=invalidation_reason.value,
                 outcome_classification=outcome_type.value,
@@ -811,11 +829,13 @@ class SpotOutcomeTracker:
                     "underlying_signal_only": True,
                     "actual_exit_occurred": False,
                     "outcome_type": outcome_type.value,
+                    "observation_timestamp": c_start.isoformat(),
                     "option_execution_eligible": False,
                     "option_execution_status": "UNAVAILABLE",
                     "invalidation_detail": f"Candle open {c_open} failed entry geometry at {c_start.isoformat()}",
                     "overlapping_policy": self.overlapping_policy.value
-                }
+                },
+                observation_timestamp=c_start.isoformat()
             )
 
         # Valid entry geometry: instantiate ActiveSpotTrade
@@ -1047,61 +1067,203 @@ class SpotOutcomeTracker:
             },
             last_observed_reference_price=round(exit_price, 2),
             last_observed_timestamp=c_end.isoformat(),
-            unrealized_reference_points_pnl=None
+            unrealized_reference_points_pnl=None,
+            observation_timestamp=c_end.isoformat()
         )
 
 
 class SpotOutcomeAttributor:
     """
     Independent attribution analyzer for spot outcome records.
-    Enforces strict cohort separation (Phase 3D.2):
+    Enforces strict cohort separation (Phase 3D.2) and canonical exit-state consistency (Phase 3E.4.1):
     - Accepted Phase 2C signal observations form the headline strategy performance summary.
     - Rejected counterfactual observations are computed independently.
     - Combined research diagnostics are isolated into an explicitly labeled supplementary section.
     - Terminology uses signal observations, avoiding execution-implying terms.
-    - Explicit denominators and separated counts for invalidated, missed, unresolved, and dataset-end.
+    - Explicit denominators and separated counts for invalidated, missed, unresolved, dataset-end,
+      and contradictory/unsupported records.
     """
+
+    ACTUAL_EXIT_CLASSIFICATIONS = frozenset({
+        SpotOutcomeType.TARGET_REACHED.value,
+        SpotOutcomeType.STOP_LOSS_HIT.value,
+        SpotOutcomeType.TIME_EXIT.value,
+    })
+
+    NON_EXECUTION_CLASSIFICATIONS = frozenset({
+        SpotOutcomeType.ENTRY_INVALIDATED.value,
+        SpotOutcomeType.MISSED_ENTRY.value,
+        SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value,
+        SpotOutcomeType.UNRESOLVED.value,
+    })
+
+    SUPPORTED_CLASSIFICATIONS = ACTUAL_EXIT_CLASSIFICATIONS | NON_EXECUTION_CLASSIFICATIONS
+
+    @classmethod
+    def resolve_canonical_actual_exit_state(cls, record: Any) -> Tuple[Optional[bool], List[str]]:
+        """
+        Deterministically resolves the canonical `actual_exit_occurred` boolean state.
+
+        Authoritative representation is `execution_metadata["actual_exit_occurred"]` (strict `bool`).
+        When a record-level `actual_exit_occurred` attribute/property also exists, both representations
+        must be present, strictly boolean, and identical. Conflicts and missing values are explicitly
+        rejected without using boolean OR or permissive default fallbacks.
+        """
+        issues: List[str] = []
+        rec_id = getattr(record, "record_id", "<unknown>")
+
+        # 1. Inspect metadata field
+        meta = getattr(record, "execution_metadata", None)
+        meta_val: Optional[bool] = None
+        meta_missing = False
+        meta_type_error = False
+
+        if not isinstance(meta, dict):
+            meta_missing = True
+        elif "actual_exit_occurred" not in meta:
+            meta_missing = True
+        else:
+            raw_meta = meta["actual_exit_occurred"]
+            if raw_meta is None:
+                meta_missing = True
+            elif type(raw_meta) is not bool:
+                meta_type_error = True
+                issues.append(
+                    f"Record {rec_id}: execution_metadata['actual_exit_occurred'] must be bool, "
+                    f"got {type(raw_meta).__name__} ({raw_meta!r})"
+                )
+            else:
+                meta_val = raw_meta
+
+        # 2. Inspect record-level property/attribute
+        prop_val: Optional[bool] = None
+        prop_missing = False
+        prop_type_error = False
+
+        if not hasattr(record, "actual_exit_occurred"):
+            prop_missing = True
+        else:
+            raw_prop = getattr(record, "actual_exit_occurred")
+            if raw_prop is None:
+                prop_missing = True
+            elif type(raw_prop) is not bool:
+                prop_type_error = True
+                issues.append(
+                    f"Record {rec_id}: record-level actual_exit_occurred must be bool, "
+                    f"got {type(raw_prop).__name__} ({raw_prop!r})"
+                )
+            else:
+                prop_val = raw_prop
+
+        # 3. Validate presence and strict equality (no boolean OR fallback)
+        if meta_missing and prop_missing and not meta_type_error and not prop_type_error:
+            issues.append(
+                f"Record {rec_id}: both record-level actual_exit_occurred and "
+                f"execution_metadata['actual_exit_occurred'] are missing"
+            )
+            return None, issues
+
+        if meta_missing and not meta_type_error:
+            issues.append(f"Record {rec_id}: execution_metadata['actual_exit_occurred'] is missing")
+
+        if prop_missing and not prop_type_error:
+            issues.append(f"Record {rec_id}: record-level actual_exit_occurred is missing")
+
+        if meta_val is not None and prop_val is not None and meta_val is not prop_val:
+            issues.append(
+                f"Record {rec_id}: conflicting actual_exit_occurred state "
+                f"(record-level={prop_val}, execution_metadata={meta_val})"
+            )
+
+        if issues:
+            return None, issues
+
+        return meta_val, []
 
     @classmethod
     def check_record_contradictions(cls, record: SpotOutcomeRecord) -> List[str]:
         """
-        Validates internal consistency between outcome_classification and execution fields.
-        Detects contradictions between metadata and classification.
+        Validates internal consistency between outcome_classification, canonical
+        actual_exit_occurred state, and execution/exit fields.
+        Detects:
+        - Unsupported/unknown outcome classifications
+        - Missing, non-boolean, or conflicting actual_exit_occurred representations
+        - Actual simulated exits missing exit_price, exit_timestamp, or underlying_points_pnl
+        - Non-execution observations containing exit_price, exit_timestamp, or realized P&L
+        - Contradictory execution_metadata['outcome_type'] tags
         """
         issues: List[str] = []
-        is_actual_exit = (
-            getattr(record, "actual_exit_occurred", False) is True or
-            (isinstance(record.execution_metadata, dict) and record.execution_metadata.get("actual_exit_occurred") is True)
-        )
-        is_terminal_exit = record.outcome_classification in (
-            SpotOutcomeType.TARGET_REACHED.value,
-            SpotOutcomeType.STOP_LOSS_HIT.value,
-            SpotOutcomeType.TIME_EXIT.value
-        )
-        is_non_exec = record.outcome_classification in (
-            SpotOutcomeType.UNRESOLVED.value,
-            SpotOutcomeType.ENTRY_INVALIDATED.value,
-            SpotOutcomeType.MISSED_ENTRY.value,
-            SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value
-        )
+        rec_id = getattr(record, "record_id", "<unknown>")
+        classification = getattr(record, "outcome_classification", None)
+
+        if classification not in cls.SUPPORTED_CLASSIFICATIONS:
+            issues.append(
+                f"Record {rec_id}: unsupported outcome_classification {classification!r}"
+            )
+
+        canonical_actual_exit, exit_state_issues = cls.resolve_canonical_actual_exit_state(record)
+        issues.extend(exit_state_issues)
+
+        is_terminal_exit = classification in cls.ACTUAL_EXIT_CLASSIFICATIONS
+        is_non_exec = classification in cls.NON_EXECUTION_CLASSIFICATIONS
+
+        meta = getattr(record, "execution_metadata", None)
+        meta_outcome_type = meta.get("outcome_type") if isinstance(meta, dict) else None
 
         if is_terminal_exit:
-            if not is_actual_exit:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but actual_exit_occurred is not True")
+            if canonical_actual_exit is False:
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but actual_exit_occurred is False"
+                )
             if record.exit_price is None:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but exit_price is None")
-            if record.exit_timestamp is None:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but exit_timestamp is None")
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but exit_price is None"
+                )
+            if record.exit_timestamp is None or (isinstance(record.exit_timestamp, str) and not record.exit_timestamp.strip()):
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but exit_timestamp is missing/None"
+                )
             if record.underlying_points_pnl is None:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but underlying_points_pnl is None")
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but underlying_points_pnl is None"
+                )
+            if meta_outcome_type in (
+                "UNRESOLVED",
+                "UNRESOLVED_OBSERVATION",
+                "ENTRY_INVALIDATED",
+                "MISSED_ENTRY",
+                "EXCLUDED_NON_ELIGIBLE",
+            ):
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but execution_metadata['outcome_type'] is {meta_outcome_type!r}"
+                )
 
         if is_non_exec:
-            if is_actual_exit:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but actual_exit_occurred is True")
+            if canonical_actual_exit is True:
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but actual_exit_occurred is True"
+                )
             if record.exit_price is not None:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but exit_price is not None ({record.exit_price})")
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but exit_price is not None ({record.exit_price})"
+                )
+            if record.exit_timestamp is not None:
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} (non-execution) must not contain exit_timestamp ({record.exit_timestamp})"
+                )
             if record.underlying_points_pnl is not None:
-                issues.append(f"Record {record.record_id}: classification is {record.outcome_classification} but underlying_points_pnl is not None ({record.underlying_points_pnl})")
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but underlying_points_pnl is not None ({record.underlying_points_pnl})"
+                )
+            if meta_outcome_type in (
+                "RESOLVED_EXIT",
+                "TARGET_REACHED",
+                "STOP_LOSS_HIT",
+                "TIME_EXIT",
+            ):
+                issues.append(
+                    f"Record {rec_id}: classification is {classification} but execution_metadata['outcome_type'] is {meta_outcome_type!r}"
+                )
 
         return issues
 
@@ -1125,6 +1287,7 @@ class SpotOutcomeAttributor:
                 "missed_entry_count": 0,
                 "excluded_non_eligible_count": 0,
                 "contradiction_count": 0,
+                "contradictory_records_count": 0,
                 "contradictions": [],
                 "target_rate_pct_of_resolved": 0.0,
                 "target_rate_pct_of_eligible": 0.0,
@@ -1146,62 +1309,60 @@ class SpotOutcomeAttributor:
                 }
             }
 
-        # Filter categories (Audit Item 6: Separately counted)
-        invalid_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.ENTRY_INVALIDATED.value)
-        missed_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.MISSED_ENTRY.value)
-        excluded_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value)
-        
-        session_end_cnt = sum(
-            1 for r in records
-            if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value
-            and r.exit_reason == ExitReason.SESSION_END_UNRESOLVED.value
-        )
-        dataset_end_cnt = sum(
-            1 for r in records
-            if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value
-            and r.exit_reason == ExitReason.DATASET_END_UNRESOLVED.value
-        )
-        unresolved_cnt = sum(1 for r in records if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value)
-
-        # Eligible observations: signals that entered active tracking (excludes invalidated, missed, excluded)
-        eligible_records = [
-            r for r in records
-            if r.outcome_classification not in (
-                SpotOutcomeType.ENTRY_INVALIDATED.value,
-                SpotOutcomeType.MISSED_ENTRY.value,
-                SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value
-            )
-        ]
-        n_eligible = len(eligible_records)
-
-        # Contradiction Detection across all records
+        # Step 1: Isolate contradictory and unsupported records FIRST so they never
+        # contaminate realized numerator, realized/eligible denominators, or ordinary unresolved counts.
+        valid_records: List[SpotOutcomeRecord] = []
+        contradictory_records: List[SpotOutcomeRecord] = []
         contradictions: List[str] = []
         for r in records:
             issues = cls.check_record_contradictions(r)
             if issues:
                 contradictions.extend(issues)
+                contradictory_records.append(r)
+            else:
+                valid_records.append(r)
 
-        # Actual Resolved Simulated Exits (Audit Item 1: Mandatory Eligibility Conditions)
-        # 1. actual_exit_occurred is True
+        # Step 2: Filter non-execution categories strictly from valid records
+        invalid_cnt = sum(1 for r in valid_records if r.outcome_classification == SpotOutcomeType.ENTRY_INVALIDATED.value)
+        missed_cnt = sum(1 for r in valid_records if r.outcome_classification == SpotOutcomeType.MISSED_ENTRY.value)
+        excluded_cnt = sum(1 for r in valid_records if r.outcome_classification == SpotOutcomeType.EXCLUDED_NON_ELIGIBLE.value)
+
+        session_end_cnt = sum(
+            1 for r in valid_records
+            if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value
+            and r.exit_reason == ExitReason.SESSION_END_UNRESOLVED.value
+        )
+        dataset_end_cnt = sum(
+            1 for r in valid_records
+            if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value
+            and r.exit_reason == ExitReason.DATASET_END_UNRESOLVED.value
+        )
+        unresolved_cnt = sum(1 for r in valid_records if r.outcome_classification == SpotOutcomeType.UNRESOLVED.value)
+
+        # Eligible observations: valid records that entered active tracking (excludes invalidated, missed, excluded, and contradictory/unsupported)
+        eligible_records = [
+            r for r in valid_records
+            if r.outcome_classification in (
+                cls.ACTUAL_EXIT_CLASSIFICATIONS | {SpotOutcomeType.UNRESOLVED.value}
+            )
+        ]
+        n_eligible = len(eligible_records)
+
+        # Actual Resolved Simulated Exits (Audit Item 1 + Phase 3E.4.1 Mandatory Consistency Conditions):
+        # 1. Canonical actual_exit_occurred is strictly True
         # 2. exit_price is not None
         # 3. exit_timestamp is not None
         # 4. underlying_points_pnl is not None
         # 5. Outcome classification is a genuine resolved simulated exit (TARGET_REACHED, STOP_LOSS_HIT, TIME_EXIT)
-        # 6. Zero internal contradictions
+        # 6. Zero internal contradictions (already guaranteed by valid_records)
         resolved_records = [
             r for r in eligible_records
             if (
-                (getattr(r, "actual_exit_occurred", False) is True or
-                 (isinstance(r.execution_metadata, dict) and r.execution_metadata.get("actual_exit_occurred") is True)) and
+                cls.resolve_canonical_actual_exit_state(r)[0] is True and
                 r.exit_price is not None and
                 r.exit_timestamp is not None and
                 r.underlying_points_pnl is not None and
-                r.outcome_classification in (
-                    SpotOutcomeType.TARGET_REACHED.value,
-                    SpotOutcomeType.STOP_LOSS_HIT.value,
-                    SpotOutcomeType.TIME_EXIT.value
-                ) and
-                len(cls.check_record_contradictions(r)) == 0
+                r.outcome_classification in cls.ACTUAL_EXIT_CLASSIFICATIONS
             )
         ]
         n_resolved = len(resolved_records)
@@ -1232,6 +1393,7 @@ class SpotOutcomeAttributor:
             "missed_entry_count": missed_cnt,
             "excluded_non_eligible_count": excluded_cnt,
             "contradiction_count": len(contradictions),
+            "contradictory_records_count": len(contradictory_records),
             "contradictions": contradictions,
             "target_rate_pct_of_resolved": round((target_cnt / n_resolved) * 100.0, 2) if n_resolved > 0 else 0.0,
             "target_rate_pct_of_eligible": round((target_cnt / n_eligible) * 100.0, 2) if n_eligible > 0 else 0.0,

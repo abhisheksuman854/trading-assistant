@@ -1,0 +1,586 @@
+{
+  "audit_type": "PHASE_3E_5_1_1_READ_ONLY_PROVIDER_PROBE_AUDIT",
+  "read_only": true,
+  "logical_request_plan": {
+    "authentication_operations_planned": 1,
+    "candle_probes_planned": 6
+  },
+  "safeguard_bounds": {
+    "max_auth_http_attempts": 2,
+    "max_candle_http_attempts_per_probe": 3,
+    "max_total_candle_http_attempts": 18,
+    "max_total_http_attempts": 20,
+    "retries_bounded": true
+  },
+  "probe_plan": [
+    {
+      "probe_id": "nifty_1m_1530",
+      "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+      "reference_date": "2026-11-06",
+      "actual_probe_date": "2026-11-06",
+      "calendar_day_difference": 0,
+      "is_valid_trading_session": true,
+      "exchange": "NSE",
+      "symboltoken": "99926000",
+      "interval": "ONE_MINUTE",
+      "fromdate": "2026-11-06 09:15",
+      "todate": "2026-11-06 15:30"
+    },
+    {
+      "probe_id": "nifty_1m_1600",
+      "probe_purpose": "REQUEST_BOUNDARY_EXPERIMENT",
+      "reference_date": "2026-11-06",
+      "actual_probe_date": "2026-11-06",
+      "calendar_day_difference": 0,
+      "is_valid_trading_session": true,
+      "exchange": "NSE",
+      "symboltoken": "99926000",
+      "interval": "ONE_MINUTE",
+      "fromdate": "2026-11-06 09:15",
+      "todate": "2026-11-06 16:00"
+    },
+    {
+      "probe_id": "nifty_5m_1530",
+      "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+      "reference_date": "2026-11-06",
+      "actual_probe_date": "2026-11-06",
+      "calendar_day_difference": 0,
+      "is_valid_trading_session": true,
+      "exchange": "NSE",
+      "symboltoken": "99926000",
+      "interval": "FIVE_MINUTE",
+      "fromdate": "2026-11-06 09:15",
+      "todate": "2026-11-06 15:30"
+    },
+    {
+      "probe_id": "banknifty_1m_1530",
+      "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+      "reference_date": "2026-11-06",
+      "actual_probe_date": "2026-11-06",
+      "calendar_day_difference": 0,
+      "is_valid_trading_session": true,
+      "exchange": "NSE",
+      "symboltoken": "99926009",
+      "interval": "ONE_MINUTE",
+      "fromdate": "2026-11-06 09:15",
+      "todate": "2026-11-06 15:30"
+    },
+    {
+      "probe_id": "reliance_1m_1530",
+      "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+      "reference_date": "2026-11-06",
+      "actual_probe_date": "2026-11-06",
+      "calendar_day_difference": 0,
+      "is_valid_trading_session": true,
+      "exchange": "NSE",
+      "symboltoken": "2885",
+      "interval": "ONE_MINUTE",
+      "fromdate": "2026-11-06 09:15",
+      "todate": "2026-11-06 15:30"
+    },
+    {
+      "probe_id": "nifty_1m_180d_prior_trading_session",
+      "probe_purpose": "HISTORICAL_RETENTION_CHECK",
+      "reference_date": "2026-11-06",
+      "actual_probe_date": "2026-05-08",
+      "calendar_day_difference": 182,
+      "is_valid_trading_session": true,
+      "exchange": "NSE",
+      "symboltoken": "99926000",
+      "interval": "ONE_MINUTE",
+      "fromdate": "2026-05-08 09:15",
+      "todate": "2026-05-08 15:30"
+    }
+  ],
+  "offline_checkpoint_forensics": {
+    "source_file": "data/checkpoints/raw_nifty_2026-11-02_2026-11-06_chunk_0.json",
+    "total_rows": 1805,
+    "sessions": {
+      "2026-11-02": {
+        "expected_session_intervals": 375,
+        "received_candle_count": 361,
+        "first_timestamp": "2026-11-02T09:15:00+05:30",
+        "last_timestamp": "2026-11-02T15:29:00+05:30",
+        "candles_before_1515": 360,
+        "candles_between_1515_and_1530": 1,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [
+          "2026-11-02T15:15:00+05:30",
+          "2026-11-02T15:16:00+05:30",
+          "2026-11-02T15:17:00+05:30",
+          "2026-11-02T15:18:00+05:30",
+          "2026-11-02T15:19:00+05:30",
+          "2026-11-02T15:20:00+05:30",
+          "2026-11-02T15:21:00+05:30",
+          "2026-11-02T15:22:00+05:30",
+          "2026-11-02T15:23:00+05:30",
+          "2026-11-02T15:24:00+05:30",
+          "2026-11-02T15:25:00+05:30",
+          "2026-11-02T15:26:00+05:30",
+          "2026-11-02T15:27:00+05:30",
+          "2026-11-02T15:28:00+05:30"
+        ],
+        "missing_intervals_count": 14,
+        "intraday_gaps": [
+          {
+            "from": "2026-11-02T15:14:00+05:30",
+            "to": "2026-11-02T15:29:00+05:30",
+            "gap_seconds": 900.0
+          }
+        ],
+        "flat_post_gap_observations": [
+          {
+            "timestamp": "2026-11-02T15:29:00+05:30",
+            "flat_price": 23440.8,
+            "gap_seconds_from_prev": 900.0,
+            "semantics": "UNVERIFIED_FLAT_POST_GAP_OBSERVATION"
+          }
+        ],
+        "continuous_to_session_close": false,
+        "parse_errors": []
+      },
+      "2026-11-03": {
+        "expected_session_intervals": 375,
+        "received_candle_count": 361,
+        "first_timestamp": "2026-11-03T09:15:00+05:30",
+        "last_timestamp": "2026-11-03T15:29:00+05:30",
+        "candles_before_1515": 360,
+        "candles_between_1515_and_1530": 1,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [
+          "2026-11-03T15:15:00+05:30",
+          "2026-11-03T15:16:00+05:30",
+          "2026-11-03T15:17:00+05:30",
+          "2026-11-03T15:18:00+05:30",
+          "2026-11-03T15:19:00+05:30",
+          "2026-11-03T15:20:00+05:30",
+          "2026-11-03T15:21:00+05:30",
+          "2026-11-03T15:22:00+05:30",
+          "2026-11-03T15:23:00+05:30",
+          "2026-11-03T15:24:00+05:30",
+          "2026-11-03T15:25:00+05:30",
+          "2026-11-03T15:26:00+05:30",
+          "2026-11-03T15:27:00+05:30",
+          "2026-11-03T15:28:00+05:30"
+        ],
+        "missing_intervals_count": 14,
+        "intraday_gaps": [
+          {
+            "from": "2026-11-03T15:14:00+05:30",
+            "to": "2026-11-03T15:29:00+05:30",
+            "gap_seconds": 900.0
+          }
+        ],
+        "flat_post_gap_observations": [
+          {
+            "timestamp": "2026-11-03T15:29:00+05:30",
+            "flat_price": 23810.85,
+            "gap_seconds_from_prev": 900.0,
+            "semantics": "UNVERIFIED_FLAT_POST_GAP_OBSERVATION"
+          }
+        ],
+        "continuous_to_session_close": false,
+        "parse_errors": []
+      },
+      "2026-11-04": {
+        "expected_session_intervals": 375,
+        "received_candle_count": 361,
+        "first_timestamp": "2026-11-04T09:15:00+05:30",
+        "last_timestamp": "2026-11-04T15:29:00+05:30",
+        "candles_before_1515": 360,
+        "candles_between_1515_and_1530": 1,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [
+          "2026-11-04T15:15:00+05:30",
+          "2026-11-04T15:16:00+05:30",
+          "2026-11-04T15:17:00+05:30",
+          "2026-11-04T15:18:00+05:30",
+          "2026-11-04T15:19:00+05:30",
+          "2026-11-04T15:20:00+05:30",
+          "2026-11-04T15:21:00+05:30",
+          "2026-11-04T15:22:00+05:30",
+          "2026-11-04T15:23:00+05:30",
+          "2026-11-04T15:24:00+05:30",
+          "2026-11-04T15:25:00+05:30",
+          "2026-11-04T15:26:00+05:30",
+          "2026-11-04T15:27:00+05:30",
+          "2026-11-04T15:28:00+05:30"
+        ],
+        "missing_intervals_count": 14,
+        "intraday_gaps": [
+          {
+            "from": "2026-11-04T15:14:00+05:30",
+            "to": "2026-11-04T15:29:00+05:30",
+            "gap_seconds": 900.0
+          }
+        ],
+        "flat_post_gap_observations": [
+          {
+            "timestamp": "2026-11-04T15:29:00+05:30",
+            "flat_price": 23960.6,
+            "gap_seconds_from_prev": 900.0,
+            "semantics": "UNVERIFIED_FLAT_POST_GAP_OBSERVATION"
+          }
+        ],
+        "continuous_to_session_close": false,
+        "parse_errors": []
+      },
+      "2026-11-05": {
+        "expected_session_intervals": 375,
+        "received_candle_count": 361,
+        "first_timestamp": "2026-11-05T09:15:00+05:30",
+        "last_timestamp": "2026-11-05T15:28:00+05:30",
+        "candles_before_1515": 360,
+        "candles_between_1515_and_1530": 1,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [
+          "2026-11-05T15:15:00+05:30",
+          "2026-11-05T15:16:00+05:30",
+          "2026-11-05T15:17:00+05:30",
+          "2026-11-05T15:18:00+05:30",
+          "2026-11-05T15:19:00+05:30",
+          "2026-11-05T15:20:00+05:30",
+          "2026-11-05T15:21:00+05:30",
+          "2026-11-05T15:22:00+05:30",
+          "2026-11-05T15:23:00+05:30",
+          "2026-11-05T15:24:00+05:30",
+          "2026-11-05T15:25:00+05:30",
+          "2026-11-05T15:26:00+05:30",
+          "2026-11-05T15:27:00+05:30",
+          "2026-11-05T15:29:00+05:30"
+        ],
+        "missing_intervals_count": 14,
+        "intraday_gaps": [
+          {
+            "from": "2026-11-05T15:14:00+05:30",
+            "to": "2026-11-05T15:28:00+05:30",
+            "gap_seconds": 840.0
+          }
+        ],
+        "flat_post_gap_observations": [
+          {
+            "timestamp": "2026-11-05T15:28:00+05:30",
+            "flat_price": 24536.6,
+            "gap_seconds_from_prev": 840.0,
+            "semantics": "UNVERIFIED_FLAT_POST_GAP_OBSERVATION"
+          }
+        ],
+        "continuous_to_session_close": false,
+        "parse_errors": []
+      },
+      "2026-11-06": {
+        "expected_session_intervals": 375,
+        "received_candle_count": 361,
+        "first_timestamp": "2026-11-06T09:15:00+05:30",
+        "last_timestamp": "2026-11-06T15:29:00+05:30",
+        "candles_before_1515": 360,
+        "candles_between_1515_and_1530": 1,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [
+          "2026-11-06T15:15:00+05:30",
+          "2026-11-06T15:16:00+05:30",
+          "2026-11-06T15:17:00+05:30",
+          "2026-11-06T15:18:00+05:30",
+          "2026-11-06T15:19:00+05:30",
+          "2026-11-06T15:20:00+05:30",
+          "2026-11-06T15:21:00+05:30",
+          "2026-11-06T15:22:00+05:30",
+          "2026-11-06T15:23:00+05:30",
+          "2026-11-06T15:24:00+05:30",
+          "2026-11-06T15:25:00+05:30",
+          "2026-11-06T15:26:00+05:30",
+          "2026-11-06T15:27:00+05:30",
+          "2026-11-06T15:28:00+05:30"
+        ],
+        "missing_intervals_count": 14,
+        "intraday_gaps": [
+          {
+            "from": "2026-11-06T15:14:00+05:30",
+            "to": "2026-11-06T15:29:00+05:30",
+            "gap_seconds": 900.0
+          }
+        ],
+        "flat_post_gap_observations": [
+          {
+            "timestamp": "2026-11-06T15:29:00+05:30",
+            "flat_price": 25030.35,
+            "gap_seconds_from_prev": 900.0,
+            "semantics": "UNVERIFIED_FLAT_POST_GAP_OBSERVATION"
+          }
+        ],
+        "continuous_to_session_close": false,
+        "parse_errors": []
+      }
+    }
+  },
+  "live_api_audit": {
+    "status": "BLOCKED_MISSING_CREDENTIALS",
+    "missing_env_vars": [
+      "ANGEL_API_KEY",
+      "ANGEL_CLIENT_CODE",
+      "ANGEL_PASSWORD",
+      "ANGEL_TOTP_SECRET"
+    ],
+    "request_accounting": {
+      "logical_request_plan": {
+        "authentication_operations_planned": 1,
+        "candle_probes_planned": 6
+      },
+      "actual_request_execution": {
+        "authentication_attempts": 0,
+        "total_candle_http_attempts": 0,
+        "total_actual_http_attempts": 0,
+        "unplanned_candle_probes_executed": 0,
+        "per_probe": [
+          {
+            "probe_id": "nifty_1m_1530",
+            "actual_http_attempts": 0,
+            "retry_count": 0,
+            "final_status": "BLOCKED_MISSING_CREDENTIALS"
+          },
+          {
+            "probe_id": "nifty_1m_1600",
+            "actual_http_attempts": 0,
+            "retry_count": 0,
+            "final_status": "BLOCKED_MISSING_CREDENTIALS"
+          },
+          {
+            "probe_id": "nifty_5m_1530",
+            "actual_http_attempts": 0,
+            "retry_count": 0,
+            "final_status": "BLOCKED_MISSING_CREDENTIALS"
+          },
+          {
+            "probe_id": "banknifty_1m_1530",
+            "actual_http_attempts": 0,
+            "retry_count": 0,
+            "final_status": "BLOCKED_MISSING_CREDENTIALS"
+          },
+          {
+            "probe_id": "reliance_1m_1530",
+            "actual_http_attempts": 0,
+            "retry_count": 0,
+            "final_status": "BLOCKED_MISSING_CREDENTIALS"
+          },
+          {
+            "probe_id": "nifty_1m_180d_prior_trading_session",
+            "actual_http_attempts": 0,
+            "retry_count": 0,
+            "final_status": "BLOCKED_MISSING_CREDENTIALS"
+          }
+        ]
+      }
+    },
+    "probes": [
+      {
+        "probe_id": "nifty_1m_1530",
+        "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+        "instrument": "NIFTY",
+        "instrument_token": "99926000",
+        "exchange": "NSE",
+        "interval": "ONE_MINUTE",
+        "reference_date": "2026-11-06",
+        "actual_probe_date": "2026-11-06",
+        "calendar_day_difference": 0,
+        "is_valid_trading_session": true,
+        "normal_nse_continuous_session": "09:15:00-15:30:00 IST",
+        "requested_api_boundary": "15:30:00 IST",
+        "requested_start": "2026-11-06 09:15",
+        "requested_end": "2026-11-06 15:30",
+        "actual_http_attempts": 0,
+        "retry_count": 0,
+        "api_response_status": "BLOCKED_MISSING_CREDENTIALS",
+        "received_candle_count": 0,
+        "first_timestamp": null,
+        "last_timestamp": null,
+        "candles_before_1515": 0,
+        "candles_between_1515_and_1530": 0,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [],
+        "missing_intervals_count": 0,
+        "flat_post_gap_observations": [],
+        "response_errors": [
+          "Missing/placeholder env vars: ANGEL_API_KEY, ANGEL_CLIENT_CODE, ANGEL_PASSWORD, ANGEL_TOTP_SECRET"
+        ],
+        "interpretation": "Cannot execute live probe without valid Angel One credentials.",
+        "verification_status": "BLOCKED_MISSING_CREDENTIALS"
+      },
+      {
+        "probe_id": "nifty_1m_1600",
+        "probe_purpose": "REQUEST_BOUNDARY_EXPERIMENT",
+        "instrument": "NIFTY",
+        "instrument_token": "99926000",
+        "exchange": "NSE",
+        "interval": "ONE_MINUTE",
+        "reference_date": "2026-11-06",
+        "actual_probe_date": "2026-11-06",
+        "calendar_day_difference": 0,
+        "is_valid_trading_session": true,
+        "normal_nse_continuous_session": "09:15:00-15:30:00 IST",
+        "requested_api_boundary": "16:00:00 IST",
+        "requested_start": "2026-11-06 09:15",
+        "requested_end": "2026-11-06 16:00",
+        "actual_http_attempts": 0,
+        "retry_count": 0,
+        "api_response_status": "BLOCKED_MISSING_CREDENTIALS",
+        "received_candle_count": 0,
+        "first_timestamp": null,
+        "last_timestamp": null,
+        "candles_before_1515": 0,
+        "candles_between_1515_and_1530": 0,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [],
+        "missing_intervals_count": 0,
+        "flat_post_gap_observations": [],
+        "response_errors": [
+          "Missing/placeholder env vars: ANGEL_API_KEY, ANGEL_CLIENT_CODE, ANGEL_PASSWORD, ANGEL_TOTP_SECRET"
+        ],
+        "interpretation": "Cannot execute live probe without valid Angel One credentials.",
+        "verification_status": "BLOCKED_MISSING_CREDENTIALS"
+      },
+      {
+        "probe_id": "nifty_5m_1530",
+        "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+        "instrument": "NIFTY",
+        "instrument_token": "99926000",
+        "exchange": "NSE",
+        "interval": "FIVE_MINUTE",
+        "reference_date": "2026-11-06",
+        "actual_probe_date": "2026-11-06",
+        "calendar_day_difference": 0,
+        "is_valid_trading_session": true,
+        "normal_nse_continuous_session": "09:15:00-15:30:00 IST",
+        "requested_api_boundary": "15:30:00 IST",
+        "requested_start": "2026-11-06 09:15",
+        "requested_end": "2026-11-06 15:30",
+        "actual_http_attempts": 0,
+        "retry_count": 0,
+        "api_response_status": "BLOCKED_MISSING_CREDENTIALS",
+        "received_candle_count": 0,
+        "first_timestamp": null,
+        "last_timestamp": null,
+        "candles_before_1515": 0,
+        "candles_between_1515_and_1530": 0,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [],
+        "missing_intervals_count": 0,
+        "flat_post_gap_observations": [],
+        "response_errors": [
+          "Missing/placeholder env vars: ANGEL_API_KEY, ANGEL_CLIENT_CODE, ANGEL_PASSWORD, ANGEL_TOTP_SECRET"
+        ],
+        "interpretation": "Cannot execute live probe without valid Angel One credentials.",
+        "verification_status": "BLOCKED_MISSING_CREDENTIALS"
+      },
+      {
+        "probe_id": "banknifty_1m_1530",
+        "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+        "instrument": "BANKNIFTY",
+        "instrument_token": "99926009",
+        "exchange": "NSE",
+        "interval": "ONE_MINUTE",
+        "reference_date": "2026-11-06",
+        "actual_probe_date": "2026-11-06",
+        "calendar_day_difference": 0,
+        "is_valid_trading_session": true,
+        "normal_nse_continuous_session": "09:15:00-15:30:00 IST",
+        "requested_api_boundary": "15:30:00 IST",
+        "requested_start": "2026-11-06 09:15",
+        "requested_end": "2026-11-06 15:30",
+        "actual_http_attempts": 0,
+        "retry_count": 0,
+        "api_response_status": "BLOCKED_MISSING_CREDENTIALS",
+        "received_candle_count": 0,
+        "first_timestamp": null,
+        "last_timestamp": null,
+        "candles_before_1515": 0,
+        "candles_between_1515_and_1530": 0,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [],
+        "missing_intervals_count": 0,
+        "flat_post_gap_observations": [],
+        "response_errors": [
+          "Missing/placeholder env vars: ANGEL_API_KEY, ANGEL_CLIENT_CODE, ANGEL_PASSWORD, ANGEL_TOTP_SECRET"
+        ],
+        "interpretation": "Cannot execute live probe without valid Angel One credentials.",
+        "verification_status": "BLOCKED_MISSING_CREDENTIALS"
+      },
+      {
+        "probe_id": "reliance_1m_1530",
+        "probe_purpose": "CONTINUOUS_SESSION_CHECK",
+        "instrument": "RELIANCE",
+        "instrument_token": "2885",
+        "exchange": "NSE",
+        "interval": "ONE_MINUTE",
+        "reference_date": "2026-11-06",
+        "actual_probe_date": "2026-11-06",
+        "calendar_day_difference": 0,
+        "is_valid_trading_session": true,
+        "normal_nse_continuous_session": "09:15:00-15:30:00 IST",
+        "requested_api_boundary": "15:30:00 IST",
+        "requested_start": "2026-11-06 09:15",
+        "requested_end": "2026-11-06 15:30",
+        "actual_http_attempts": 0,
+        "retry_count": 0,
+        "api_response_status": "BLOCKED_MISSING_CREDENTIALS",
+        "received_candle_count": 0,
+        "first_timestamp": null,
+        "last_timestamp": null,
+        "candles_before_1515": 0,
+        "candles_between_1515_and_1530": 0,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [],
+        "missing_intervals_count": 0,
+        "flat_post_gap_observations": [],
+        "response_errors": [
+          "Missing/placeholder env vars: ANGEL_API_KEY, ANGEL_CLIENT_CODE, ANGEL_PASSWORD, ANGEL_TOTP_SECRET"
+        ],
+        "interpretation": "Cannot execute live probe without valid Angel One credentials.",
+        "verification_status": "BLOCKED_MISSING_CREDENTIALS"
+      },
+      {
+        "probe_id": "nifty_1m_180d_prior_trading_session",
+        "probe_purpose": "HISTORICAL_RETENTION_CHECK",
+        "instrument": "NIFTY",
+        "instrument_token": "99926000",
+        "exchange": "NSE",
+        "interval": "ONE_MINUTE",
+        "reference_date": "2026-11-06",
+        "actual_probe_date": "2026-05-08",
+        "calendar_day_difference": 182,
+        "is_valid_trading_session": true,
+        "normal_nse_continuous_session": "09:15:00-15:30:00 IST",
+        "requested_api_boundary": "15:30:00 IST",
+        "requested_start": "2026-05-08 09:15",
+        "requested_end": "2026-05-08 15:30",
+        "actual_http_attempts": 0,
+        "retry_count": 0,
+        "api_response_status": "BLOCKED_MISSING_CREDENTIALS",
+        "received_candle_count": 0,
+        "first_timestamp": null,
+        "last_timestamp": null,
+        "candles_before_1515": 0,
+        "candles_between_1515_and_1530": 0,
+        "candles_after_1530": 0,
+        "post_1530_observations": [],
+        "missing_intervals": [],
+        "missing_intervals_count": 0,
+        "flat_post_gap_observations": [],
+        "response_errors": [
+          "Missing/placeholder env vars: ANGEL_API_KEY, ANGEL_CLIENT_CODE, ANGEL_PASSWORD, ANGEL_TOTP_SECRET"
+        ],
+        "interpretation": "Cannot execute live probe without valid Angel One credentials.",
+        "verification_status": "BLOCKED_MISSING_CREDENTIALS"
+      }
+    ]
+  }
+}
