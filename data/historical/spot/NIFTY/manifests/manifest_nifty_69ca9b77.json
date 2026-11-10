@@ -1,0 +1,125 @@
+{
+  "dataset_id": "manifest_nifty_69ca9b77",
+  "symbol": "NIFTY",
+  "timeframe": "1m",
+  "provider": "ANGEL_ONE",
+  "source_file": "ANGEL_ONE_historical",
+  "retrieval_date": "2026-11-10T17:26:24.266128+05:30",
+  "dataset_version": "1.1.0",
+  "record_count": 1805,
+  "valid_record_count": 1805,
+  "invalid_record_count": 0,
+  "duplicate_count": 0,
+  "exact_duplicate_count": 0,
+  "conflicting_duplicate_count": 0,
+  "quarantined_conflicts": [],
+  "missing_intervals_count": 5,
+  "missing_intervals": [
+    {
+      "date": "2026-11-02",
+      "from_time": "15:15:00",
+      "to_time": "15:29:00",
+      "missing_candles": 14,
+      "gap_seconds": 900.0
+    },
+    {
+      "date": "2026-11-03",
+      "from_time": "15:15:00",
+      "to_time": "15:29:00",
+      "missing_candles": 14,
+      "gap_seconds": 900.0
+    },
+    {
+      "date": "2026-11-04",
+      "from_time": "15:15:00",
+      "to_time": "15:29:00",
+      "missing_candles": 14,
+      "gap_seconds": 900.0
+    },
+    {
+      "date": "2026-11-05",
+      "from_time": "15:15:00",
+      "to_time": "15:28:00",
+      "missing_candles": 13,
+      "gap_seconds": 840.0
+    },
+    {
+      "date": "2026-11-06",
+      "from_time": "15:15:00",
+      "to_time": "15:29:00",
+      "missing_candles": 14,
+      "gap_seconds": 900.0
+    }
+  ],
+  "start_timestamp_ist": "2026-11-02T09:15:00+05:30",
+  "end_timestamp_ist": "2026-11-06T15:30:00+05:30",
+  "timezone_convention": "Asia/Kolkata (UTC+05:30)",
+  "volume_semantics": "NOT_APPLICABLE",
+  "validation_status": "VERIFIED",
+  "source_raw_sha256": "9c7008c81e2045e6fc52fc5a197cf9891d30e45d38d9f342b03a013365fa0065",
+  "canonical_content_sha256": "69ca9b77b1615687a3ad3ff58901804f05c74f7d18048afa0cf44051b4c9fbaf",
+  "sha256_checksum": "69ca9b77b1615687a3ad3ff58901804f05c74f7d18048afa0cf44051b4c9fbaf",
+  "partition_paths": [
+    "data/historical/spot/NIFTY/year=2026/month=11/candles_NIFTY_2026_11.csv"
+  ],
+  "storage_format": "csv",
+  "calendar_version": "NSE_OFFICIAL_CALENDAR_2025_2026_V1",
+  "calendar_coverage_start": "2025-01-01",
+  "calendar_coverage_end": "2026-12-31",
+  "calendar_assumptions": "Continuous trading 09:15-15:30 IST Mon-Fri. Official NSE holidays applied for 2025-2026. Exceptional sessions (e.g. Diwali Muhurat 2026-11-08) explicitly supported. Pre-2025 sessions lack official holiday data and are flagged as unsupported calendar dates.",
+  "unsupported_calendar_dates_count": 0,
+  "manifest_created_at": "2026-11-10T17:26:24.266357+05:30",
+  "provider_cutoff_observed": true,
+  "last_validated_candle_start": "2026-11-06T15:14:00+05:30",
+  "last_validated_candle_end": "2026-11-06T15:15:00+05:30",
+  "exchange_session_close": "15:30:00+05:30",
+  "provider_cutoff_cause": "BROKER_HISTORICAL_FEED_INTRADAY_TRUNCATION",
+  "provider_cutoff_cause_verified": false,
+  "isolated_post_gap_count": 5,
+  "isolated_post_gap_records": [
+    {
+      "timestamp": "2026-11-02T15:29:00+05:30",
+      "price": 23440.8,
+      "validation_flags": [
+        "ISOLATED_POST_GAP_UNVERIFIED"
+      ]
+    },
+    {
+      "timestamp": "2026-11-03T15:29:00+05:30",
+      "price": 23810.85,
+      "validation_flags": [
+        "ISOLATED_POST_GAP_UNVERIFIED"
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T15:29:00+05:30",
+      "price": 23960.6,
+      "validation_flags": [
+        "ISOLATED_POST_GAP_UNVERIFIED"
+      ]
+    },
+    {
+      "timestamp": "2026-11-05T15:28:00+05:30",
+      "price": 24536.6,
+      "validation_flags": [
+        "ISOLATED_POST_GAP_UNVERIFIED"
+      ]
+    },
+    {
+      "timestamp": "2026-11-06T15:29:00+05:30",
+      "price": 25030.35,
+      "validation_flags": [
+        "ISOLATED_POST_GAP_UNVERIFIED"
+      ]
+    }
+  ],
+  "settlement_semantics": "UNVERIFIED",
+  "PROVIDER_CUTOFF_OBSERVED": true,
+  "LAST_VALIDATED_CANDLE_START": "2026-11-06T15:14:00+05:30",
+  "LAST_VALIDATED_CANDLE_END": "2026-11-06T15:15:00+05:30",
+  "EXCHANGE_SESSION_CLOSE": "15:30:00+05:30",
+  "PROVIDER_CUTOFF_CAUSE": "BROKER_HISTORICAL_FEED_INTRADAY_TRUNCATION",
+  "PROVIDER_CUTOFF_CAUSE_VERIFIED": false,
+  "ISOLATED_POST_GAP_COUNT": 5,
+  "SETTLEMENT_SEMANTICS": "UNVERIFIED"
+}

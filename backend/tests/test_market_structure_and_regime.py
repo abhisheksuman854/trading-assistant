@@ -135,6 +135,38 @@ class TestMarketStructureAndRegime(unittest.TestCase):
         self.assertEqual(sh["confirmation_status"], ConfirmationStatus.DEVELOPING)
         self.assertIsNone(sh["confirmed_at_index"])
 
+    def test_pivot_confirmation_timestamp_uses_candle_close_not_start(self):
+        """
+        Phase 3A Part 1 Item 1 Regression Test:
+        A pivot requiring the candle at i + k must not become available until that candle has fully closed.
+        Verifies that confirmation_timestamp reflects the confirming candle's actual close/end time,
+        never its start_time (which would introduce a 1-bar lookahead leak in backtesting).
+        """
+        candles = self._create_base_candles(7, base_price=100.0)
+        # Bar 4 has peak: start_time is 09:19:00
+        candles[4]["high"] = 130.0
+        # For K=2, confirming bar is index 6. Set explicit start_time and end_time on confirming bar
+        candles[6]["start_time"] = "2026-11-09T09:21:00"
+        candles[6]["timestamp"] = "2026-11-09T09:21:00"
+        candles[6]["end_time"] = "2026-11-09T09:22:00"
+        candles[6]["is_closed"] = True
+
+        res = identify_fractal_pivots(candles, k=2, symbol="NIFTY", timeframe="1m")
+        self.assertEqual(len(res["swing_highs"]), 1)
+        sh = res["swing_highs"][0]
+        self.assertEqual(sh["index"], 4)
+        self.assertEqual(sh["confirmation_status"], ConfirmationStatus.CONFIRMED)
+        self.assertEqual(sh["confirmed_at_index"], 6)
+        # Must match end_time (09:22:00), NOT start_time (09:21:00)
+        self.assertEqual(sh["confirmation_timestamp"], "2026-11-09T09:22:00")
+        self.assertNotEqual(sh["confirmation_timestamp"], candles[6]["start_time"])
+
+        # Case 2: When end_time is not explicitly present, derived close time from 1m interval
+        del candles[6]["end_time"]
+        res2 = identify_fractal_pivots(candles, k=2, symbol="NIFTY", timeframe="1m")
+        sh2 = res2["swing_highs"][0]
+        self.assertEqual(sh2["confirmation_timestamp"], "2026-11-09T09:22:00")
+
     def test_right_side_incomplete_window_marked_developing(self):
         """When right window is incomplete (< K bars after candidate), pivot must be DEVELOPING."""
         candles = self._create_base_candles(6, base_price=100.0)

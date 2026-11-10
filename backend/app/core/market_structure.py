@@ -241,7 +241,22 @@ def identify_fractal_pivots(
             confirming_bar = candles[i + k]
             is_confirmed = bool(confirming_bar.get("is_closed", True))
             if is_confirmed:
-                confirm_ts = confirming_bar.get("timestamp") or confirming_bar.get("start_time")
+                # Part 1 Audit Fix: Use the candle's actual close/end time for confirmation timestamp.
+                # If end_time or close_time is explicitly provided, prefer it.
+                # If only start_time/timestamp is present, compute close time = start_time + expected_sec.
+                raw_confirm_ts = confirming_bar.get("end_time") or confirming_bar.get("close_time")
+                if not raw_confirm_ts:
+                    base_ts = confirming_bar.get("timestamp") or confirming_bar.get("start_time")
+                    if base_ts:
+                        try:
+                            dt_base = datetime.fromisoformat(str(base_ts).replace("Z", "+00:00"))
+                            raw_confirm_ts = (dt_base + timedelta(seconds=expected_sec)).isoformat()
+                        except Exception:
+                            raw_confirm_ts = base_ts
+                    else:
+                        raw_confirm_ts = None
+
+                confirm_ts = raw_confirm_ts
                 confirm_idx = i + k
             else:
                 confirm_ts = None
