@@ -174,6 +174,12 @@ def calculate_rsi(prices: List[float], period: int = 14) -> List[Optional[float]
     AvgLoss_t = (AvgLoss_{t-1} * (period - 1) + Loss_t) / period
     RS = AvgGain / AvgLoss
     RSI = 100 - (100 / (1 + RS))
+
+    Flat Market & Numerical Edge Conventions:
+    - Completely Flat Series (AvgGain == 0 and AvgLoss == 0): Defined as RSI = 50.0 (neutral momentum equilibrium).
+    - Strictly Rising Series (AvgGain > 0 and AvgLoss == 0): RSI = 100.0.
+    - Strictly Falling Series (AvgGain == 0 and AvgLoss > 0): RSI = 0.0.
+    - Uses EPSILON = 1e-12 to safeguard against IEEE 754 precision noise.
     """
     if len(prices) <= period or period <= 0:
         return [None] * len(prices)
@@ -186,10 +192,13 @@ def calculate_rsi(prices: List[float], period: int = 14) -> List[Optional[float]
     avg_gain = sum(gains[:period]) / float(period)
     avg_loss = sum(losses[:period]) / float(period)
 
-    if avg_loss == 0.0 and avg_gain == 0.0:
+    EPSILON = 1e-12
+    if abs(avg_loss) < EPSILON and abs(avg_gain) < EPSILON:
         rsi.append(50.0)
-    elif avg_loss == 0.0:
+    elif abs(avg_loss) < EPSILON:
         rsi.append(100.0)
+    elif abs(avg_gain) < EPSILON:
+        rsi.append(0.0)
     else:
         rs = avg_gain / avg_loss
         rsi.append(round(100.0 - (100.0 / (1.0 + rs)), 2))
@@ -198,10 +207,12 @@ def calculate_rsi(prices: List[float], period: int = 14) -> List[Optional[float]
         avg_gain = (avg_gain * (period - 1) + gains[i]) / float(period)
         avg_loss = (avg_loss * (period - 1) + losses[i]) / float(period)
 
-        if avg_loss == 0.0 and avg_gain == 0.0:
+        if abs(avg_loss) < EPSILON and abs(avg_gain) < EPSILON:
             rsi.append(50.0)
-        elif avg_loss == 0.0:
+        elif abs(avg_loss) < EPSILON:
             rsi.append(100.0)
+        elif abs(avg_gain) < EPSILON:
+            rsi.append(0.0)
         else:
             rs = avg_gain / avg_loss
             rsi.append(round(100.0 - (100.0 / (1.0 + rs)), 2))
@@ -344,6 +355,63 @@ def calculate_macd(
     }
 
 
+def calculate_macd_series(
+    prices: List[float],
+    fast: int = 12,
+    slow: int = 26,
+    signal: int = 9,
+    round_output: bool = True
+) -> Dict[str, List[Optional[float]]]:
+    """
+    Calculates full time-series of MACD line, signal line, and histogram in O(N) time.
+    Maintains full internal 64-bit float precision across the entire series.
+    """
+    n = len(prices)
+    if n < slow or fast <= 0 or slow <= 0 or signal <= 0:
+        return {
+            "macd": [None] * n,
+            "signal": [None] * n,
+            "hist": [None] * n
+        }
+
+    ema_fast_raw = calculate_ema(prices, fast, round_output=False)
+    ema_slow_raw = calculate_ema(prices, slow, round_output=False)
+
+    macd_line_raw: List[Optional[float]] = []
+    for f, s in zip(ema_fast_raw, ema_slow_raw):
+        if f is not None and s is not None:
+            macd_line_raw.append(f - s)
+        else:
+            macd_line_raw.append(None)
+
+    valid_macd = [v for v in macd_line_raw if v is not None]
+    if len(valid_macd) >= signal:
+        sig_ema_raw = calculate_ema(valid_macd, signal, round_output=False)
+        leading_nones = len(macd_line_raw) - len(valid_macd)
+        signal_line_raw = [None] * leading_nones + sig_ema_raw
+    else:
+        signal_line_raw = [None] * len(macd_line_raw)
+
+    histogram_raw: List[Optional[float]] = []
+    for m, s in zip(macd_line_raw, signal_line_raw):
+        if m is not None and s is not None:
+            histogram_raw.append(m - s)
+        else:
+            histogram_raw.append(None)
+
+    if round_output:
+        return {
+            "macd": [round(v, 2) if v is not None else None for v in macd_line_raw],
+            "signal": [round(v, 2) if v is not None else None for v in signal_line_raw],
+            "hist": [round(v, 2) if v is not None else None for v in histogram_raw]
+        }
+    return {
+        "macd": macd_line_raw,
+        "signal": signal_line_raw,
+        "hist": histogram_raw
+    }
+
+
 def calculate_roc(prices: List[float], period: int = 14) -> List[Optional[float]]:
     """
     Calculates Rate of Change (ROC) momentum oscillator.
@@ -440,22 +508,45 @@ def calculate_adx(
         else:
             minus_dm_list.append(0.0)
 
-    # Initial Wilder sum for first 'period' bars
+    # Initial Wilder sum for first 'period' bars (candle index 'period', 15th candle for period=14)
     smoothed_tr = sum(tr_list[:period])
     smoothed_plus_dm = sum(plus_dm_list[:period])
     smoothed_minus_dm = sum(minus_dm_list[:period])
 
-    dx_list = []
+    EPSILON = 1e-12
+    if smoothed_tr > EPSILON:
+        init_p_di = 100.0 * (smoothed_plus_dm / smoothed_tr)
+        init_m_di = 100.0 * (smoothed_minus_dm / smoothed_tr)
+    else:
+        init_p_di = 0.0
+        init_m_di = 0.0
+
+    init_di_sum = init_p_di + init_m_di
+    if init_di_sum > EPSILON:
+        init_dx = 100.0 * (abs(init_p_di - init_m_di) / init_di_sum)
+    else:
+        init_dx = 0.0
+
+    dx_list = [(init_dx, init_p_di, init_m_di)]
+
     for i in range(period, len(tr_list)):
         smoothed_tr = smoothed_tr - (smoothed_tr / float(period)) + tr_list[i]
         smoothed_plus_dm = smoothed_plus_dm - (smoothed_plus_dm / float(period)) + plus_dm_list[i]
         smoothed_minus_dm = smoothed_minus_dm - (smoothed_minus_dm / float(period)) + minus_dm_list[i]
 
-        p_di = 100.0 * (smoothed_plus_dm / max(0.0001, smoothed_tr))
-        m_di = 100.0 * (smoothed_minus_dm / max(0.0001, smoothed_tr))
+        if smoothed_tr > EPSILON:
+            p_di = 100.0 * (smoothed_plus_dm / smoothed_tr)
+            m_di = 100.0 * (smoothed_minus_dm / smoothed_tr)
+        else:
+            p_di = 0.0
+            m_di = 0.0
 
         di_sum = p_di + m_di
-        dx = 100.0 * (abs(p_di - m_di) / max(0.0001, di_sum))
+        if di_sum > EPSILON:
+            dx = 100.0 * (abs(p_di - m_di) / di_sum)
+        else:
+            dx = 0.0
+
         dx_list.append((dx, p_di, m_di))
 
     if len(dx_list) < period:
@@ -492,17 +583,22 @@ def calculate_adx(
 def calculate_bollinger_bands(
     prices: List[float],
     period: int = 20,
-    num_std: float = 2.0
+    num_std: float = 2.0,
+    ddof: int = 0
 ) -> Dict[str, Any]:
     """
     Calculates Bollinger Bands (Middle, Upper, Lower, Bandwidth, %B).
     Formula:
     Middle = SMA(period)
-    sigma = sqrt(sum((P - Middle)^2) / period)
+    sigma = sqrt(sum((P - Middle)^2) / (period - ddof))
     Upper = Middle + num_std * sigma
     Lower = Middle - num_std * sigma
     Bandwidth = (Upper - Lower) / Middle
     %B = (Close - Lower) / (Upper - Lower)
+
+    Population vs Sample Standard Deviation:
+    John Bollinger's original specification specifies Population Standard Deviation (ddof=0).
+    Sample standard deviation (ddof=1) is supported via the ddof parameter.
     """
     if len(prices) < period or period <= 0:
         return {
@@ -525,7 +621,8 @@ def calculate_bollinger_bands(
         }
 
     recent_window = prices[-period:]
-    variance = sum((p - middle) ** 2 for p in recent_window) / float(period)
+    denom = float(period - ddof) if (period - ddof) > 0 else 1.0
+    variance = sum((p - middle) ** 2 for p in recent_window) / denom
     sigma = math.sqrt(variance)
 
     upper = middle + num_std * sigma
@@ -533,8 +630,8 @@ def calculate_bollinger_bands(
     bw = (upper - lower) / max(0.0001, middle)
 
     last_price = prices[-1]
-    denom = upper - lower
-    pct_b = (last_price - lower) / denom if denom > 0 else 0.5
+    band_width = upper - lower
+    pct_b = (last_price - lower) / band_width if band_width > 0 else 0.5
 
     return {
         "middle": round(middle, 2),
@@ -758,15 +855,17 @@ def calculate_session_vwap(
 
     current_vwap = cum_pv / cum_vol
     variance_sum = sum(v * ((tp - current_vwap) ** 2) for tp, v in zip(typical_prices, volumes))
-    current_sigma = math.sqrt(variance_sum / cum_vol)
+    current_variance = variance_sum / cum_vol
+    current_sigma = math.sqrt(current_variance)
 
     return {
         "vwap": round(current_vwap, 2),
+        "variance": round(current_variance, 2),
+        "sigma": round(current_sigma, 2),
         "upper_band_1": round(current_vwap + current_sigma, 2),
         "lower_band_1": round(current_vwap - current_sigma, 2),
         "upper_band_2": round(current_vwap + 2.0 * current_sigma, 2),
         "lower_band_2": round(current_vwap - 2.0 * current_sigma, 2),
-        "sigma": round(current_sigma, 2),
         "total_session_volume": cum_vol,
         "vwap_name": "NIFTY Futures VWAP" if is_spot_index else "Session VWAP",
         "volume_source": "FUTURES_TRADED_PROXY" if is_spot_index else "DIRECT_CANDLE_VOLUME",
@@ -774,6 +873,120 @@ def calculate_session_vwap(
         "is_spot_proxy": is_spot_index,
         "calculation_status": CalculationStatus.VALID
     }
+
+
+class SessionVWAPAccumulator:
+    """
+    Intraday Session VWAP Accumulator with Weighted Variance & Standard Deviation Bands.
+
+    Guarantees:
+    1. Full Session Retention: Maintains session-wide sums (cum_vol, cum_pv, cum_pv2)
+       so that VWAP remains exact across the entire trading day (e.g. 1,500 15s candles)
+       even if older candles are evicted from memory buffers.
+    2. Session Date Isolation: Automatically detects session boundaries (date change
+       or crossing 09:15:00 IST) and resets accumulators. Prior-session volume NEVER
+       leaks into the active session.
+    3. Futures Contract Isolation: For proxy attribution, guarantees that volume is
+       never mixed between different futures contract expiries within a session.
+    4. Zero and Missing Volume Safety: Returns UNAVAILABLE_NO_VOLUME without synthetic
+       fallbacks when volume is zero or missing.
+    5. Candle-Based Approximation Notice: Typical-price (H+L+C)/3 candle-volume VWAP
+       is a standard discrete approximation of trade-level tick VWAP.
+    """
+    def __init__(self, symbol: str, is_spot_index: bool = False):
+        self.symbol = symbol.strip().upper()
+        self.is_spot_index = is_spot_index
+        self.session_date: Optional[date] = None
+        self.cum_vol: int = 0
+        self.cum_pv: float = 0.0
+        self.cum_pv2: float = 0.0
+        self.candle_count: int = 0
+        self.underlying_contract: Optional[str] = None
+        self._processed_timestamps: set = set()
+
+    def reset(self, new_session_date: Optional[date] = None) -> None:
+        self.session_date = new_session_date
+        self.cum_vol = 0
+        self.cum_pv = 0.0
+        self.cum_pv2 = 0.0
+        self.candle_count = 0
+        self._processed_timestamps.clear()
+
+    def add_candle(
+        self,
+        high: float,
+        low: float,
+        close: float,
+        volume: int,
+        timestamp_dt: datetime,
+        contract_symbol: Optional[str] = None
+    ) -> bool:
+        c_date = timestamp_dt.date()
+        if self.session_date is None:
+            self.session_date = c_date
+        elif c_date != self.session_date:
+            self.reset(c_date)
+
+        if contract_symbol:
+            if self.underlying_contract is None:
+                self.underlying_contract = contract_symbol
+            elif self.underlying_contract != contract_symbol:
+                # Contract change: reset accumulator to prevent mixing two different contract volumes
+                self.reset(c_date)
+                self.underlying_contract = contract_symbol
+
+        ts_key = timestamp_dt.isoformat()
+        if ts_key in self._processed_timestamps:
+            return False
+        self._processed_timestamps.add(ts_key)
+
+        vol = int(volume or 0)
+        tp = (float(high) + float(low) + float(close)) / 3.0
+        self.cum_vol += vol
+        self.cum_pv += tp * vol
+        self.cum_pv2 += (tp ** 2) * vol
+        self.candle_count += 1
+        return True
+
+    def get_vwap_state(self) -> Dict[str, Any]:
+        if self.cum_vol <= 0:
+            return {
+                "vwap": None,
+                "variance": None,
+                "sigma": None,
+                "upper_band_1": None,
+                "lower_band_1": None,
+                "upper_band_2": None,
+                "lower_band_2": None,
+                "total_session_volume": 0,
+                "candle_count": self.candle_count,
+                "vwap_name": "NIFTY Futures VWAP" if self.is_spot_index else "Session VWAP",
+                "volume_source": "FUTURES_TRADED_PROXY" if self.is_spot_index else "DIRECT_CANDLE_VOLUME",
+                "underlying_contract": self.underlying_contract if self.is_spot_index else None,
+                "is_spot_proxy": self.is_spot_index,
+                "calculation_status": CalculationStatus.UNAVAILABLE_NO_VOLUME
+            }
+
+        vwap = self.cum_pv / self.cum_vol
+        variance = max(0.0, (self.cum_pv2 / self.cum_vol) - (vwap ** 2))
+        sigma = math.sqrt(variance)
+
+        return {
+            "vwap": round(vwap, 2),
+            "variance": round(variance, 2),
+            "sigma": round(sigma, 2),
+            "upper_band_1": round(vwap + sigma, 2),
+            "lower_band_1": round(vwap - sigma, 2),
+            "upper_band_2": round(vwap + 2.0 * sigma, 2),
+            "lower_band_2": round(vwap - 2.0 * sigma, 2),
+            "total_session_volume": self.cum_vol,
+            "candle_count": self.candle_count,
+            "vwap_name": "NIFTY Futures VWAP" if self.is_spot_index else "Session VWAP",
+            "volume_source": "FUTURES_TRADED_PROXY" if self.is_spot_index else "DIRECT_CANDLE_VOLUME",
+            "underlying_contract": self.underlying_contract if self.is_spot_index else None,
+            "is_spot_proxy": self.is_spot_index,
+            "calculation_status": CalculationStatus.VALID
+        }
 
 
 # ============================================================================
@@ -998,7 +1211,7 @@ class TechnicalIndicatorService:
             "minus_di": adx_res.get("minus_di"),
             "trend_strength": adx_res.get("trend_strength"),
             "calculation_status": adx_res.get("calculation_status", CalculationStatus.VALID),
-            "warmup_status": self.get_warmup_status(n_bars, min_required=28, recommended_warmup=42)
+            "warmup_status": self.get_warmup_status(n_bars, min_required=28, recommended_warmup=50)
         }
 
     def compute_volatility(
@@ -1078,7 +1291,7 @@ class TechnicalIndicatorService:
         sym_clean = symbol.strip().upper()
         is_spot_index = sym_clean in ("NIFTY 50", "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY")
 
-        spot_candles = self.candle_store.get_closed_candles(sym_clean, timeframe, limit=500)
+        spot_candles = self.candle_store.get_closed_candles(sym_clean, timeframe, limit=None)
         futures_candles: Optional[List[Dict[str, Any]]] = None
         underlying_contract: Optional[str] = None
 
@@ -1087,7 +1300,7 @@ class TechnicalIndicatorService:
             near_exp = active_info["near_expiry"]
             fut_sym = self.futures_manager.format_trading_symbol(sym_clean, near_exp)
             underlying_contract = fut_sym
-            futures_candles = self.candle_store.get_closed_candles(fut_sym, timeframe, limit=500)
+            futures_candles = self.candle_store.get_closed_candles(fut_sym, timeframe, limit=None)
 
         vwap_res = calculate_session_vwap(
             candles=spot_candles,
@@ -1106,6 +1319,7 @@ class TechnicalIndicatorService:
             "timestamp": latest_ts,
             "is_closed": True,
             "vwap": vwap_res.get("vwap"),
+            "variance": vwap_res.get("variance"),
             "upper_band_1": vwap_res.get("upper_band_1"),
             "lower_band_1": vwap_res.get("lower_band_1"),
             "upper_band_2": vwap_res.get("upper_band_2"),

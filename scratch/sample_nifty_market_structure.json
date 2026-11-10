@@ -1,0 +1,670 @@
+{
+  "symbol": "NIFTY 50",
+  "timeframe_analyses": {
+    "15s": {
+      "structure": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15s",
+        "structure_state": "BULLISH",
+        "last_high_class": "HH",
+        "last_low_class": "HL",
+        "confirmed_highs_count": 10,
+        "confirmed_lows_count": 9,
+        "latest_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "index": 396,
+          "pivot_timestamp": "2026-11-09T10:54:00+05:30",
+          "confirmation_timestamp": "2026-11-09T10:54:30+05:30",
+          "pivot_price": 24377.99,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 398,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "index": 324,
+          "pivot_timestamp": "2026-11-09T10:36:00+05:30",
+          "confirmation_timestamp": "2026-11-09T10:36:30+05:30",
+          "pivot_price": 24357.38,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 326,
+          "data_quality_status": "VALID",
+          "is_equal_extrema": true
+        },
+        "latest_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "index": 360,
+          "pivot_timestamp": "2026-11-09T10:45:00+05:30",
+          "confirmation_timestamp": "2026-11-09T10:45:30+05:30",
+          "pivot_price": 24213.72,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 362,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "index": 288,
+          "pivot_timestamp": "2026-11-09T10:27:00+05:30",
+          "confirmation_timestamp": "2026-11-09T10:27:30+05:30",
+          "pivot_price": 24200.67,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 290,
+          "data_quality_status": "VALID",
+          "is_equal_extrema": true
+        },
+        "calculation_status": "VALID"
+      },
+      "structural_break": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15s",
+        "event_type": "NONE",
+        "lifecycle_state": "UNBROKEN",
+        "is_level_consumed": false,
+        "broken_level_price": null,
+        "broken_level_timestamp": null,
+        "break_candle_timestamp": "2026-11-09T10:54:45+05:30",
+        "break_candle_close": 24354.22,
+        "previous_structure": "BULLISH",
+        "resulting_structure": "BULLISH",
+        "invalidation_level": null,
+        "confirmation_status": "CONFIRMED",
+        "calculation_status": "VALID",
+        "data_quality_status": "VALID",
+        "explanation": "No structural break detected on the latest candle.",
+        "event_history": []
+      },
+      "regime": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15s",
+        "regime": "VOLATILITY_COMPRESSION",
+        "confidence_factors": [
+          "Bollinger Bands contracted strictly inside Keltner Channels (Carter's Squeeze ON).",
+          "Compressed Bandwidth: 0.0022"
+        ],
+        "conflicting_factors": [],
+        "metrics": {
+          "structure": "BULLISH",
+          "ma_alignment": "BULLISH_STACK",
+          "adx": 78.5,
+          "bandwidth": 0.0022,
+          "is_squeeze_on": true
+        },
+        "calculation_status": "VALID",
+        "explanation": "Market is in Volatility Compression (Carter's Squeeze ON). Energy is coiling; directional bias deferred until release."
+      },
+      "divergences": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15s",
+        "rsi_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "RSI",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        },
+        "macd_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15s",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "MACD_HIST",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        }
+      }
+    },
+    "1m": {
+      "structure": {
+        "symbol": "NIFTY 50",
+        "timeframe": "1m",
+        "structure_state": "BULLISH",
+        "last_high_class": "HH",
+        "last_low_class": "HL",
+        "confirmed_highs_count": 10,
+        "confirmed_lows_count": 9,
+        "latest_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "index": 396,
+          "pivot_timestamp": "2026-11-09T15:51:00+05:30",
+          "confirmation_timestamp": "2026-11-09T15:53:00+05:30",
+          "pivot_price": 24377.99,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 398,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "index": 324,
+          "pivot_timestamp": "2026-11-09T14:39:00+05:30",
+          "confirmation_timestamp": "2026-11-09T14:41:00+05:30",
+          "pivot_price": 24357.38,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 326,
+          "data_quality_status": "VALID",
+          "is_equal_extrema": true
+        },
+        "latest_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "index": 360,
+          "pivot_timestamp": "2026-11-09T15:15:00+05:30",
+          "confirmation_timestamp": "2026-11-09T15:17:00+05:30",
+          "pivot_price": 24213.72,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 362,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "index": 288,
+          "pivot_timestamp": "2026-11-09T14:03:00+05:30",
+          "confirmation_timestamp": "2026-11-09T14:05:00+05:30",
+          "pivot_price": 24200.67,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 290,
+          "data_quality_status": "VALID",
+          "is_equal_extrema": true
+        },
+        "calculation_status": "VALID"
+      },
+      "structural_break": {
+        "symbol": "NIFTY 50",
+        "timeframe": "1m",
+        "event_type": "NONE",
+        "lifecycle_state": "UNBROKEN",
+        "is_level_consumed": false,
+        "broken_level_price": null,
+        "broken_level_timestamp": null,
+        "break_candle_timestamp": "2026-11-09T15:54:00+05:30",
+        "break_candle_close": 24354.22,
+        "previous_structure": "BULLISH",
+        "resulting_structure": "BULLISH",
+        "invalidation_level": null,
+        "confirmation_status": "CONFIRMED",
+        "calculation_status": "VALID",
+        "data_quality_status": "VALID",
+        "explanation": "No structural break detected on the latest candle.",
+        "event_history": []
+      },
+      "regime": {
+        "symbol": "NIFTY 50",
+        "timeframe": "1m",
+        "regime": "VOLATILITY_COMPRESSION",
+        "confidence_factors": [
+          "Bollinger Bands contracted strictly inside Keltner Channels (Carter's Squeeze ON).",
+          "Compressed Bandwidth: 0.0022"
+        ],
+        "conflicting_factors": [],
+        "metrics": {
+          "structure": "BULLISH",
+          "ma_alignment": "BULLISH_STACK",
+          "adx": 78.5,
+          "bandwidth": 0.0022,
+          "is_squeeze_on": true
+        },
+        "calculation_status": "VALID",
+        "explanation": "Market is in Volatility Compression (Carter's Squeeze ON). Energy is coiling; directional bias deferred until release."
+      },
+      "divergences": {
+        "symbol": "NIFTY 50",
+        "timeframe": "1m",
+        "rsi_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "RSI",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        },
+        "macd_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "1m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "MACD_HIST",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        }
+      }
+    },
+    "3m": {
+      "structure": {
+        "symbol": "NIFTY 50",
+        "timeframe": "3m",
+        "structure_state": "BULLISH",
+        "last_high_class": "HH",
+        "last_low_class": "HL",
+        "confirmed_highs_count": 10,
+        "confirmed_lows_count": 9,
+        "latest_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "index": 396,
+          "pivot_timestamp": "2026-11-10T05:03:00+05:30",
+          "confirmation_timestamp": "2026-11-10T05:09:00+05:30",
+          "pivot_price": 24377.99,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 398,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "index": 324,
+          "pivot_timestamp": "2026-11-10T01:27:00+05:30",
+          "confirmation_timestamp": "2026-11-10T01:33:00+05:30",
+          "pivot_price": 24357.38,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 326,
+          "data_quality_status": "VALID",
+          "is_equal_extrema": true
+        },
+        "latest_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "index": 360,
+          "pivot_timestamp": "2026-11-10T03:15:00+05:30",
+          "confirmation_timestamp": "2026-11-10T03:21:00+05:30",
+          "pivot_price": 24213.72,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 362,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "index": 288,
+          "pivot_timestamp": "2026-11-09T23:39:00+05:30",
+          "confirmation_timestamp": "2026-11-09T23:45:00+05:30",
+          "pivot_price": 24200.67,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 2,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 290,
+          "data_quality_status": "VALID",
+          "is_equal_extrema": true
+        },
+        "calculation_status": "VALID"
+      },
+      "structural_break": {
+        "symbol": "NIFTY 50",
+        "timeframe": "3m",
+        "event_type": "NONE",
+        "lifecycle_state": "UNBROKEN",
+        "is_level_consumed": false,
+        "broken_level_price": null,
+        "broken_level_timestamp": null,
+        "break_candle_timestamp": "2026-11-10T05:12:00+05:30",
+        "break_candle_close": 24354.22,
+        "previous_structure": "BULLISH",
+        "resulting_structure": "BULLISH",
+        "invalidation_level": null,
+        "confirmation_status": "CONFIRMED",
+        "calculation_status": "VALID",
+        "data_quality_status": "VALID",
+        "explanation": "No structural break detected on the latest candle.",
+        "event_history": []
+      },
+      "regime": {
+        "symbol": "NIFTY 50",
+        "timeframe": "3m",
+        "regime": "VOLATILITY_COMPRESSION",
+        "confidence_factors": [
+          "Bollinger Bands contracted strictly inside Keltner Channels (Carter's Squeeze ON).",
+          "Compressed Bandwidth: 0.0022"
+        ],
+        "conflicting_factors": [],
+        "metrics": {
+          "structure": "BULLISH",
+          "ma_alignment": "BULLISH_STACK",
+          "adx": 78.5,
+          "bandwidth": 0.0022,
+          "is_squeeze_on": true
+        },
+        "calculation_status": "VALID",
+        "explanation": "Market is in Volatility Compression (Carter's Squeeze ON). Energy is coiling; directional bias deferred until release."
+      },
+      "divergences": {
+        "symbol": "NIFTY 50",
+        "timeframe": "3m",
+        "rsi_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "RSI",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        },
+        "macd_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "3m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "MACD_HIST",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        }
+      }
+    },
+    "5m": {
+      "structure": {
+        "symbol": "NIFTY 50",
+        "timeframe": "5m",
+        "structure_state": "BULLISH",
+        "last_high_class": "HH",
+        "last_low_class": "HL",
+        "confirmed_highs_count": 7,
+        "confirmed_lows_count": 7,
+        "latest_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "index": 396,
+          "pivot_timestamp": "2026-11-10T18:15:00+05:30",
+          "confirmation_timestamp": "2026-11-10T18:30:00+05:30",
+          "pivot_price": 24377.99,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 399,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "index": 324,
+          "pivot_timestamp": "2026-11-10T12:15:00+05:30",
+          "confirmation_timestamp": "2026-11-10T12:30:00+05:30",
+          "pivot_price": 24357.38,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 327,
+          "data_quality_status": "VALID"
+        },
+        "latest_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "index": 360,
+          "pivot_timestamp": "2026-11-10T15:15:00+05:30",
+          "confirmation_timestamp": "2026-11-10T15:30:00+05:30",
+          "pivot_price": 24213.72,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 363,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "index": 282,
+          "pivot_timestamp": "2026-11-10T08:45:00+05:30",
+          "confirmation_timestamp": "2026-11-10T09:00:00+05:30",
+          "pivot_price": 24198.62,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 285,
+          "data_quality_status": "VALID"
+        },
+        "calculation_status": "VALID"
+      },
+      "structural_break": {
+        "symbol": "NIFTY 50",
+        "timeframe": "5m",
+        "event_type": "NONE",
+        "lifecycle_state": "UNBROKEN",
+        "is_level_consumed": false,
+        "broken_level_price": null,
+        "broken_level_timestamp": null,
+        "break_candle_timestamp": "2026-11-10T18:30:00+05:30",
+        "break_candle_close": 24354.22,
+        "previous_structure": "BULLISH",
+        "resulting_structure": "BULLISH",
+        "invalidation_level": null,
+        "confirmation_status": "CONFIRMED",
+        "calculation_status": "VALID",
+        "data_quality_status": "VALID",
+        "explanation": "No structural break detected on the latest candle.",
+        "event_history": []
+      },
+      "regime": {
+        "symbol": "NIFTY 50",
+        "timeframe": "5m",
+        "regime": "VOLATILITY_COMPRESSION",
+        "confidence_factors": [
+          "Bollinger Bands contracted strictly inside Keltner Channels (Carter's Squeeze ON).",
+          "Compressed Bandwidth: 0.0022"
+        ],
+        "conflicting_factors": [],
+        "metrics": {
+          "structure": "BULLISH",
+          "ma_alignment": "BULLISH_STACK",
+          "adx": 78.5,
+          "bandwidth": 0.0022,
+          "is_squeeze_on": true
+        },
+        "calculation_status": "VALID",
+        "explanation": "Market is in Volatility Compression (Carter's Squeeze ON). Energy is coiling; directional bias deferred until release."
+      },
+      "divergences": {
+        "symbol": "NIFTY 50",
+        "timeframe": "5m",
+        "rsi_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "RSI",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        },
+        "macd_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "5m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "MACD_HIST",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        }
+      }
+    },
+    "15m": {
+      "structure": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15m",
+        "structure_state": "BULLISH",
+        "last_high_class": "HH",
+        "last_low_class": "HL",
+        "confirmed_highs_count": 7,
+        "confirmed_lows_count": 7,
+        "latest_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "index": 396,
+          "pivot_timestamp": "2026-11-13T12:15:00+05:30",
+          "confirmation_timestamp": "2026-11-13T13:00:00+05:30",
+          "pivot_price": 24377.99,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 399,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_high": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "index": 324,
+          "pivot_timestamp": "2026-11-12T18:15:00+05:30",
+          "confirmation_timestamp": "2026-11-12T19:00:00+05:30",
+          "pivot_price": 24357.38,
+          "swing_type": "SWING_HIGH",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 327,
+          "data_quality_status": "VALID"
+        },
+        "latest_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "index": 360,
+          "pivot_timestamp": "2026-11-13T03:15:00+05:30",
+          "confirmation_timestamp": "2026-11-13T04:00:00+05:30",
+          "pivot_price": 24213.72,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 363,
+          "data_quality_status": "VALID"
+        },
+        "previous_confirmed_low": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "index": 282,
+          "pivot_timestamp": "2026-11-12T07:45:00+05:30",
+          "confirmation_timestamp": "2026-11-12T08:30:00+05:30",
+          "pivot_price": 24198.62,
+          "swing_type": "SWING_LOW",
+          "k_parameter": 3,
+          "confirmation_status": "CONFIRMED",
+          "confirmed_at_index": 285,
+          "data_quality_status": "VALID"
+        },
+        "calculation_status": "VALID"
+      },
+      "structural_break": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15m",
+        "event_type": "NONE",
+        "lifecycle_state": "UNBROKEN",
+        "is_level_consumed": false,
+        "broken_level_price": null,
+        "broken_level_timestamp": null,
+        "break_candle_timestamp": "2026-11-13T13:00:00+05:30",
+        "break_candle_close": 24354.22,
+        "previous_structure": "BULLISH",
+        "resulting_structure": "BULLISH",
+        "invalidation_level": null,
+        "confirmation_status": "CONFIRMED",
+        "calculation_status": "VALID",
+        "data_quality_status": "VALID",
+        "explanation": "No structural break detected on the latest candle.",
+        "event_history": []
+      },
+      "regime": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15m",
+        "regime": "VOLATILITY_COMPRESSION",
+        "confidence_factors": [
+          "Bollinger Bands contracted strictly inside Keltner Channels (Carter's Squeeze ON).",
+          "Compressed Bandwidth: 0.0022"
+        ],
+        "conflicting_factors": [],
+        "metrics": {
+          "structure": "BULLISH",
+          "ma_alignment": "BULLISH_STACK",
+          "adx": 78.5,
+          "bandwidth": 0.0022,
+          "is_squeeze_on": true
+        },
+        "calculation_status": "VALID",
+        "explanation": "Market is in Volatility Compression (Carter's Squeeze ON). Energy is coiling; directional bias deferred until release."
+      },
+      "divergences": {
+        "symbol": "NIFTY 50",
+        "timeframe": "15m",
+        "rsi_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "RSI",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        },
+        "macd_divergence": {
+          "symbol": "NIFTY 50",
+          "timeframe": "15m",
+          "has_divergence": false,
+          "divergence_type": "NO_DIVERGENCE",
+          "confirmation_status": "CONFIRMED",
+          "indicator_name": "MACD_HIST",
+          "invalidation_status": "ACTIVE_UNTOUCHED",
+          "data_quality_status": "VALID",
+          "details": null
+        }
+      }
+    }
+  },
+  "multi_timeframe_summary": {
+    "alignment_status": "CONFLICTING_MTF_REGIMES",
+    "macro_anchor_regimes": {
+      "15m": "VOLATILITY_COMPRESSION",
+      "5m": "VOLATILITY_COMPRESSION"
+    },
+    "intermediate_trigger_regimes": {
+      "3m": "VOLATILITY_COMPRESSION",
+      "1m": "VOLATILITY_COMPRESSION"
+    },
+    "refiner_regime": {
+      "15s": "VOLATILITY_COMPRESSION"
+    },
+    "macro_anchor_structures": {
+      "15m": "BULLISH",
+      "5m": "BULLISH"
+    },
+    "explanation": "Conflicting MTF Regimes: 15m is VOLATILITY_COMPRESSION, 5m is VOLATILITY_COMPRESSION, and 1m is VOLATILITY_COMPRESSION."
+  }
+}

@@ -253,10 +253,13 @@ def calculate_rsi(prices: List[float], period: int = 14) -> List[Optional[float]
     avg_gain = sum(gains[:period]) / float(period)
     avg_loss = sum(losses[:period]) / float(period)
     
-    if avg_loss == 0.0 and avg_gain == 0.0:
+    EPSILON = 1e-12
+    if abs(avg_loss) < EPSILON and abs(avg_gain) < EPSILON:
         rsi.append(50.0)
-    elif avg_loss == 0.0:
+    elif abs(avg_loss) < EPSILON:
         rsi.append(100.0)
+    elif abs(avg_gain) < EPSILON:
+        rsi.append(0.0)
     else:
         rs = avg_gain / avg_loss
         rsi.append(round(100.0 - (100.0 / (1.0 + rs)), 2))
@@ -265,10 +268,12 @@ def calculate_rsi(prices: List[float], period: int = 14) -> List[Optional[float]
         avg_gain = (avg_gain * (period - 1) + gains[i]) / float(period)
         avg_loss = (avg_loss * (period - 1) + losses[i]) / float(period)
         
-        if avg_loss == 0.0 and avg_gain == 0.0:
+        if abs(avg_loss) < EPSILON and abs(avg_gain) < EPSILON:
             rsi.append(50.0)
-        elif avg_loss == 0.0:
+        elif abs(avg_loss) < EPSILON:
             rsi.append(100.0)
+        elif abs(avg_gain) < EPSILON:
+            rsi.append(0.0)
         else:
             rs = avg_gain / avg_loss
             rsi.append(round(100.0 - (100.0 / (1.0 + rs)), 2))

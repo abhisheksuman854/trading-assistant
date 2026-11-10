@@ -37,6 +37,7 @@ from app.core.indicators import (
     calculate_keltner_channels,
     detect_volatility_squeeze,
     calculate_session_vwap,
+    SessionVWAPAccumulator,
     TechnicalIndicatorService,
     CalculationStatus,
     WarmupStatus
@@ -99,19 +100,34 @@ class TestIndicatorsLibrary(unittest.TestCase):
     # B. Momentum Indicators Tests (RSI, MACD, ROC)
     # ========================================================================
 
-    def test_rsi_strictly_rising_and_falling_series(self):
-        """
-        - Strictly rising prices (zero losses) must yield RSI = 100.0.
-        - Strictly falling prices (zero gains) must yield RSI = 0.0.
-        """
+    def test_rsi_strictly_rising(self):
+        """Strictly rising prices (zero losses) must yield RSI = 100.0."""
         rising = [float(100 + i) for i in range(25)]
-        falling = [float(100 - i) for i in range(25)]
-
         rsi_rising = calculate_rsi(rising, 14)
-        rsi_falling = calculate_rsi(falling, 14)
-
         self.assertEqual(rsi_rising[-1], 100.0)
+
+    def test_rsi_strictly_falling(self):
+        """Strictly falling prices (zero gains) must yield RSI = 0.0."""
+        falling = [float(100 - i) for i in range(25)]
+        rsi_falling = calculate_rsi(falling, 14)
         self.assertEqual(rsi_falling[-1], 0.0)
+
+    def test_rsi_completely_flat_market(self):
+        """
+        Documented Convention:
+        When price action is completely flat (average gain == 0 and average loss == 0),
+        momentum is neutral and price change is nonexistent; RSI is defined as 50.0.
+        """
+        flat = [100.0] * 30
+        rsi_flat = calculate_rsi(flat, 14)
+        self.assertIsNotNone(rsi_flat[-1])
+        self.assertEqual(rsi_flat[-1], 50.0)
+
+    def test_rsi_alternating_prices(self):
+        """Alternating price series (symmetric gains and losses) oscillates symmetrically around 50.0."""
+        alternating = [100.0, 101.0] * 15
+        rsi_alt = calculate_rsi(alternating, 14)
+        self.assertAlmostEqual(rsi_alt[-1], 50.0, delta=3.0)
 
     def test_rsi_insufficient_history(self):
         """RSI must return None when bars <= period."""
@@ -119,13 +135,18 @@ class TestIndicatorsLibrary(unittest.TestCase):
         rsi_res = calculate_rsi(short_series, 14)
         self.assertEqual(rsi_res, [None, None, None, None])
 
+    def test_rsi_floating_point_epsilon_edge_cases(self):
+        """Near-zero microscopic changes within floating-point epsilon (1e-12) must be treated as flat (50.0)."""
+        micro_flat = [100.0 + (i * 1e-15) for i in range(30)]
+        rsi_micro = calculate_rsi(micro_flat, 14)
+        self.assertEqual(rsi_micro[-1], 50.0)
+
     def test_macd_confirmed_vs_developing_crossover(self):
         """
         Verifies strict separation between confirmed closed crossover and active developing crossover:
         - When last_bar_is_closed=False: crossover on active bar [-1] is flagged as DEVELOPING_BULLISH.
         - When last_bar_is_closed=True: crossover on bar [-1] is flagged as CONFIRMED_BULLISH.
         """
-        # Series with sufficient history (>= 35 bars) and a bullish turn on the active bar
         prices = [100.0] * 40 + [98.0, 105.0]
 
         # Case 1: Active bar is developing (is_closed=False)
@@ -139,6 +160,55 @@ class TestIndicatorsLibrary(unittest.TestCase):
         self.assertTrue(res_conf["is_confirmed_bullish_cross"])
         self.assertFalse(res_conf["is_developing_bullish_cross"])
         self.assertEqual(res_conf["crossover_status"], "CONFIRMED_BULLISH")
+
+    def test_macd_developing_bearish_crossover(self):
+        """Verifies developing bearish crossover on unclosed bar."""
+        prices = [100.0] * 40 + [102.0, 95.0]
+        res_dev = calculate_macd(prices, 12, 26, 9, last_bar_is_closed=False)
+        self.assertTrue(res_dev["is_developing_bearish_cross"])
+        self.assertEqual(res_dev["crossover_status"], "DEVELOPING_BEARISH")
+
+    def test_macd_developing_crossover_disappears_before_candle_closure(self):
+        """
+        Simulates live tick movement where an unclosed bar temporarily forms a developing crossover,
+        then retraces before closure:
+        1. Tick A (Spike): forms DEVELOPING_BULLISH.
+        2. Tick B (Pullback): price retraces, DEVELOPING_BULLISH disappears.
+        3. Candle closure: seals at pullback price with NO_CROSSOVER.
+        Proves confirmed state is NEVER corrupted by intraday developing fluctuations.
+        """
+        base_prices = [100.0] * 35 + [98.0, 97.0, 96.0]
+        # Tick A: Price spikes to 115.0 during developing candle
+        res_tick_a = calculate_macd(base_prices + [115.0], 12, 26, 9, last_bar_is_closed=False)
+        self.assertTrue(res_tick_a["is_developing_bullish_cross"])
+        self.assertFalse(res_tick_a["is_confirmed_bullish_cross"])
+
+        # Tick B: Price pulls back to 96.0 during developing candle
+        res_tick_b = calculate_macd(base_prices + [96.0], 12, 26, 9, last_bar_is_closed=False)
+        self.assertFalse(res_tick_b["is_developing_bullish_cross"])
+        self.assertEqual(res_tick_b["crossover_status"], "NO_CROSSOVER")
+
+        # Candle seals at 96.0 (is_closed=True)
+        res_closed = calculate_macd(base_prices + [96.0], 12, 26, 9, last_bar_is_closed=True)
+        self.assertFalse(res_closed["is_confirmed_bullish_cross"])
+        self.assertEqual(res_closed["crossover_status"], "NO_CROSSOVER")
+
+    def test_macd_historical_recalculation_idempotence(self):
+        """Recalculating MACD repeatedly on closed historical bars produces bit-for-bit identical results."""
+        prices = [100.0 + (i % 5) for i in range(60)]
+        first_run = calculate_macd(prices, 12, 26, 9, last_bar_is_closed=True)
+        for _ in range(20):
+            rerun = calculate_macd(prices, 12, 26, 9, last_bar_is_closed=True)
+            self.assertEqual(first_run, rerun)
+
+    def test_macd_confirmed_candle_metadata_accuracy(self):
+        """Confirmed crossover metadata reports the exact candle index and timestamp of the finalized bar."""
+        prices = [100.0] * 40 + [95.0, 93.0, 115.0]
+        metadata = [{"timestamp": f"2026-11-09T09:{i:02d}:00+05:30"} for i in range(len(prices))]
+        res = calculate_macd(prices, 12, 26, 9, last_bar_is_closed=True, candles_metadata=metadata)
+        self.assertTrue(res["is_confirmed_bullish_cross"])
+        self.assertEqual(res["confirmed_candle_index"], len(prices) - 1)
+        self.assertEqual(res["confirmed_candle_timestamp"], metadata[-1]["timestamp"])
 
     def test_roc_hand_calculated_values(self):
         """
@@ -154,9 +224,53 @@ class TestIndicatorsLibrary(unittest.TestCase):
         roc3 = calculate_roc(prices, period=3)
         self.assertEqual(roc3[3], 20.0)
 
+    def test_roc_zero_denominator_handling(self):
+        """Rate of Change with zero denominator returns 0.0 without raising ZeroDivisionError."""
+        prices = [0.0, 10.0, 20.0]
+        roc = calculate_roc(prices, period=1)
+        self.assertEqual(roc[1], 0.0)
+
     # ========================================================================
     # C. Trend Strength Tests (ADX, +DI, -DI)
     # ========================================================================
+
+    def test_adx_exact_first_valid_indices(self):
+        """
+        Audits Welles Wilder ADX(14) initialization indexing:
+        - True Range requires 1 bar delta -> first TR at index 1 (2nd bar).
+        - 14 initial TR, +DM, -DM values -> indices 1..14 (15 bars).
+        - First +DI, -DI, and DX are produced at index 14 (15th bar).
+        - First ADX requires 14 DX values (indices 14..27) -> first ADX at index 27 (28th bar).
+        - For N < 28 bars: ADX must return None with INSUFFICIENT_DATA.
+        - For N >= 28 bars: ADX must return valid float.
+        """
+        highs = [float(100 + i) for i in range(27)]
+        lows = [float(99 + i) for i in range(27)]
+        closes = [float(99.5 + i) for i in range(27)]
+
+        # 27 bars (index 26) -> ADX is None
+        res_27 = calculate_adx(highs, lows, closes, period=14)
+        self.assertIsNone(res_27["adx"])
+        self.assertEqual(res_27["calculation_status"], CalculationStatus.INSUFFICIENT_DATA)
+
+        # 28 bars (index 27) -> First valid ADX is produced!
+        highs_28 = highs + [127.0]
+        lows_28 = lows + [126.0]
+        closes_28 = closes + [126.5]
+        res_28 = calculate_adx(highs_28, lows_28, closes_28, period=14)
+        self.assertIsNotNone(res_28["adx"])
+        self.assertEqual(res_28["calculation_status"], CalculationStatus.VALID)
+
+    def test_adx_warmup_status_classification(self):
+        """
+        Verifies ADX warmup classification:
+        - N < 28 bars: INSUFFICIENT_DATA
+        - 28 <= N < 50 bars: PARTIAL_WARMUP (mathematically valid, but Wilder decay still settling)
+        - N >= 50 bars: WARMUP_COMPLETE (Wilder smoothing fully stabilized)
+        """
+        self.assertEqual(self.service.get_warmup_status(available_bars=20, min_required=28, recommended_warmup=50), WarmupStatus.INSUFFICIENT_DATA)
+        self.assertEqual(self.service.get_warmup_status(available_bars=35, min_required=28, recommended_warmup=50), WarmupStatus.PARTIAL_WARMUP)
+        self.assertEqual(self.service.get_warmup_status(available_bars=60, min_required=28, recommended_warmup=50), WarmupStatus.WARMUP_COMPLETE)
 
     def test_adx_flat_market_indicates_weak_chop(self):
         """A flat series with constant high, low, and close must yield ADX = 0 and WEAK_TREND_CHOP."""
@@ -169,6 +283,17 @@ class TestIndicatorsLibrary(unittest.TestCase):
         self.assertEqual(adx_res["plus_di"], 0.0)
         self.assertEqual(adx_res["minus_di"], 0.0)
         self.assertEqual(adx_res["trend_strength"], "WEAK_TREND_CHOP")
+
+    def test_adx_zero_denominator_in_dx_handled_safely(self):
+        """When high == low == close (zero range, TR = 0), DX denominator is zero; must yield 0.0 without ZeroDivisionError."""
+        highs = [100.0] * 35
+        lows = [100.0] * 35
+        closes = [100.0] * 35
+
+        adx_res = calculate_adx(highs, lows, closes, period=14)
+        self.assertEqual(adx_res["adx"], 0.0)
+        self.assertEqual(adx_res["plus_di"], 0.0)
+        self.assertEqual(adx_res["minus_di"], 0.0)
 
     def test_adx_strong_trend_classification(self):
         """A persistent steep trend must produce high ADX (>= 25) with STRONG_TREND status."""
@@ -207,6 +332,22 @@ class TestIndicatorsLibrary(unittest.TestCase):
         self.assertEqual(bb["lower"], 8.34)
         self.assertEqual(bb["bandwidth"], 0.8081)
         self.assertEqual(bb["pct_b"], 0.8536)
+
+    def test_bollinger_bands_population_vs_sample_standard_deviation(self):
+        """
+        Verifies Population Standard Deviation (ddof=0, John Bollinger default)
+        vs Sample Standard Deviation (ddof=1, Bessel's correction):
+        Prices: [10.0, 12.0, 14.0, 16.0, 18.0]
+        Sum of squared deviations = 40.0
+        Population (ddof=0): Variance = 40 / 5 = 8.0, sigma = sqrt(8) = 2.83
+        Sample (ddof=1): Variance = 40 / 4 = 10.0, sigma = sqrt(10) = 3.16
+        """
+        prices = [10.0, 12.0, 14.0, 16.0, 18.0]
+        bb_pop = calculate_bollinger_bands(prices, period=5, num_std=2.0, ddof=0)
+        self.assertEqual(bb_pop["sigma"], 2.83)
+
+        bb_sample = calculate_bollinger_bands(prices, period=5, num_std=2.0, ddof=1)
+        self.assertEqual(bb_sample["sigma"], 3.16)
 
     def test_carter_volatility_squeeze_states(self):
         """
@@ -250,20 +391,52 @@ class TestIndicatorsLibrary(unittest.TestCase):
 
     def test_session_vwap_weighted_standard_deviation_bands_hand_calculated(self):
         """
-        Hand-calculated verification of Volume-Weighted Variance and +-1sigma, +-2sigma bands:
-        Bar 1: High=105, Low=95, Close=100 -> Typical Price = 100.0, Volume = 1000
-        Bar 2: High=115, Low=105, Close=110 -> Typical Price = 110.0, Volume = 2000
-        Total Volume = 3000
-        CumPV = (100 * 1000) + (110 * 2000) = 100,000 + 220,000 = 320,000
-        VWAP = 320,000 / 3000 = 106.6667 -> 106.67
-        Variance = [1000 * (100 - 106.6667)^2 + 2000 * (110 - 106.6667)^2] / 3000
-                 = [1000 * 44.4449 + 2000 * 11.1109] / 3000
-                 = [44,444.9 + 22,221.8] / 3000 = 66,666.7 / 3000 = 22.2222
-        sigma = sqrt(22.2222) = 4.7140 -> 4.71
-        Upper_1 = 106.67 + 4.71 = 111.38
-        Lower_1 = 106.67 - 4.71 = 101.96
-        Upper_2 = 106.67 + 2 * 4.71 = 116.09
-        Lower_2 = 106.67 - 2 * 4.71 = 97.25
+        Hand-calculated verification of Volume-Weighted Variance and +-1sigma, +-2sigma bands
+        on canonical 3-bar fixture:
+        Bar 1: Typical Price = 100.0, Volume = 100
+        Bar 2: Typical Price = 110.0, Volume = 200
+        Bar 3: Typical Price = 120.0, Volume = 300
+        Total Volume = 100 + 200 + 300 = 600
+
+        CumPV = (100 * 100) + (110 * 200) + (120 * 300) = 10,000 + 22,000 + 36,000 = 68,000
+        VWAP = 68,000 / 600 = 340 / 3 = 113.3333333333... -> 113.33
+
+        Weighted Variance:
+        Deviations: (100 - 340/3) = -40/3; (110 - 340/3) = -10/3; (120 - 340/3) = 20/3
+        Squared Deviations: 1600/9, 100/9, 400/9
+        Weighted Sum: 100 * (1600/9) + 200 * (100/9) + 300 * (400/9) = 300,000 / 9 = 100,000 / 3
+        Variance = (100,000 / 3) / 600 = 500 / 9 = 55.5555555556... -> 55.56
+
+        Weighted Standard Deviation:
+        sigma = sqrt(500 / 9) = 10 * sqrt(5) / 3 = 7.453559925... -> 7.45
+
+        Bands:
+        Upper_1 = 113.333333 + 7.453560 = 120.786893 -> 120.79
+        Lower_1 = 113.333333 - 7.453560 = 105.879773 -> 105.88
+        Upper_2 = 113.333333 + 14.907120 = 128.240453 -> 128.24
+        Lower_2 = 113.333333 - 14.907120 = 98.426213 -> 98.43
+        """
+        candles = [
+            {"high": 105.0, "low": 95.0, "close": 100.0, "volume": 100},
+            {"high": 115.0, "low": 105.0, "close": 110.0, "volume": 200},
+            {"high": 125.0, "low": 115.0, "close": 120.0, "volume": 300}
+        ]
+        res = calculate_session_vwap(candles)
+        self.assertEqual(res["vwap"], 113.33)
+        self.assertEqual(res["variance"], 55.56)
+        self.assertEqual(res["sigma"], 7.45)
+        self.assertEqual(res["upper_band_1"], 120.79)
+        self.assertEqual(res["lower_band_1"], 105.88)
+        self.assertEqual(res["upper_band_2"], 128.24)
+        self.assertEqual(res["lower_band_2"], 98.43)
+        self.assertEqual(res["total_session_volume"], 600)
+
+    def test_session_vwap_two_bar_reference(self):
+        """
+        Analytical reference test on 2-bar fixture:
+        Bar 1: Typical Price = 100.0, Volume = 1000
+        Bar 2: Typical Price = 110.0, Volume = 2000
+        VWAP = 320,000 / 3000 = 106.67, sigma = 4.71, variance = 22.22.
         """
         candles = [
             {"high": 105.0, "low": 95.0, "close": 100.0, "volume": 1000},
@@ -271,12 +444,126 @@ class TestIndicatorsLibrary(unittest.TestCase):
         ]
         res = calculate_session_vwap(candles)
         self.assertEqual(res["vwap"], 106.67)
+        self.assertEqual(res["variance"], 22.22)
         self.assertEqual(res["sigma"], 4.71)
         self.assertEqual(res["upper_band_1"], 111.38)
         self.assertEqual(res["lower_band_1"], 101.95)
         self.assertEqual(res["upper_band_2"], 116.09)
         self.assertEqual(res["lower_band_2"], 97.24)
         self.assertEqual(res["total_session_volume"], 3000)
+
+    def test_session_vwap_accumulator_full_session_1500_bars(self):
+        """
+        Verifies full-session accumulation across 1,500 15-second candles (full 6h15m regular session).
+        Asserts no data loss across all 1,500 bars.
+        """
+        accum = SessionVWAPAccumulator("NIFTY 50", is_spot_index=True)
+        t0 = datetime(2026, 11, 9, 9, 15, 0, tzinfo=IST_ZONE)
+        for i in range(1500):
+            t = t0 + timedelta(seconds=15 * i)
+            accum.add_candle(
+                high=24300.0 + (i % 20),
+                low=24280.0 + (i % 20),
+                close=24290.0 + (i % 20),
+                volume=1000,
+                timestamp_dt=t,
+                contract_symbol="NIFTY26NOVFUT"
+            )
+        state = accum.get_vwap_state()
+        self.assertEqual(state["candle_count"], 1500)
+        self.assertEqual(state["total_session_volume"], 1500 * 1000)
+        self.assertIsNotNone(state["vwap"])
+        self.assertIsNotNone(state["variance"])
+        self.assertIsNotNone(state["sigma"])
+
+    def test_session_vwap_accumulator_candle_eviction_preservation(self):
+        """
+        Proves that when the candle buffer evicts early candles (e.g. store capacity is 500, but session has 1,500 bars),
+        the SessionVWAPAccumulator preserves the exact full-session VWAP, volume, and variance.
+        """
+        accum = SessionVWAPAccumulator("NIFTY 50", is_spot_index=True)
+        t0 = datetime(2026, 11, 9, 9, 15, 0, tzinfo=IST_ZONE)
+        # Feed first 1000 bars
+        for i in range(1000):
+            t = t0 + timedelta(seconds=15 * i)
+            accum.add_candle(high=24000.0, low=24000.0, close=24000.0, volume=100, timestamp_dt=t, contract_symbol="NIFTY26NOVFUT")
+
+        # Feed remaining 500 bars at 25000.0
+        for i in range(1000, 1500):
+            t = t0 + timedelta(seconds=15 * i)
+            accum.add_candle(high=25000.0, low=25000.0, close=25000.0, volume=100, timestamp_dt=t, contract_symbol="NIFTY26NOVFUT")
+
+        state = accum.get_vwap_state()
+        # Full session expected VWAP: (1000 * 24000 + 500 * 25000) / 1500 = (24,000,000 + 12,500,000) / 1500 = 36,500,000 / 1500 = 24333.33
+        self.assertEqual(state["candle_count"], 1500)
+        self.assertEqual(state["total_session_volume"], 150000)
+        self.assertEqual(state["vwap"], 24333.33)
+
+    def test_session_vwap_accumulator_session_open_reset(self):
+        """Crossing from previous session date to a new session date automatically resets cumulative totals."""
+        accum = SessionVWAPAccumulator("NIFTY 50")
+        day1 = datetime(2026, 11, 6, 15, 15, 0, tzinfo=IST_ZONE)
+        accum.add_candle(high=24000.0, low=23900.0, close=23950.0, volume=5000, timestamp_dt=day1)
+        self.assertEqual(accum.cum_vol, 5000)
+
+        # Day 2 morning candle: date boundary crossed
+        day2 = datetime(2026, 11, 9, 9, 15, 0, tzinfo=IST_ZONE)
+        accum.add_candle(high=24100.0, low=24050.0, close=24080.0, volume=1000, timestamp_dt=day2)
+        # Prior volume must be reset; day 2 should start fresh with 1000
+        self.assertEqual(accum.cum_vol, 1000)
+        self.assertEqual(accum.candle_count, 1)
+
+    def test_session_vwap_accumulator_zero_volume_candles(self):
+        """Zero volume candles are handled cleanly without dividing by zero or altering VWAP."""
+        accum = SessionVWAPAccumulator("NIFTY 50")
+        t0 = datetime(2026, 11, 9, 9, 15, 0, tzinfo=IST_ZONE)
+        accum.add_candle(high=24000.0, low=24000.0, close=24000.0, volume=100, timestamp_dt=t0)
+        # Candle with zero volume
+        accum.add_candle(high=24100.0, low=24050.0, close=24080.0, volume=0, timestamp_dt=t0 + timedelta(minutes=1))
+        state = accum.get_vwap_state()
+        self.assertEqual(state["total_session_volume"], 100)
+        self.assertEqual(state["vwap"], 24000.0)
+
+    def test_session_vwap_missing_volume_returns_unavailable(self):
+        """When entire candle list has zero volume, returns UNAVAILABLE_NO_VOLUME."""
+        candles = [
+            {"high": 100.0, "low": 100.0, "close": 100.0, "volume": 0},
+            {"high": 101.0, "low": 99.0, "close": 100.0, "volume": 0}
+        ]
+        res = calculate_session_vwap(candles)
+        self.assertEqual(res["calculation_status"], CalculationStatus.UNAVAILABLE_NO_VOLUME)
+        self.assertIsNone(res["vwap"])
+
+    def test_session_vwap_futures_rollover_no_contract_mixing(self):
+        """
+        When contract symbol changes mid-session, accumulator resets to ensure
+        volumes from two different contract expiries are NEVER mixed.
+        """
+        accum = SessionVWAPAccumulator("NIFTY 50", is_spot_index=True)
+        t0 = datetime(2026, 11, 9, 9, 15, 0, tzinfo=IST_ZONE)
+        accum.add_candle(high=24000.0, low=24000.0, close=24000.0, volume=5000, timestamp_dt=t0, contract_symbol="NIFTY26NOVFUT")
+        self.assertEqual(accum.underlying_contract, "NIFTY26NOVFUT")
+        self.assertEqual(accum.cum_vol, 5000)
+
+        # Switch to DEC contract
+        accum.add_candle(high=24100.0, low=24100.0, close=24100.0, volume=2000, timestamp_dt=t0 + timedelta(minutes=1), contract_symbol="NIFTY26DECFUT")
+        self.assertEqual(accum.underlying_contract, "NIFTY26DECFUT")
+        self.assertEqual(accum.cum_vol, 2000, "Must not add DEC volume onto NOV baseline")
+
+    def test_session_vwap_no_prior_session_volume_leakage(self):
+        """Prior session candles in the store are strictly excluded from current session VWAP."""
+        sym = "RELIANCE"
+        t_prev = datetime(2026, 11, 6, 15, 25, 0, tzinfo=IST_ZONE)
+        t_curr = datetime(2026, 11, 9, 9, 15, 0, tzinfo=IST_ZONE)
+        candles = [
+            {"timestamp": t_prev.isoformat(), "start_time": t_prev.isoformat(), "open": 2500, "high": 2510, "low": 2490, "close": 2500, "volume": 100000, "is_closed": True},
+            {"timestamp": t_curr.isoformat(), "start_time": t_curr.isoformat(), "open": 2520, "high": 2530, "low": 2510, "close": 2520, "volume": 1000, "is_closed": True}
+        ]
+        self.store.ingest_base_candles(sym, candles, base_timeframe=Timeframe.M1)
+        # Using get_session_candles, only current session (2026-11-09) is returned
+        session_candles = self.store.get_session_candles(sym, Timeframe.M1, session_date=date(2026, 11, 9))
+        self.assertEqual(len(session_candles), 1)
+        self.assertEqual(session_candles[0]["volume"], 1000)
 
     def test_nifty_spot_vwap_futures_volume_proxy_attribution(self):
         """

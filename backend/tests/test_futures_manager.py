@@ -102,13 +102,14 @@ class TestFuturesManager(unittest.TestCase):
                 "token": "26000",
                 "symbol": "NIFTY26NOVFUT",
                 "expiry": "2026-11-23",
-                "lotsize": 75
+                "lotsize": 65
             }
         }
         res_valid = self.mgr.validate_contract_against_master("NIFTY 50", calc_expiry, valid_master)
         self.assertTrue(res_valid["is_valid"])
         self.assertEqual(res_valid["status"], "VERIFIED_IN_CONTRACT_MASTER")
         self.assertEqual(res_valid["token"], "26000")
+        self.assertEqual(res_valid["lot_size"], 65)
 
         # 2. Expiry mismatch (Master has 2026-11-26 but calculated is 2026-11-23)
         mismatched_master = {
@@ -116,7 +117,7 @@ class TestFuturesManager(unittest.TestCase):
                 "token": "26000",
                 "symbol": "NIFTY26NOVFUT",
                 "expiry": "2026-11-26",
-                "lotsize": 75
+                "lotsize": 65
             }
         }
         res_mismatch = self.mgr.validate_contract_against_master("NIFTY 50", calc_expiry, mismatched_master)

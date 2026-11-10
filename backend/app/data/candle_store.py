@@ -394,6 +394,14 @@ class MultiTimeframeCandleStore:
     Guarantees strict deduplication and chronological ordering.
     """
 
+    DEFAULT_TIMEFRAME_CAPACITIES = {
+        Timeframe.S15: 1500,  # Full 6h15m NSE regular session (1,500 15s candles)
+        Timeframe.M1: 500,    # Full 375 1m regular session + pre-open/buffer
+        Timeframe.M3: 200,    # Full 125 3m regular session
+        Timeframe.M5: 150,    # Full 75 5m regular session
+        Timeframe.M15: 50     # Full 25 15m regular session
+    }
+
     def __init__(
         self,
         clock: Optional[IndianMarketSessionClock] = None,
@@ -403,6 +411,11 @@ class MultiTimeframeCandleStore:
         self.clock = clock or IndianMarketSessionClock()
         self.max_closed_candles = max_closed_candles
         self.volume_semantics = volume_semantics
+        # Timeframe capacities: ensure 15s can retain full 1,500 session bars
+        self.capacities = dict(self.DEFAULT_TIMEFRAME_CAPACITIES)
+        if max_closed_candles != 500:
+            for tf in self.capacities:
+                self.capacities[tf] = max_closed_candles
         # {symbol: {timeframe: [Candle, ...]}}
         self._closed_candles: Dict[str, Dict[str, List[Candle]]] = {}
         # {symbol: {timeframe: Candle}}
@@ -512,7 +525,8 @@ class MultiTimeframeCandleStore:
                     closed_list[-1] = active
                 else:
                     closed_list.append(active)
-                    if len(closed_list) > self.max_closed_candles:
+                    cap = self.capacities.get(tf, self.max_closed_candles)
+                    if len(closed_list) > cap:
                         closed_list.pop(0)
 
                 # Initialize new active candle for current interval
@@ -590,7 +604,8 @@ class MultiTimeframeCandleStore:
             existing_map[c.start_time] = c
 
         sorted_closed = [existing_map[k] for k in sorted(existing_map.keys())]
-        self._closed_candles[sym][base_timeframe] = sorted_closed[-self.max_closed_candles:]
+        cap_base = self.capacities.get(base_timeframe, self.max_closed_candles)
+        self._closed_candles[sym][base_timeframe] = sorted_closed[-cap_base:]
 
         # If an active forming candle was present, preserve it as active candle
         if active_new:
@@ -620,17 +635,39 @@ class MultiTimeframeCandleStore:
                     candle_status=r["candle_status"]
                 )
             sorted_resampled = [resampled_map[k] for k in sorted(resampled_map.keys())]
-            self._closed_candles[sym][target_tf] = sorted_resampled[-self.max_closed_candles:]
+            cap_target = self.capacities.get(target_tf, self.max_closed_candles)
+            self._closed_candles[sym][target_tf] = sorted_resampled[-cap_target:]
 
-    def get_closed_candles(self, symbol: str, timeframe: str, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_closed_candles(self, symbol: str, timeframe: str, limit: Optional[int] = 100) -> List[Dict[str, Any]]:
         """
         Returns ONLY closed, finalized candles.
         Guarantees strictly non-repainting indicator inputs.
+        If limit is None or <= 0, returns all available closed candles.
         """
         sym = symbol.strip().upper()
         self._ensure_symbol_initialized(sym)
         closed_list = self._closed_candles[sym].get(timeframe, [])
-        return [c.to_dict() for c in closed_list[-limit:]]
+        if limit is not None and limit > 0:
+            return [c.to_dict() for c in closed_list[-limit:]]
+        return [c.to_dict() for c in closed_list]
+
+    def get_session_candles(
+        self,
+        symbol: str,
+        timeframe: str,
+        session_date: Optional[date] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns closed candles strictly belonging to the designated trading session date.
+        Discards previous trading day bars to guarantee pristine intraday session calculations.
+        """
+        sym = symbol.strip().upper()
+        self._ensure_symbol_initialized(sym)
+        closed_list = self._closed_candles[sym].get(timeframe, [])
+        if not closed_list:
+            return []
+        target_date = session_date or closed_list[-1].start_time.date()
+        return [c.to_dict() for c in closed_list if c.start_time.date() == target_date]
 
     def get_active_candle(self, symbol: str, timeframe: str) -> Optional[Dict[str, Any]]:
         """Returns the single active unclosed candle, or None if market closed."""

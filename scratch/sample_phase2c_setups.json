@@ -1,0 +1,1960 @@
+{
+  "bullish_opportunity_evaluation": {
+    "symbol": "NIFTY 50",
+    "timestamp": "2026-11-10T14:05:09.218353",
+    "candidate_direction": "BULLISH",
+    "trade_action": "NO_TRADE",
+    "gates_passed": false,
+    "gate_rejection_reasons": [
+      "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50)."
+    ],
+    "canonical_eight_gates": {
+      "all_gates_passed": false,
+      "gate_count": 8,
+      "passed_gate_count": 7,
+      "failed_gate_count": 1,
+      "rejection_reasons": [
+        "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50)."
+      ],
+      "gate_registry": {
+        "GATE_1_SQUEEZE_COMPRESSION": {
+          "gate_id": "GATE_1_SQUEEZE_COMPRESSION",
+          "gate_name": "Squeeze Compression Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15m_regime": "TRENDING_BULLISH",
+            "15m_squeeze_lifecycle": "NO_SQUEEZE",
+            "5m_regime": "TRENDING_BULLISH",
+            "5m_squeeze_lifecycle": "NO_SQUEEZE"
+          }
+        },
+        "GATE_2_CONFLICTING_MTF_REGIMES": {
+          "gate_id": "GATE_2_CONFLICTING_MTF_REGIMES",
+          "gate_name": "Conflicting MTF Regimes Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15m_anchor_regime": "TRENDING_BULLISH",
+            "candidate_direction": "BULLISH"
+          }
+        },
+        "GATE_3_HIGH_MUTUAL_CONFLUENCE": {
+          "gate_id": "GATE_3_HIGH_MUTUAL_CONFLUENCE",
+          "gate_name": "High Mutual Confluence Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "bullish_score": 68.0,
+            "bearish_score": 5.0,
+            "threshold": 60.0
+          }
+        },
+        "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA": {
+          "gate_id": "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA",
+          "gate_name": "Feed Gap & Data Quality Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15s_break_quality": "VALID",
+            "15s_struct_quality": null,
+            "1m_break_quality": "VALID",
+            "1m_struct_quality": null,
+            "3m_break_quality": "VALID",
+            "3m_struct_quality": null,
+            "5m_break_quality": "VALID",
+            "5m_struct_quality": null,
+            "15m_break_quality": "VALID",
+            "15m_struct_quality": null
+          }
+        },
+        "GATE_5_UNFAVORABLE_RISK_REWARD": {
+          "gate_id": "GATE_5_UNFAVORABLE_RISK_REWARD",
+          "gate_name": "Unfavorable Risk/Reward Gate",
+          "passed": false,
+          "rejection_reason": "Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50).",
+          "source_data": {
+            "underlying_risk_reward": 0.38,
+            "min_required": 1.5
+          }
+        },
+        "GATE_6_UNTRADABLE_OPTION_CONTRACT": {
+          "gate_id": "GATE_6_UNTRADABLE_OPTION_CONTRACT",
+          "gate_name": "Untradable Option Contract Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "contract_symbol": "NIFTY26NOV24300CE",
+            "spread_pct": 0.61,
+            "quote_age_seconds": 0.0,
+            "freshness_status": "FRESH_LIVE_QUOTE"
+          }
+        },
+        "GATE_7_INVALID_STRUCTURAL_LEVELS": {
+          "gate_id": "GATE_7_INVALID_STRUCTURAL_LEVELS",
+          "gate_name": "Invalid Structural Levels Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "entry_price": 24315.85,
+            "stop_loss_price": 24253.17,
+            "target_price": 24339.85
+          }
+        },
+        "GATE_8_DEVELOPING_UNCONFIRMED_BAR": {
+          "gate_id": "GATE_8_DEVELOPING_UNCONFIRMED_BAR",
+          "gate_name": "Developing Unconfirmed Bar Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "setup_depends_on_developing_bar": false,
+            "is_candle_closed": true,
+            "candidate_depends_on_unclosed": false
+          }
+        }
+      }
+    },
+    "confirmation_status": "CONFIRMED",
+    "bullish_assessment": {
+      "direction": "BULLISH",
+      "total_score": 68.0,
+      "quality_tier": "TIER_2_MODERATE",
+      "is_qualified": true,
+      "category_scores": {
+        "macro_context_trend": 30.0,
+        "intermediate_structure_momentum": 13.0,
+        "volatility_value_location": 5.0,
+        "divergence_timing": 20.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": 20.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 15.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 8.0,
+            "ceiling": 8.0,
+            "capped": 8.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "MOMENTUM": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 5.0,
+            "ceiling": 10.0,
+            "capped": 5.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 15.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 20.0,
+            "ceiling": 20.0,
+            "capped": 20.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "15m Macro Regime is confirmed TRENDING_BULLISH.",
+        "5m Macro Regime is confirmed TRENDING_BULLISH.",
+        "Macro swing structure confirmed BULLISH on both 15m and 5m.",
+        "Moving Average Stack is BULLISH_STACK on 1m/3m.",
+        "Strong Bullish ADX (46.5 >= 25.0) with +DI > -DI.",
+        "Normal volatility expansion (no compression constraint).",
+        "Confirmed Divergence catalyst: HIDDEN_BULLISH on RSI.",
+        "Divergence invalidation level is untouched.",
+        "15s execution timeframe structure aligned: BULLISH."
+      ],
+      "opposing_factors": [
+        "RSI(14) = 87.9 is overbought (> 75). Risk of mean reversion."
+      ]
+    },
+    "bearish_assessment": {
+      "direction": "BEARISH",
+      "total_score": 5.0,
+      "quality_tier": "TIER_3_WEAK",
+      "is_qualified": false,
+      "category_scores": {
+        "macro_context_trend": 0.0,
+        "intermediate_structure_momentum": 0.0,
+        "volatility_value_location": 5.0,
+        "divergence_timing": 0.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": -20.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 8.0,
+            "capped": 0.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "MOMENTUM": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 5.0,
+            "ceiling": 10.0,
+            "capped": 5.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 0.0,
+            "ceiling": 20.0,
+            "capped": 0.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "Normal volatility expansion (no compression constraint)."
+      ],
+      "opposing_factors": [
+        "15m Macro Regime directly opposes direction: TRENDING_BULLISH (-10 penalty).",
+        "5m Macro Regime directly opposes direction: TRENDING_BULLISH (-10 penalty).",
+        "Both 15m and 5m structures are in opposing state: BULLISH.",
+        "Moving averages on 1m and 3m are in opposing stack: BULLISH_STACK.",
+        "ADX = 46.5 is strong but DI directional spread opposes setup.",
+        "RSI(14) = 87.9 is above 55 (bullish momentum dominance).",
+        "Opposing HIDDEN_BULLISH on RSI is active.",
+        "Opposing HIDDEN_BULLISH on MACD is active."
+      ]
+    },
+    "structural_trade_levels": {
+      "direction": "BULLISH",
+      "underlying_risk_reward": {
+        "entry_price": 24315.85,
+        "stop_loss_price": 24253.17,
+        "target_price": 24339.85,
+        "risk_points": 62.68,
+        "reward_points": 24.0,
+        "risk_reward_ratio": 0.38,
+        "risk_reward_str": "1 : 0.38",
+        "is_valid_levels": true,
+        "passes_minimum_rr": false,
+        "target_type": "MODELLED_EXPANSION_TARGET",
+        "target_source": "atr_1.5_expansion",
+        "is_structurally_confirmed": false,
+        "atr_buffer_applied": 3.2,
+        "target_selection_tier": "TIER_3_FALLBACK_EXPANSION",
+        "has_intermediate_obstacle": false,
+        "obstacle_price": null,
+        "confirmation_status": "CONFIRMED"
+      },
+      "option_premium_risk_reward": {
+        "status": "VALID_ESTIMATE",
+        "reason": "CALCULATED_OPTION_GREEK_APPROXIMATION",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": "NIFTY26NOV24300CE",
+        "strike": 24300.0,
+        "option_type": "CE",
+        "option_entry_price": 165.5,
+        "theoretical_option_target": 178.7922,
+        "theoretical_option_stop_loss": 132.3337,
+        "exchange_rounded_target_price": 178.8,
+        "exchange_rounded_stop_loss": 132.35,
+        "exchange_tick_size": 0.05,
+        "option_stop_loss_estimate": 132.35,
+        "option_target_estimate": 178.8,
+        "option_risk_points": 33.15,
+        "option_reward_points": 13.3,
+        "option_risk_reward_ratio": 0.4,
+        "option_risk_reward_str": "1 : 0.40",
+        "signed_delta_applied": 0.547,
+        "delta_applied": 0.547,
+        "gamma_applied": 0.00057,
+        "provenance": {
+          "underlying_spot_price": 24315.85,
+          "spot_source": "multi_timeframe_candle_store_cmp",
+          "spot_timestamp": "2026-11-10T14:05:09.218306+05:30",
+          "instrument_token": "999123",
+          "contract_symbol": "NIFTY26NOV24300CE",
+          "option_type": "CE",
+          "strike": 24300.0,
+          "exact_expiry_date": "2026-11-23",
+          "is_same_day_expiry": false,
+          "implied_volatility": 0.15,
+          "iv_source": "constant_fallback_iv_0.15",
+          "greeks_calculation_timestamp": "2026-11-10T14:05:09.218306+05:30",
+          "time_to_expiry_convention": "ACT/365",
+          "settlement_time_convention": "15:30:00_IST",
+          "time_to_expiry_years": 0.035778,
+          "risk_free_rate": 0.065,
+          "risk_free_rate_source": "ASSUMED_RISK_FREE_RATE_6.5_PERCENT",
+          "model_name": "Black-Scholes-Merton Greek Model (Signed Delta + Second-Order Gamma Taylor Approximation)"
+        },
+        "assumptions": {
+          "model": "Second-order Taylor series Delta/Gamma local approximation",
+          "formula": "\u0394P \u2248 Delta * \u0394S + 0.5 * Gamma * (\u0394S)^2",
+          "signed_delta_convention": "CE: N(d1) > 0 | PE: N(d1) - 1 < 0",
+          "gamma_second_order_contribution": "Positive Gamma contributes a positive second-order term relative to linear Delta projection",
+          "theta_decay": "EXCLUDED",
+          "implied_volatility": "HELD_CONSTANT (Vega = 0)",
+          "entry_quote_basis": "EXECUTABLE_ASK_PRICE",
+          "exit_valuation_basis": "THEORETICAL_MID_PROJECTION (spread decay and slippage excluded)",
+          "tick_size_quotation_floor": "\u20b90.05 minimum tick constraint on exchange (not theoretical fair value)",
+          "transaction_costs": "EXCLUDED (Brokerage, STT, exchange turnover fees, and GST not deducted)",
+          "higher_order_greeks": "TRUNCATED_AT_GAMMA",
+          "greeks_timestamp": "2026-11-10T14:05:09.218306+05:30",
+          "disclaimer": "Positive Gamma contributes a positive second-order term relative to the linear Delta-only projection. Approximation valid only for local price moves under declared assumptions. Not an execution-guaranteed option price."
+        },
+        "explanation": "Option premium R:R estimated via signed Delta (+0.547) and Gamma (0.00057) Taylor approximation from Ask \u20b9165.50. IV and Theta held constant."
+      },
+      "option_risk_reward": {
+        "status": "VALID_ESTIMATE",
+        "reason": "CALCULATED_OPTION_GREEK_APPROXIMATION",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": "NIFTY26NOV24300CE",
+        "strike": 24300.0,
+        "option_type": "CE",
+        "option_entry_price": 165.5,
+        "theoretical_option_target": 178.7922,
+        "theoretical_option_stop_loss": 132.3337,
+        "exchange_rounded_target_price": 178.8,
+        "exchange_rounded_stop_loss": 132.35,
+        "exchange_tick_size": 0.05,
+        "option_stop_loss_estimate": 132.35,
+        "option_target_estimate": 178.8,
+        "option_risk_points": 33.15,
+        "option_reward_points": 13.3,
+        "option_risk_reward_ratio": 0.4,
+        "option_risk_reward_str": "1 : 0.40",
+        "signed_delta_applied": 0.547,
+        "delta_applied": 0.547,
+        "gamma_applied": 0.00057,
+        "provenance": {
+          "underlying_spot_price": 24315.85,
+          "spot_source": "multi_timeframe_candle_store_cmp",
+          "spot_timestamp": "2026-11-10T14:05:09.218306+05:30",
+          "instrument_token": "999123",
+          "contract_symbol": "NIFTY26NOV24300CE",
+          "option_type": "CE",
+          "strike": 24300.0,
+          "exact_expiry_date": "2026-11-23",
+          "is_same_day_expiry": false,
+          "implied_volatility": 0.15,
+          "iv_source": "constant_fallback_iv_0.15",
+          "greeks_calculation_timestamp": "2026-11-10T14:05:09.218306+05:30",
+          "time_to_expiry_convention": "ACT/365",
+          "settlement_time_convention": "15:30:00_IST",
+          "time_to_expiry_years": 0.035778,
+          "risk_free_rate": 0.065,
+          "risk_free_rate_source": "ASSUMED_RISK_FREE_RATE_6.5_PERCENT",
+          "model_name": "Black-Scholes-Merton Greek Model (Signed Delta + Second-Order Gamma Taylor Approximation)"
+        },
+        "assumptions": {
+          "model": "Second-order Taylor series Delta/Gamma local approximation",
+          "formula": "\u0394P \u2248 Delta * \u0394S + 0.5 * Gamma * (\u0394S)^2",
+          "signed_delta_convention": "CE: N(d1) > 0 | PE: N(d1) - 1 < 0",
+          "gamma_second_order_contribution": "Positive Gamma contributes a positive second-order term relative to linear Delta projection",
+          "theta_decay": "EXCLUDED",
+          "implied_volatility": "HELD_CONSTANT (Vega = 0)",
+          "entry_quote_basis": "EXECUTABLE_ASK_PRICE",
+          "exit_valuation_basis": "THEORETICAL_MID_PROJECTION (spread decay and slippage excluded)",
+          "tick_size_quotation_floor": "\u20b90.05 minimum tick constraint on exchange (not theoretical fair value)",
+          "transaction_costs": "EXCLUDED (Brokerage, STT, exchange turnover fees, and GST not deducted)",
+          "higher_order_greeks": "TRUNCATED_AT_GAMMA",
+          "greeks_timestamp": "2026-11-10T14:05:09.218306+05:30",
+          "disclaimer": "Positive Gamma contributes a positive second-order term relative to the linear Delta-only projection. Approximation valid only for local price moves under declared assumptions. Not an execution-guaranteed option price."
+        },
+        "explanation": "Option premium R:R estimated via signed Delta (+0.547) and Gamma (0.00057) Taylor approximation from Ask \u20b9165.50. IV and Theta held constant."
+      },
+      "entry_price": 24315.85,
+      "stop_loss_price": 24253.17,
+      "target_price": 24339.85,
+      "risk_reward_ratio": 0.38,
+      "risk_reward_str": "1 : 0.38",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "MODELLED_EXPANSION_TARGET",
+      "is_structurally_confirmed": false
+    },
+    "underlying_risk_reward": {
+      "entry_price": 24315.85,
+      "stop_loss_price": 24253.17,
+      "target_price": 24339.85,
+      "risk_points": 62.68,
+      "reward_points": 24.0,
+      "risk_reward_ratio": 0.38,
+      "risk_reward_str": "1 : 0.38",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "MODELLED_EXPANSION_TARGET",
+      "target_source": "atr_1.5_expansion",
+      "is_structurally_confirmed": false,
+      "atr_buffer_applied": 3.2,
+      "target_selection_tier": "TIER_3_FALLBACK_EXPANSION",
+      "has_intermediate_obstacle": false,
+      "obstacle_price": null,
+      "confirmation_status": "CONFIRMED"
+    },
+    "option_premium_risk_reward": {
+      "status": "VALID_ESTIMATE",
+      "reason": "CALCULATED_OPTION_GREEK_APPROXIMATION",
+      "model_classification": "OPTION_GREEK_APPROXIMATION",
+      "contract_symbol": "NIFTY26NOV24300CE",
+      "strike": 24300.0,
+      "option_type": "CE",
+      "option_entry_price": 165.5,
+      "theoretical_option_target": 178.7922,
+      "theoretical_option_stop_loss": 132.3337,
+      "exchange_rounded_target_price": 178.8,
+      "exchange_rounded_stop_loss": 132.35,
+      "exchange_tick_size": 0.05,
+      "option_stop_loss_estimate": 132.35,
+      "option_target_estimate": 178.8,
+      "option_risk_points": 33.15,
+      "option_reward_points": 13.3,
+      "option_risk_reward_ratio": 0.4,
+      "option_risk_reward_str": "1 : 0.40",
+      "signed_delta_applied": 0.547,
+      "delta_applied": 0.547,
+      "gamma_applied": 0.00057,
+      "provenance": {
+        "underlying_spot_price": 24315.85,
+        "spot_source": "multi_timeframe_candle_store_cmp",
+        "spot_timestamp": "2026-11-10T14:05:09.218306+05:30",
+        "instrument_token": "999123",
+        "contract_symbol": "NIFTY26NOV24300CE",
+        "option_type": "CE",
+        "strike": 24300.0,
+        "exact_expiry_date": "2026-11-23",
+        "is_same_day_expiry": false,
+        "implied_volatility": 0.15,
+        "iv_source": "constant_fallback_iv_0.15",
+        "greeks_calculation_timestamp": "2026-11-10T14:05:09.218306+05:30",
+        "time_to_expiry_convention": "ACT/365",
+        "settlement_time_convention": "15:30:00_IST",
+        "time_to_expiry_years": 0.035778,
+        "risk_free_rate": 0.065,
+        "risk_free_rate_source": "ASSUMED_RISK_FREE_RATE_6.5_PERCENT",
+        "model_name": "Black-Scholes-Merton Greek Model (Signed Delta + Second-Order Gamma Taylor Approximation)"
+      },
+      "assumptions": {
+        "model": "Second-order Taylor series Delta/Gamma local approximation",
+        "formula": "\u0394P \u2248 Delta * \u0394S + 0.5 * Gamma * (\u0394S)^2",
+        "signed_delta_convention": "CE: N(d1) > 0 | PE: N(d1) - 1 < 0",
+        "gamma_second_order_contribution": "Positive Gamma contributes a positive second-order term relative to linear Delta projection",
+        "theta_decay": "EXCLUDED",
+        "implied_volatility": "HELD_CONSTANT (Vega = 0)",
+        "entry_quote_basis": "EXECUTABLE_ASK_PRICE",
+        "exit_valuation_basis": "THEORETICAL_MID_PROJECTION (spread decay and slippage excluded)",
+        "tick_size_quotation_floor": "\u20b90.05 minimum tick constraint on exchange (not theoretical fair value)",
+        "transaction_costs": "EXCLUDED (Brokerage, STT, exchange turnover fees, and GST not deducted)",
+        "higher_order_greeks": "TRUNCATED_AT_GAMMA",
+        "greeks_timestamp": "2026-11-10T14:05:09.218306+05:30",
+        "disclaimer": "Positive Gamma contributes a positive second-order term relative to the linear Delta-only projection. Approximation valid only for local price moves under declared assumptions. Not an execution-guaranteed option price."
+      },
+      "explanation": "Option premium R:R estimated via signed Delta (+0.547) and Gamma (0.00057) Taylor approximation from Ask \u20b9165.50. IV and Theta held constant."
+    },
+    "option_contract_tradability": {
+      "contract_symbol": "NIFTY26NOV24300CE",
+      "option_type": "CE",
+      "strike": 24300.0,
+      "expiry_date": "2026-11-23",
+      "lot_size": 65,
+      "instrument_token": "999123",
+      "is_tradable": true,
+      "tradability_status": "TRADABLE_LIQUID",
+      "master_validation_status": "UNVALIDATED_STANDALONE",
+      "is_contract_master_verified": false,
+      "ltp": 165.0,
+      "bid": 164.5,
+      "ask": 165.5,
+      "mid_price": 165.0,
+      "bid_ask_spread": 1.0,
+      "spread_pct": 0.61,
+      "spread_reference": "MID_PRICE",
+      "freshness_status": "FRESH_LIVE_QUOTE",
+      "quote_age_seconds": 0.0,
+      "open_interest": 180000,
+      "daily_volume": 75000,
+      "rejection_reasons": [],
+      "warnings": []
+    },
+    "explanation": "TradeLens AI Opportunity Evaluation for NIFTY 50:\n- Confluence Scores: Bullish = 68.0/100 | Bearish = 5.0/100.\n- Status: NO TRADE.\n- Disqualifying Gate Rejection Reasons:\n  * GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50)."
+  },
+  "bearish_opportunity_evaluation": {
+    "symbol": "NIFTY 50",
+    "timestamp": "2026-11-10T14:05:09.260571",
+    "candidate_direction": "NEUTRAL",
+    "trade_action": "NO_TRADE",
+    "gates_passed": false,
+    "gate_rejection_reasons": [
+      "GATE_1_SQUEEZE_COMPRESSION: Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.",
+      "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 1.21) is below minimum threshold (1 : 1.50)."
+    ],
+    "canonical_eight_gates": {
+      "all_gates_passed": false,
+      "gate_count": 8,
+      "passed_gate_count": 6,
+      "failed_gate_count": 2,
+      "rejection_reasons": [
+        "GATE_1_SQUEEZE_COMPRESSION: Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.",
+        "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 1.21) is below minimum threshold (1 : 1.50)."
+      ],
+      "gate_registry": {
+        "GATE_1_SQUEEZE_COMPRESSION": {
+          "gate_id": "GATE_1_SQUEEZE_COMPRESSION",
+          "gate_name": "Squeeze Compression Gate",
+          "passed": false,
+          "rejection_reason": "Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.",
+          "source_data": {
+            "15m_regime": "VOLATILITY_COMPRESSION",
+            "15m_squeeze_lifecycle": "ACTIVE_COMPRESSION"
+          }
+        },
+        "GATE_2_CONFLICTING_MTF_REGIMES": {
+          "gate_id": "GATE_2_CONFLICTING_MTF_REGIMES",
+          "gate_name": "Conflicting MTF Regimes Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15m_anchor_regime": "VOLATILITY_COMPRESSION",
+            "candidate_direction": "NEUTRAL"
+          }
+        },
+        "GATE_3_HIGH_MUTUAL_CONFLUENCE": {
+          "gate_id": "GATE_3_HIGH_MUTUAL_CONFLUENCE",
+          "gate_name": "High Mutual Confluence Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "bullish_score": 10.0,
+            "bearish_score": 20.0,
+            "threshold": 60.0
+          }
+        },
+        "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA": {
+          "gate_id": "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA",
+          "gate_name": "Feed Gap & Data Quality Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15s_break_quality": "VALID",
+            "15s_struct_quality": null,
+            "1m_break_quality": "VALID",
+            "1m_struct_quality": null,
+            "3m_break_quality": "VALID",
+            "3m_struct_quality": null,
+            "5m_break_quality": "VALID",
+            "5m_struct_quality": null,
+            "15m_break_quality": "VALID",
+            "15m_struct_quality": null
+          }
+        },
+        "GATE_5_UNFAVORABLE_RISK_REWARD": {
+          "gate_id": "GATE_5_UNFAVORABLE_RISK_REWARD",
+          "gate_name": "Unfavorable Risk/Reward Gate",
+          "passed": false,
+          "rejection_reason": "Structural R:R (1 : 1.21) is below minimum threshold (1 : 1.50).",
+          "source_data": {
+            "underlying_risk_reward": 1.21,
+            "min_required": 1.5
+          }
+        },
+        "GATE_6_UNTRADABLE_OPTION_CONTRACT": {
+          "gate_id": "GATE_6_UNTRADABLE_OPTION_CONTRACT",
+          "gate_name": "Untradable Option Contract Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "contract_symbol": "NIFTY26NOV24300PE",
+            "spread_pct": 0.69,
+            "quote_age_seconds": 0.1,
+            "freshness_status": "FRESH_LIVE_QUOTE"
+          }
+        },
+        "GATE_7_INVALID_STRUCTURAL_LEVELS": {
+          "gate_id": "GATE_7_INVALID_STRUCTURAL_LEVELS",
+          "gate_name": "Invalid Structural Levels Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "entry_price": 24417.45,
+            "stop_loss_price": 24383.29,
+            "target_price": 24458.68
+          }
+        },
+        "GATE_8_DEVELOPING_UNCONFIRMED_BAR": {
+          "gate_id": "GATE_8_DEVELOPING_UNCONFIRMED_BAR",
+          "gate_name": "Developing Unconfirmed Bar Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "setup_depends_on_developing_bar": false,
+            "is_candle_closed": true,
+            "candidate_depends_on_unclosed": false
+          }
+        }
+      }
+    },
+    "confirmation_status": "CONFIRMED",
+    "bullish_assessment": {
+      "direction": "BULLISH",
+      "total_score": 10.0,
+      "quality_tier": "TIER_3_WEAK",
+      "is_qualified": false,
+      "category_scores": {
+        "macro_context_trend": 0.0,
+        "intermediate_structure_momentum": 10.0,
+        "volatility_value_location": 0.0,
+        "divergence_timing": 0.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 8.0,
+            "capped": 0.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "MOMENTUM": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 0.0,
+            "ceiling": 20.0,
+            "capped": 0.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "Strong Bullish ADX (38.7 >= 25.0) with +DI > -DI.",
+        "RSI(14) = 63.1 in healthy bullish expansion zone (50-72)."
+      ],
+      "opposing_factors": [
+        "Both 15m and 5m structures are in opposing state: BEARISH.",
+        "Squeeze ON: Volatility is compressing inside bands."
+      ]
+    },
+    "bearish_assessment": {
+      "direction": "BEARISH",
+      "total_score": 20.0,
+      "quality_tier": "TIER_3_WEAK",
+      "is_qualified": false,
+      "category_scores": {
+        "macro_context_trend": 15.0,
+        "intermediate_structure_momentum": 0.0,
+        "volatility_value_location": 0.0,
+        "divergence_timing": 5.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 15.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 8.0,
+            "capped": 0.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "MOMENTUM": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 5.0,
+            "ceiling": 20.0,
+            "capped": 5.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "Macro swing structure confirmed BEARISH on both 15m and 5m.",
+        "15s execution timeframe structure aligned: BEARISH."
+      ],
+      "opposing_factors": [
+        "ADX = 38.7 is strong but DI directional spread opposes setup.",
+        "RSI(14) = 63.1 is above 55 (bullish momentum dominance).",
+        "Squeeze ON: Volatility is compressing inside bands."
+      ]
+    },
+    "structural_trade_levels": {
+      "direction": "BULLISH",
+      "underlying_risk_reward": {
+        "entry_price": 24417.45,
+        "stop_loss_price": 24383.29,
+        "target_price": 24458.68,
+        "risk_points": 34.16,
+        "reward_points": 41.23,
+        "risk_reward_ratio": 1.21,
+        "risk_reward_str": "1 : 1.21",
+        "is_valid_levels": true,
+        "passes_minimum_rr": false,
+        "target_type": "STRUCTURAL_TARGET_CONFIRMED",
+        "target_source": "5m_nearest_swing_high",
+        "is_structurally_confirmed": true,
+        "atr_buffer_applied": 3.2,
+        "target_selection_tier": "TIER_1_INTERMEDIATE_5M",
+        "has_intermediate_obstacle": false,
+        "obstacle_price": null,
+        "confirmation_status": "CONFIRMED"
+      },
+      "option_premium_risk_reward": {
+        "status": "UNAVAILABLE",
+        "reason": "OPTION_QUOTE_NOT_EVALUATED",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": null,
+        "strike": null,
+        "option_type": null,
+        "option_entry_price": null,
+        "option_stop_loss_estimate": null,
+        "option_target_estimate": null,
+        "option_risk_points": null,
+        "option_reward_points": null,
+        "option_risk_reward_ratio": null,
+        "option_risk_reward_str": "UNAVAILABLE",
+        "signed_delta_applied": null,
+        "delta_applied": null,
+        "gamma_applied": null,
+        "provenance": null,
+        "assumptions": null,
+        "explanation": "Option premium risk/reward is UNAVAILABLE: Option expected returns require verified delta/IV models and cannot be fabricated from underlying points."
+      },
+      "option_risk_reward": {
+        "status": "UNAVAILABLE",
+        "reason": "OPTION_QUOTE_NOT_EVALUATED",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": null,
+        "strike": null,
+        "option_type": null,
+        "option_entry_price": null,
+        "option_stop_loss_estimate": null,
+        "option_target_estimate": null,
+        "option_risk_points": null,
+        "option_reward_points": null,
+        "option_risk_reward_ratio": null,
+        "option_risk_reward_str": "UNAVAILABLE",
+        "signed_delta_applied": null,
+        "delta_applied": null,
+        "gamma_applied": null,
+        "provenance": null,
+        "assumptions": null,
+        "explanation": "Option premium risk/reward is UNAVAILABLE: Option expected returns require verified delta/IV models and cannot be fabricated from underlying points."
+      },
+      "entry_price": 24417.45,
+      "stop_loss_price": 24383.29,
+      "target_price": 24458.68,
+      "risk_reward_ratio": 1.21,
+      "risk_reward_str": "1 : 1.21",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "STRUCTURAL_TARGET_CONFIRMED",
+      "is_structurally_confirmed": true
+    },
+    "underlying_risk_reward": {
+      "entry_price": 24417.45,
+      "stop_loss_price": 24383.29,
+      "target_price": 24458.68,
+      "risk_points": 34.16,
+      "reward_points": 41.23,
+      "risk_reward_ratio": 1.21,
+      "risk_reward_str": "1 : 1.21",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "STRUCTURAL_TARGET_CONFIRMED",
+      "target_source": "5m_nearest_swing_high",
+      "is_structurally_confirmed": true,
+      "atr_buffer_applied": 3.2,
+      "target_selection_tier": "TIER_1_INTERMEDIATE_5M",
+      "has_intermediate_obstacle": false,
+      "obstacle_price": null,
+      "confirmation_status": "CONFIRMED"
+    },
+    "option_premium_risk_reward": {
+      "status": "UNAVAILABLE",
+      "reason": "OPTION_QUOTE_NOT_EVALUATED",
+      "model_classification": "OPTION_GREEK_APPROXIMATION",
+      "contract_symbol": null,
+      "strike": null,
+      "option_type": null,
+      "option_entry_price": null,
+      "option_stop_loss_estimate": null,
+      "option_target_estimate": null,
+      "option_risk_points": null,
+      "option_reward_points": null,
+      "option_risk_reward_ratio": null,
+      "option_risk_reward_str": "UNAVAILABLE",
+      "signed_delta_applied": null,
+      "delta_applied": null,
+      "gamma_applied": null,
+      "provenance": null,
+      "assumptions": null,
+      "explanation": "Option premium risk/reward is UNAVAILABLE: Option expected returns require verified delta/IV models and cannot be fabricated from underlying points."
+    },
+    "option_contract_tradability": {
+      "contract_symbol": "NIFTY26NOV24300PE",
+      "option_type": "PE",
+      "strike": 24300.0,
+      "expiry_date": "2026-11-23",
+      "lot_size": 65,
+      "instrument_token": "999124",
+      "is_tradable": true,
+      "tradability_status": "TRADABLE_LIQUID",
+      "master_validation_status": "UNVALIDATED_STANDALONE",
+      "is_contract_master_verified": false,
+      "ltp": 145.0,
+      "bid": 144.5,
+      "ask": 145.5,
+      "mid_price": 145.0,
+      "bid_ask_spread": 1.0,
+      "spread_pct": 0.69,
+      "spread_reference": "MID_PRICE",
+      "freshness_status": "FRESH_LIVE_QUOTE",
+      "quote_age_seconds": 0.1,
+      "open_interest": 160000,
+      "daily_volume": 62000,
+      "rejection_reasons": [],
+      "warnings": []
+    },
+    "explanation": "TradeLens AI Opportunity Evaluation for NIFTY 50:\n- Confluence Scores: Bullish = 10.0/100 | Bearish = 20.0/100.\n- Status: NO TRADE.\n- Disqualifying Gate Rejection Reasons:\n  * GATE_1_SQUEEZE_COMPRESSION: Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.\n  * GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 1.21) is below minimum threshold (1 : 1.50)."
+  },
+  "squeeze_compression_gate_no_trade": {
+    "symbol": "NIFTY 50",
+    "timestamp": "2026-11-10T14:05:09.288417",
+    "candidate_direction": "NEUTRAL",
+    "trade_action": "NO_TRADE",
+    "gates_passed": false,
+    "gate_rejection_reasons": [
+      "GATE_1_SQUEEZE_COMPRESSION: Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.",
+      "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.82) is below minimum threshold (1 : 1.50)."
+    ],
+    "canonical_eight_gates": {
+      "all_gates_passed": false,
+      "gate_count": 8,
+      "passed_gate_count": 6,
+      "failed_gate_count": 2,
+      "rejection_reasons": [
+        "GATE_1_SQUEEZE_COMPRESSION: Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.",
+        "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.82) is below minimum threshold (1 : 1.50)."
+      ],
+      "gate_registry": {
+        "GATE_1_SQUEEZE_COMPRESSION": {
+          "gate_id": "GATE_1_SQUEEZE_COMPRESSION",
+          "gate_name": "Squeeze Compression Gate",
+          "passed": false,
+          "rejection_reason": "Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.",
+          "source_data": {
+            "15m_regime": "VOLATILITY_COMPRESSION",
+            "15m_squeeze_lifecycle": "ACTIVE_COMPRESSION"
+          }
+        },
+        "GATE_2_CONFLICTING_MTF_REGIMES": {
+          "gate_id": "GATE_2_CONFLICTING_MTF_REGIMES",
+          "gate_name": "Conflicting MTF Regimes Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15m_anchor_regime": "VOLATILITY_COMPRESSION",
+            "candidate_direction": "NEUTRAL"
+          }
+        },
+        "GATE_3_HIGH_MUTUAL_CONFLUENCE": {
+          "gate_id": "GATE_3_HIGH_MUTUAL_CONFLUENCE",
+          "gate_name": "High Mutual Confluence Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "bullish_score": 0.0,
+            "bearish_score": 10.0,
+            "threshold": 60.0
+          }
+        },
+        "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA": {
+          "gate_id": "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA",
+          "gate_name": "Feed Gap & Data Quality Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15s_break_quality": "VALID",
+            "15s_struct_quality": null,
+            "1m_break_quality": "VALID",
+            "1m_struct_quality": null,
+            "3m_break_quality": "VALID",
+            "3m_struct_quality": null,
+            "5m_break_quality": "VALID",
+            "5m_struct_quality": null,
+            "15m_break_quality": "VALID",
+            "15m_struct_quality": null
+          }
+        },
+        "GATE_5_UNFAVORABLE_RISK_REWARD": {
+          "gate_id": "GATE_5_UNFAVORABLE_RISK_REWARD",
+          "gate_name": "Unfavorable Risk/Reward Gate",
+          "passed": false,
+          "rejection_reason": "Structural R:R (1 : 0.82) is below minimum threshold (1 : 1.50).",
+          "source_data": {
+            "underlying_risk_reward": 0.82,
+            "min_required": 1.5
+          }
+        },
+        "GATE_6_UNTRADABLE_OPTION_CONTRACT": {
+          "gate_id": "GATE_6_UNTRADABLE_OPTION_CONTRACT",
+          "gate_name": "Untradable Option Contract Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "contract_symbol": "NIFTY26NOV24300CE",
+            "spread_pct": 0.61,
+            "quote_age_seconds": 0.1,
+            "freshness_status": "FRESH_LIVE_QUOTE"
+          }
+        },
+        "GATE_7_INVALID_STRUCTURAL_LEVELS": {
+          "gate_id": "GATE_7_INVALID_STRUCTURAL_LEVELS",
+          "gate_name": "Invalid Structural Levels Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "entry_price": 24300.06,
+            "stop_loss_price": 24297.1,
+            "target_price": 24302.5
+          }
+        },
+        "GATE_8_DEVELOPING_UNCONFIRMED_BAR": {
+          "gate_id": "GATE_8_DEVELOPING_UNCONFIRMED_BAR",
+          "gate_name": "Developing Unconfirmed Bar Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "setup_depends_on_developing_bar": false,
+            "is_candle_closed": true,
+            "candidate_depends_on_unclosed": false
+          }
+        }
+      }
+    },
+    "confirmation_status": "CONFIRMED",
+    "bullish_assessment": {
+      "direction": "BULLISH",
+      "total_score": 0.0,
+      "quality_tier": "TIER_3_WEAK",
+      "is_qualified": false,
+      "category_scores": {
+        "macro_context_trend": 0.0,
+        "intermediate_structure_momentum": 0.0,
+        "volatility_value_location": 0.0,
+        "divergence_timing": 0.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 8.0,
+            "capped": 0.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "MOMENTUM": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 0.0,
+            "ceiling": 20.0,
+            "capped": 0.0
+          }
+        }
+      },
+      "supporting_factors": [],
+      "opposing_factors": [
+        "ADX = 30.5 is strong but DI directional spread opposes setup.",
+        "RSI(14) = 38.7 is below 45 (bearish momentum dominance).",
+        "Squeeze ON: Volatility is compressing inside bands."
+      ]
+    },
+    "bearish_assessment": {
+      "direction": "BEARISH",
+      "total_score": 10.0,
+      "quality_tier": "TIER_3_WEAK",
+      "is_qualified": false,
+      "category_scores": {
+        "macro_context_trend": 0.0,
+        "intermediate_structure_momentum": 10.0,
+        "volatility_value_location": 0.0,
+        "divergence_timing": 0.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 8.0,
+            "capped": 0.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "MOMENTUM": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 0.0,
+            "ceiling": 20.0,
+            "capped": 0.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "Strong Bearish ADX (30.5 >= 25.0) with -DI > +DI.",
+        "RSI(14) = 38.7 in healthy bearish expansion zone (28-50)."
+      ],
+      "opposing_factors": [
+        "Squeeze ON: Volatility is compressing inside bands."
+      ]
+    },
+    "structural_trade_levels": {
+      "direction": "BULLISH",
+      "underlying_risk_reward": {
+        "entry_price": 24300.06,
+        "stop_loss_price": 24297.1,
+        "target_price": 24302.5,
+        "risk_points": 2.96,
+        "reward_points": 2.44,
+        "risk_reward_ratio": 0.82,
+        "risk_reward_str": "1 : 0.82",
+        "is_valid_levels": true,
+        "passes_minimum_rr": false,
+        "target_type": "STRUCTURAL_TARGET_CONFIRMED",
+        "target_source": "5m_nearest_swing_high",
+        "is_structurally_confirmed": true,
+        "atr_buffer_applied": 0.4,
+        "target_selection_tier": "TIER_1_INTERMEDIATE_5M",
+        "has_intermediate_obstacle": false,
+        "obstacle_price": null,
+        "confirmation_status": "CONFIRMED"
+      },
+      "option_premium_risk_reward": {
+        "status": "VALID_ESTIMATE",
+        "reason": "CALCULATED_OPTION_GREEK_APPROXIMATION",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": "NIFTY26NOV24300CE",
+        "strike": 24300.0,
+        "option_type": "CE",
+        "option_entry_price": 165.5,
+        "theoretical_option_target": 166.8144,
+        "theoretical_option_stop_loss": 163.9101,
+        "exchange_rounded_target_price": 166.8,
+        "exchange_rounded_stop_loss": 163.9,
+        "exchange_tick_size": 0.05,
+        "option_stop_loss_estimate": 163.9,
+        "option_target_estimate": 166.8,
+        "option_risk_points": 1.6,
+        "option_reward_points": 1.3,
+        "option_risk_reward_ratio": 0.81,
+        "option_risk_reward_str": "1 : 0.81",
+        "signed_delta_applied": 0.538,
+        "delta_applied": 0.538,
+        "gamma_applied": 0.00058,
+        "provenance": {
+          "underlying_spot_price": 24300.06,
+          "spot_source": "multi_timeframe_candle_store_cmp",
+          "spot_timestamp": "2026-11-10T14:05:09.288374+05:30",
+          "instrument_token": "999123",
+          "contract_symbol": "NIFTY26NOV24300CE",
+          "option_type": "CE",
+          "strike": 24300.0,
+          "exact_expiry_date": "2026-11-23",
+          "is_same_day_expiry": false,
+          "implied_volatility": 0.15,
+          "iv_source": "constant_fallback_iv_0.15",
+          "greeks_calculation_timestamp": "2026-11-10T14:05:09.288374+05:30",
+          "time_to_expiry_convention": "ACT/365",
+          "settlement_time_convention": "15:30:00_IST",
+          "time_to_expiry_years": 0.035778,
+          "risk_free_rate": 0.065,
+          "risk_free_rate_source": "ASSUMED_RISK_FREE_RATE_6.5_PERCENT",
+          "model_name": "Black-Scholes-Merton Greek Model (Signed Delta + Second-Order Gamma Taylor Approximation)"
+        },
+        "assumptions": {
+          "model": "Second-order Taylor series Delta/Gamma local approximation",
+          "formula": "\u0394P \u2248 Delta * \u0394S + 0.5 * Gamma * (\u0394S)^2",
+          "signed_delta_convention": "CE: N(d1) > 0 | PE: N(d1) - 1 < 0",
+          "gamma_second_order_contribution": "Positive Gamma contributes a positive second-order term relative to linear Delta projection",
+          "theta_decay": "EXCLUDED",
+          "implied_volatility": "HELD_CONSTANT (Vega = 0)",
+          "entry_quote_basis": "EXECUTABLE_ASK_PRICE",
+          "exit_valuation_basis": "THEORETICAL_MID_PROJECTION (spread decay and slippage excluded)",
+          "tick_size_quotation_floor": "\u20b90.05 minimum tick constraint on exchange (not theoretical fair value)",
+          "transaction_costs": "EXCLUDED (Brokerage, STT, exchange turnover fees, and GST not deducted)",
+          "higher_order_greeks": "TRUNCATED_AT_GAMMA",
+          "greeks_timestamp": "2026-11-10T14:05:09.288374+05:30",
+          "disclaimer": "Positive Gamma contributes a positive second-order term relative to the linear Delta-only projection. Approximation valid only for local price moves under declared assumptions. Not an execution-guaranteed option price."
+        },
+        "explanation": "Option premium R:R estimated via signed Delta (+0.538) and Gamma (0.00058) Taylor approximation from Ask \u20b9165.50. IV and Theta held constant."
+      },
+      "option_risk_reward": {
+        "status": "VALID_ESTIMATE",
+        "reason": "CALCULATED_OPTION_GREEK_APPROXIMATION",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": "NIFTY26NOV24300CE",
+        "strike": 24300.0,
+        "option_type": "CE",
+        "option_entry_price": 165.5,
+        "theoretical_option_target": 166.8144,
+        "theoretical_option_stop_loss": 163.9101,
+        "exchange_rounded_target_price": 166.8,
+        "exchange_rounded_stop_loss": 163.9,
+        "exchange_tick_size": 0.05,
+        "option_stop_loss_estimate": 163.9,
+        "option_target_estimate": 166.8,
+        "option_risk_points": 1.6,
+        "option_reward_points": 1.3,
+        "option_risk_reward_ratio": 0.81,
+        "option_risk_reward_str": "1 : 0.81",
+        "signed_delta_applied": 0.538,
+        "delta_applied": 0.538,
+        "gamma_applied": 0.00058,
+        "provenance": {
+          "underlying_spot_price": 24300.06,
+          "spot_source": "multi_timeframe_candle_store_cmp",
+          "spot_timestamp": "2026-11-10T14:05:09.288374+05:30",
+          "instrument_token": "999123",
+          "contract_symbol": "NIFTY26NOV24300CE",
+          "option_type": "CE",
+          "strike": 24300.0,
+          "exact_expiry_date": "2026-11-23",
+          "is_same_day_expiry": false,
+          "implied_volatility": 0.15,
+          "iv_source": "constant_fallback_iv_0.15",
+          "greeks_calculation_timestamp": "2026-11-10T14:05:09.288374+05:30",
+          "time_to_expiry_convention": "ACT/365",
+          "settlement_time_convention": "15:30:00_IST",
+          "time_to_expiry_years": 0.035778,
+          "risk_free_rate": 0.065,
+          "risk_free_rate_source": "ASSUMED_RISK_FREE_RATE_6.5_PERCENT",
+          "model_name": "Black-Scholes-Merton Greek Model (Signed Delta + Second-Order Gamma Taylor Approximation)"
+        },
+        "assumptions": {
+          "model": "Second-order Taylor series Delta/Gamma local approximation",
+          "formula": "\u0394P \u2248 Delta * \u0394S + 0.5 * Gamma * (\u0394S)^2",
+          "signed_delta_convention": "CE: N(d1) > 0 | PE: N(d1) - 1 < 0",
+          "gamma_second_order_contribution": "Positive Gamma contributes a positive second-order term relative to linear Delta projection",
+          "theta_decay": "EXCLUDED",
+          "implied_volatility": "HELD_CONSTANT (Vega = 0)",
+          "entry_quote_basis": "EXECUTABLE_ASK_PRICE",
+          "exit_valuation_basis": "THEORETICAL_MID_PROJECTION (spread decay and slippage excluded)",
+          "tick_size_quotation_floor": "\u20b90.05 minimum tick constraint on exchange (not theoretical fair value)",
+          "transaction_costs": "EXCLUDED (Brokerage, STT, exchange turnover fees, and GST not deducted)",
+          "higher_order_greeks": "TRUNCATED_AT_GAMMA",
+          "greeks_timestamp": "2026-11-10T14:05:09.288374+05:30",
+          "disclaimer": "Positive Gamma contributes a positive second-order term relative to the linear Delta-only projection. Approximation valid only for local price moves under declared assumptions. Not an execution-guaranteed option price."
+        },
+        "explanation": "Option premium R:R estimated via signed Delta (+0.538) and Gamma (0.00058) Taylor approximation from Ask \u20b9165.50. IV and Theta held constant."
+      },
+      "entry_price": 24300.06,
+      "stop_loss_price": 24297.1,
+      "target_price": 24302.5,
+      "risk_reward_ratio": 0.82,
+      "risk_reward_str": "1 : 0.82",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "STRUCTURAL_TARGET_CONFIRMED",
+      "is_structurally_confirmed": true
+    },
+    "underlying_risk_reward": {
+      "entry_price": 24300.06,
+      "stop_loss_price": 24297.1,
+      "target_price": 24302.5,
+      "risk_points": 2.96,
+      "reward_points": 2.44,
+      "risk_reward_ratio": 0.82,
+      "risk_reward_str": "1 : 0.82",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "STRUCTURAL_TARGET_CONFIRMED",
+      "target_source": "5m_nearest_swing_high",
+      "is_structurally_confirmed": true,
+      "atr_buffer_applied": 0.4,
+      "target_selection_tier": "TIER_1_INTERMEDIATE_5M",
+      "has_intermediate_obstacle": false,
+      "obstacle_price": null,
+      "confirmation_status": "CONFIRMED"
+    },
+    "option_premium_risk_reward": {
+      "status": "VALID_ESTIMATE",
+      "reason": "CALCULATED_OPTION_GREEK_APPROXIMATION",
+      "model_classification": "OPTION_GREEK_APPROXIMATION",
+      "contract_symbol": "NIFTY26NOV24300CE",
+      "strike": 24300.0,
+      "option_type": "CE",
+      "option_entry_price": 165.5,
+      "theoretical_option_target": 166.8144,
+      "theoretical_option_stop_loss": 163.9101,
+      "exchange_rounded_target_price": 166.8,
+      "exchange_rounded_stop_loss": 163.9,
+      "exchange_tick_size": 0.05,
+      "option_stop_loss_estimate": 163.9,
+      "option_target_estimate": 166.8,
+      "option_risk_points": 1.6,
+      "option_reward_points": 1.3,
+      "option_risk_reward_ratio": 0.81,
+      "option_risk_reward_str": "1 : 0.81",
+      "signed_delta_applied": 0.538,
+      "delta_applied": 0.538,
+      "gamma_applied": 0.00058,
+      "provenance": {
+        "underlying_spot_price": 24300.06,
+        "spot_source": "multi_timeframe_candle_store_cmp",
+        "spot_timestamp": "2026-11-10T14:05:09.288374+05:30",
+        "instrument_token": "999123",
+        "contract_symbol": "NIFTY26NOV24300CE",
+        "option_type": "CE",
+        "strike": 24300.0,
+        "exact_expiry_date": "2026-11-23",
+        "is_same_day_expiry": false,
+        "implied_volatility": 0.15,
+        "iv_source": "constant_fallback_iv_0.15",
+        "greeks_calculation_timestamp": "2026-11-10T14:05:09.288374+05:30",
+        "time_to_expiry_convention": "ACT/365",
+        "settlement_time_convention": "15:30:00_IST",
+        "time_to_expiry_years": 0.035778,
+        "risk_free_rate": 0.065,
+        "risk_free_rate_source": "ASSUMED_RISK_FREE_RATE_6.5_PERCENT",
+        "model_name": "Black-Scholes-Merton Greek Model (Signed Delta + Second-Order Gamma Taylor Approximation)"
+      },
+      "assumptions": {
+        "model": "Second-order Taylor series Delta/Gamma local approximation",
+        "formula": "\u0394P \u2248 Delta * \u0394S + 0.5 * Gamma * (\u0394S)^2",
+        "signed_delta_convention": "CE: N(d1) > 0 | PE: N(d1) - 1 < 0",
+        "gamma_second_order_contribution": "Positive Gamma contributes a positive second-order term relative to linear Delta projection",
+        "theta_decay": "EXCLUDED",
+        "implied_volatility": "HELD_CONSTANT (Vega = 0)",
+        "entry_quote_basis": "EXECUTABLE_ASK_PRICE",
+        "exit_valuation_basis": "THEORETICAL_MID_PROJECTION (spread decay and slippage excluded)",
+        "tick_size_quotation_floor": "\u20b90.05 minimum tick constraint on exchange (not theoretical fair value)",
+        "transaction_costs": "EXCLUDED (Brokerage, STT, exchange turnover fees, and GST not deducted)",
+        "higher_order_greeks": "TRUNCATED_AT_GAMMA",
+        "greeks_timestamp": "2026-11-10T14:05:09.288374+05:30",
+        "disclaimer": "Positive Gamma contributes a positive second-order term relative to the linear Delta-only projection. Approximation valid only for local price moves under declared assumptions. Not an execution-guaranteed option price."
+      },
+      "explanation": "Option premium R:R estimated via signed Delta (+0.538) and Gamma (0.00058) Taylor approximation from Ask \u20b9165.50. IV and Theta held constant."
+    },
+    "option_contract_tradability": {
+      "contract_symbol": "NIFTY26NOV24300CE",
+      "option_type": "CE",
+      "strike": 24300.0,
+      "expiry_date": "2026-11-23",
+      "lot_size": 65,
+      "instrument_token": "999123",
+      "is_tradable": true,
+      "tradability_status": "TRADABLE_LIQUID",
+      "master_validation_status": "UNVALIDATED_STANDALONE",
+      "is_contract_master_verified": false,
+      "ltp": 165.0,
+      "bid": 164.5,
+      "ask": 165.5,
+      "mid_price": 165.0,
+      "bid_ask_spread": 1.0,
+      "spread_pct": 0.61,
+      "spread_reference": "MID_PRICE",
+      "freshness_status": "FRESH_LIVE_QUOTE",
+      "quote_age_seconds": 0.1,
+      "open_interest": 180000,
+      "daily_volume": 75000,
+      "rejection_reasons": [],
+      "warnings": []
+    },
+    "explanation": "TradeLens AI Opportunity Evaluation for NIFTY 50:\n- Confluence Scores: Bullish = 0.0/100 | Bearish = 10.0/100.\n- Status: NO TRADE.\n- Disqualifying Gate Rejection Reasons:\n  * GATE_1_SQUEEZE_COMPRESSION: Market is in ACTIVE_COMPRESSION (Carter's Squeeze ON) on 15m. Directional trading prohibited while energy coils.\n  * GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.82) is below minimum threshold (1 : 1.50)."
+  },
+  "illiquid_option_gate_no_trade": {
+    "symbol": "NIFTY 50",
+    "timestamp": "2026-11-10T14:05:09.329710",
+    "candidate_direction": "BULLISH",
+    "trade_action": "NO_TRADE",
+    "gates_passed": false,
+    "gate_rejection_reasons": [
+      "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50).",
+      "GATE_6_UNTRADABLE_OPTION_CONTRACT: Excessive bid-ask spread: 40.0% (\u20b96.0) exceeds threshold (4.0%) based on Mid-Price \u20b915.0.; Open Interest (5,000) below liquidity threshold (50,000).; Daily volume (400) below liquidity threshold (5,000)."
+    ],
+    "canonical_eight_gates": {
+      "all_gates_passed": false,
+      "gate_count": 8,
+      "passed_gate_count": 6,
+      "failed_gate_count": 2,
+      "rejection_reasons": [
+        "GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50).",
+        "GATE_6_UNTRADABLE_OPTION_CONTRACT: Excessive bid-ask spread: 40.0% (\u20b96.0) exceeds threshold (4.0%) based on Mid-Price \u20b915.0.; Open Interest (5,000) below liquidity threshold (50,000).; Daily volume (400) below liquidity threshold (5,000)."
+      ],
+      "gate_registry": {
+        "GATE_1_SQUEEZE_COMPRESSION": {
+          "gate_id": "GATE_1_SQUEEZE_COMPRESSION",
+          "gate_name": "Squeeze Compression Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15m_regime": "TRENDING_BULLISH",
+            "15m_squeeze_lifecycle": "NO_SQUEEZE",
+            "5m_regime": "TRENDING_BULLISH",
+            "5m_squeeze_lifecycle": "NO_SQUEEZE"
+          }
+        },
+        "GATE_2_CONFLICTING_MTF_REGIMES": {
+          "gate_id": "GATE_2_CONFLICTING_MTF_REGIMES",
+          "gate_name": "Conflicting MTF Regimes Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15m_anchor_regime": "TRENDING_BULLISH",
+            "candidate_direction": "BULLISH"
+          }
+        },
+        "GATE_3_HIGH_MUTUAL_CONFLUENCE": {
+          "gate_id": "GATE_3_HIGH_MUTUAL_CONFLUENCE",
+          "gate_name": "High Mutual Confluence Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "bullish_score": 68.0,
+            "bearish_score": 5.0,
+            "threshold": 60.0
+          }
+        },
+        "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA": {
+          "gate_id": "GATE_4_FEED_GAP_OR_UNRELIABLE_DATA",
+          "gate_name": "Feed Gap & Data Quality Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "15s_break_quality": "VALID",
+            "15s_struct_quality": null,
+            "1m_break_quality": "VALID",
+            "1m_struct_quality": null,
+            "3m_break_quality": "VALID",
+            "3m_struct_quality": null,
+            "5m_break_quality": "VALID",
+            "5m_struct_quality": null,
+            "15m_break_quality": "VALID",
+            "15m_struct_quality": null
+          }
+        },
+        "GATE_5_UNFAVORABLE_RISK_REWARD": {
+          "gate_id": "GATE_5_UNFAVORABLE_RISK_REWARD",
+          "gate_name": "Unfavorable Risk/Reward Gate",
+          "passed": false,
+          "rejection_reason": "Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50).",
+          "source_data": {
+            "underlying_risk_reward": 0.38,
+            "min_required": 1.5
+          }
+        },
+        "GATE_6_UNTRADABLE_OPTION_CONTRACT": {
+          "gate_id": "GATE_6_UNTRADABLE_OPTION_CONTRACT",
+          "gate_name": "Untradable Option Contract Gate",
+          "passed": false,
+          "rejection_reason": "Excessive bid-ask spread: 40.0% (\u20b96.0) exceeds threshold (4.0%) based on Mid-Price \u20b915.0.; Open Interest (5,000) below liquidity threshold (50,000).; Daily volume (400) below liquidity threshold (5,000).",
+          "source_data": {
+            "contract_symbol": "NIFTY26NOV25000CE",
+            "spread_pct": 40.0,
+            "quote_age_seconds": 0.2,
+            "freshness_status": "FRESH_LIVE_QUOTE"
+          }
+        },
+        "GATE_7_INVALID_STRUCTURAL_LEVELS": {
+          "gate_id": "GATE_7_INVALID_STRUCTURAL_LEVELS",
+          "gate_name": "Invalid Structural Levels Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "entry_price": 24315.85,
+            "stop_loss_price": 24253.17,
+            "target_price": 24339.85
+          }
+        },
+        "GATE_8_DEVELOPING_UNCONFIRMED_BAR": {
+          "gate_id": "GATE_8_DEVELOPING_UNCONFIRMED_BAR",
+          "gate_name": "Developing Unconfirmed Bar Gate",
+          "passed": true,
+          "rejection_reason": null,
+          "source_data": {
+            "setup_depends_on_developing_bar": false,
+            "is_candle_closed": true,
+            "candidate_depends_on_unclosed": false
+          }
+        }
+      }
+    },
+    "confirmation_status": "CONFIRMED",
+    "bullish_assessment": {
+      "direction": "BULLISH",
+      "total_score": 68.0,
+      "quality_tier": "TIER_2_MODERATE",
+      "is_qualified": true,
+      "category_scores": {
+        "macro_context_trend": 30.0,
+        "intermediate_structure_momentum": 13.0,
+        "volatility_value_location": 5.0,
+        "divergence_timing": 20.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": 20.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 15.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 8.0,
+            "ceiling": 8.0,
+            "capped": 8.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "MOMENTUM": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 5.0,
+            "ceiling": 10.0,
+            "capped": 5.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 15.0,
+            "ceiling": 15.0,
+            "capped": 15.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 5.0,
+            "ceiling": 5.0,
+            "capped": 5.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 20.0,
+            "ceiling": 20.0,
+            "capped": 20.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "15m Macro Regime is confirmed TRENDING_BULLISH.",
+        "5m Macro Regime is confirmed TRENDING_BULLISH.",
+        "Macro swing structure confirmed BULLISH on both 15m and 5m.",
+        "Moving Average Stack is BULLISH_STACK on 1m/3m.",
+        "Strong Bullish ADX (46.5 >= 25.0) with +DI > -DI.",
+        "Normal volatility expansion (no compression constraint).",
+        "Confirmed Divergence catalyst: HIDDEN_BULLISH on RSI.",
+        "Divergence invalidation level is untouched.",
+        "15s execution timeframe structure aligned: BULLISH."
+      ],
+      "opposing_factors": [
+        "RSI(14) = 87.9 is overbought (> 75). Risk of mean reversion."
+      ]
+    },
+    "bearish_assessment": {
+      "direction": "BEARISH",
+      "total_score": 5.0,
+      "quality_tier": "TIER_3_WEAK",
+      "is_qualified": false,
+      "category_scores": {
+        "macro_context_trend": 0.0,
+        "intermediate_structure_momentum": 0.0,
+        "volatility_value_location": 5.0,
+        "divergence_timing": 0.0
+      },
+      "evidence_family_breakdown": {
+        "category_1": {
+          "TREND_ALIGNMENT": {
+            "raw": -20.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          }
+        },
+        "category_2": {
+          "MARKET_STRUCTURE": {
+            "raw": 0.0,
+            "ceiling": 12.0,
+            "capped": 0.0
+          },
+          "TREND_ALIGNMENT": {
+            "raw": 0.0,
+            "ceiling": 8.0,
+            "capped": 0.0
+          },
+          "DIRECTIONAL_STRENGTH": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "MOMENTUM": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          }
+        },
+        "category_3": {
+          "VALUE_LOCATION": {
+            "raw": 0.0,
+            "ceiling": 10.0,
+            "capped": 0.0
+          },
+          "VOLATILITY": {
+            "raw": 5.0,
+            "ceiling": 10.0,
+            "capped": 5.0
+          }
+        },
+        "category_4": {
+          "DIVERGENCE": {
+            "raw": 0.0,
+            "ceiling": 15.0,
+            "capped": 0.0
+          },
+          "EXECUTION_TIMING": {
+            "raw": 0.0,
+            "ceiling": 5.0,
+            "capped": 0.0
+          },
+          "DIVERGENCE_TIMING": {
+            "raw": 0.0,
+            "ceiling": 20.0,
+            "capped": 0.0
+          }
+        }
+      },
+      "supporting_factors": [
+        "Normal volatility expansion (no compression constraint)."
+      ],
+      "opposing_factors": [
+        "15m Macro Regime directly opposes direction: TRENDING_BULLISH (-10 penalty).",
+        "5m Macro Regime directly opposes direction: TRENDING_BULLISH (-10 penalty).",
+        "Both 15m and 5m structures are in opposing state: BULLISH.",
+        "Moving averages on 1m and 3m are in opposing stack: BULLISH_STACK.",
+        "ADX = 46.5 is strong but DI directional spread opposes setup.",
+        "RSI(14) = 87.9 is above 55 (bullish momentum dominance).",
+        "Opposing HIDDEN_BULLISH on RSI is active.",
+        "Opposing HIDDEN_BULLISH on MACD is active."
+      ]
+    },
+    "structural_trade_levels": {
+      "direction": "BULLISH",
+      "underlying_risk_reward": {
+        "entry_price": 24315.85,
+        "stop_loss_price": 24253.17,
+        "target_price": 24339.85,
+        "risk_points": 62.68,
+        "reward_points": 24.0,
+        "risk_reward_ratio": 0.38,
+        "risk_reward_str": "1 : 0.38",
+        "is_valid_levels": true,
+        "passes_minimum_rr": false,
+        "target_type": "MODELLED_EXPANSION_TARGET",
+        "target_source": "atr_1.5_expansion",
+        "is_structurally_confirmed": false,
+        "atr_buffer_applied": 3.2,
+        "target_selection_tier": "TIER_3_FALLBACK_EXPANSION",
+        "has_intermediate_obstacle": false,
+        "obstacle_price": null,
+        "confirmation_status": "CONFIRMED"
+      },
+      "option_premium_risk_reward": {
+        "status": "UNAVAILABLE",
+        "reason": "OPTION_QUOTE_NOT_EVALUATED",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": null,
+        "strike": null,
+        "option_type": null,
+        "option_entry_price": null,
+        "option_stop_loss_estimate": null,
+        "option_target_estimate": null,
+        "option_risk_points": null,
+        "option_reward_points": null,
+        "option_risk_reward_ratio": null,
+        "option_risk_reward_str": "UNAVAILABLE",
+        "signed_delta_applied": null,
+        "delta_applied": null,
+        "gamma_applied": null,
+        "provenance": null,
+        "assumptions": null,
+        "explanation": "Option premium risk/reward is UNAVAILABLE: Option expected returns require verified delta/IV models and cannot be fabricated from underlying points."
+      },
+      "option_risk_reward": {
+        "status": "UNAVAILABLE",
+        "reason": "OPTION_QUOTE_NOT_EVALUATED",
+        "model_classification": "OPTION_GREEK_APPROXIMATION",
+        "contract_symbol": null,
+        "strike": null,
+        "option_type": null,
+        "option_entry_price": null,
+        "option_stop_loss_estimate": null,
+        "option_target_estimate": null,
+        "option_risk_points": null,
+        "option_reward_points": null,
+        "option_risk_reward_ratio": null,
+        "option_risk_reward_str": "UNAVAILABLE",
+        "signed_delta_applied": null,
+        "delta_applied": null,
+        "gamma_applied": null,
+        "provenance": null,
+        "assumptions": null,
+        "explanation": "Option premium risk/reward is UNAVAILABLE: Option expected returns require verified delta/IV models and cannot be fabricated from underlying points."
+      },
+      "entry_price": 24315.85,
+      "stop_loss_price": 24253.17,
+      "target_price": 24339.85,
+      "risk_reward_ratio": 0.38,
+      "risk_reward_str": "1 : 0.38",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "MODELLED_EXPANSION_TARGET",
+      "is_structurally_confirmed": false
+    },
+    "underlying_risk_reward": {
+      "entry_price": 24315.85,
+      "stop_loss_price": 24253.17,
+      "target_price": 24339.85,
+      "risk_points": 62.68,
+      "reward_points": 24.0,
+      "risk_reward_ratio": 0.38,
+      "risk_reward_str": "1 : 0.38",
+      "is_valid_levels": true,
+      "passes_minimum_rr": false,
+      "target_type": "MODELLED_EXPANSION_TARGET",
+      "target_source": "atr_1.5_expansion",
+      "is_structurally_confirmed": false,
+      "atr_buffer_applied": 3.2,
+      "target_selection_tier": "TIER_3_FALLBACK_EXPANSION",
+      "has_intermediate_obstacle": false,
+      "obstacle_price": null,
+      "confirmation_status": "CONFIRMED"
+    },
+    "option_premium_risk_reward": {
+      "status": "UNAVAILABLE",
+      "reason": "OPTION_QUOTE_NOT_EVALUATED",
+      "model_classification": "OPTION_GREEK_APPROXIMATION",
+      "contract_symbol": null,
+      "strike": null,
+      "option_type": null,
+      "option_entry_price": null,
+      "option_stop_loss_estimate": null,
+      "option_target_estimate": null,
+      "option_risk_points": null,
+      "option_reward_points": null,
+      "option_risk_reward_ratio": null,
+      "option_risk_reward_str": "UNAVAILABLE",
+      "signed_delta_applied": null,
+      "delta_applied": null,
+      "gamma_applied": null,
+      "provenance": null,
+      "assumptions": null,
+      "explanation": "Option premium risk/reward is UNAVAILABLE: Option expected returns require verified delta/IV models and cannot be fabricated from underlying points."
+    },
+    "option_contract_tradability": {
+      "contract_symbol": "NIFTY26NOV25000CE",
+      "option_type": "CE",
+      "strike": 25000.0,
+      "expiry_date": "2026-11-23",
+      "lot_size": 65,
+      "instrument_token": "999999",
+      "is_tradable": false,
+      "tradability_status": "UNTRADABLE_REJECTED",
+      "master_validation_status": "UNVALIDATED_STANDALONE",
+      "is_contract_master_verified": false,
+      "ltp": 15.0,
+      "bid": 12.0,
+      "ask": 18.0,
+      "mid_price": 15.0,
+      "bid_ask_spread": 6.0,
+      "spread_pct": 40.0,
+      "spread_reference": "MID_PRICE",
+      "freshness_status": "FRESH_LIVE_QUOTE",
+      "quote_age_seconds": 0.2,
+      "open_interest": 5000,
+      "daily_volume": 400,
+      "rejection_reasons": [
+        "Excessive bid-ask spread: 40.0% (\u20b96.0) exceeds threshold (4.0%) based on Mid-Price \u20b915.0.",
+        "Open Interest (5,000) below liquidity threshold (50,000).",
+        "Daily volume (400) below liquidity threshold (5,000)."
+      ],
+      "warnings": []
+    },
+    "explanation": "TradeLens AI Opportunity Evaluation for NIFTY 50:\n- Confluence Scores: Bullish = 68.0/100 | Bearish = 5.0/100.\n- Status: NO TRADE.\n- Disqualifying Gate Rejection Reasons:\n  * GATE_5_UNFAVORABLE_RISK_REWARD: Structural R:R (1 : 0.38) is below minimum threshold (1 : 1.50).\n  * GATE_6_UNTRADABLE_OPTION_CONTRACT: Excessive bid-ask spread: 40.0% (\u20b96.0) exceeds threshold (4.0%) based on Mid-Price \u20b915.0.; Open Interest (5,000) below liquidity threshold (50,000).; Daily volume (400) below liquidity threshold (5,000)."
+  }
+}

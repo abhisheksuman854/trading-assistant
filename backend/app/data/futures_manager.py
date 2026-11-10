@@ -20,8 +20,8 @@ class FuturesContractManager:
 
     SUPPORTED_INDICES = {
         # NSE Published Contract Rules: All NSE Index Futures expire on LAST TUESDAY of the expiry month
-        "NIFTY 50": {"fut_symbol": "NIFTY", "lot_size": 75, "step": 50.0, "expiry_weekday": 1},   # 1 = Tuesday
-        "NIFTY": {"fut_symbol": "NIFTY", "lot_size": 75, "step": 50.0, "expiry_weekday": 1},      # 1 = Tuesday
+        "NIFTY 50": {"fut_symbol": "NIFTY", "lot_size": 65, "step": 50.0, "expiry_weekday": 1},   # 1 = Tuesday
+        "NIFTY": {"fut_symbol": "NIFTY", "lot_size": 65, "step": 50.0, "expiry_weekday": 1},      # 1 = Tuesday
         "BANKNIFTY": {"fut_symbol": "BANKNIFTY", "lot_size": 30, "step": 100.0, "expiry_weekday": 1}, # 1 = Tuesday
         "FINNIFTY": {"fut_symbol": "FINNIFTY", "lot_size": 65, "step": 50.0, "expiry_weekday": 1},  # 1 = Tuesday
         "MIDCPNIFTY": {"fut_symbol": "MIDCPNIFTY", "lot_size": 120, "step": 25.0, "expiry_weekday": 1} # 1 = Tuesday
@@ -167,12 +167,26 @@ class FuturesContractManager:
             except Exception as pe:
                 pass
 
+        master_lot = master_record.get("lotsize") or master_record.get("lot_size")
+        expected_lot = self.SUPPORTED_INDICES.get(symbol.strip().upper(), {}).get("lot_size")
+        if master_lot is not None and expected_lot is not None and int(master_lot) != int(expected_lot):
+            return {
+                "is_valid": False,
+                "status": "LOT_SIZE_MISMATCH",
+                "trading_symbol": trading_symbol,
+                "calculated_expiry": calculated_expiry.strftime("%Y-%m-%d"),
+                "master_lot": int(master_lot),
+                "expected_lot": int(expected_lot),
+                "error": f"Authoritative contract master lot size {master_lot} does not match expected {expected_lot}."
+            }
+
         return {
             "is_valid": True,
             "status": "VERIFIED_IN_CONTRACT_MASTER",
             "trading_symbol": trading_symbol,
             "calculated_expiry": calculated_expiry.strftime("%Y-%m-%d"),
-            "token": master_record.get("token") or master_record.get("symboltoken")
+            "token": master_record.get("token") or master_record.get("symboltoken"),
+            "lot_size": int(master_lot) if master_lot is not None else expected_lot
         }
 
     def calculate_basis(self, spot_price: float, futures_price: float) -> Dict[str, Any]:
