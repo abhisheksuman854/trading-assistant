@@ -6,8 +6,8 @@
   <string>com.tradelens.home-engine</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/deploy/scripts/run_launchd_service.sh</string>
-    <string>/opt/homebrew/bin/python3.12</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/deploy/scripts/run_launchd_service.sh</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/backend/.venv/bin/python3.12</string>
     <string>-m</string>
     <string>backend.app.runtime.cli</string>
     <string>supervise</string>
@@ -18,21 +18,21 @@
     <string>--frontend-port</string>
     <string>8080</string>
     <string>--state-dir</string>
-    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_state</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/runtime_state</string>
     <string>--caffeinate</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai</string>
+  <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PYTHONPATH</key>
-    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai:/Users/abhisheksuman/Documents/GitHub/tradelens-ai/backend</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant:/Users/abhisheksuman/Documents/GitHub/trading-assistant/backend</string>
     <key>PYTHONUNBUFFERED</key>
     <string>1</string>
     <key>TRADELENS_BIND_HOST</key>
     <string>127.0.0.1</string>
     <key>TRADELENS_RUNTIME_STATE_DIR</key>
-    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_state</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/runtime_state</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>
@@ -48,8 +48,8 @@
   <key>ProcessType</key>
   <string>Interactive</string>
   <key>StandardOutPath</key>
-  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_logs/launchd.home-engine.stdout.log</string>
+  <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/runtime_logs/launchd.home-engine.stdout.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_logs/launchd.home-engine.stderr.log</string>
+  <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/runtime_logs/launchd.home-engine.stderr.log</string>
 </dict>
 </plist>

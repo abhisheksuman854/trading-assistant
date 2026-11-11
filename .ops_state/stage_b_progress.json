@@ -1,13 +1,13 @@
 {
-  "schema_version": "1.0",
-  "phase": "Phase 3E.5.2.6",
+  "schema_version": "1.1",
+  "phase": "Phase 3E.5.2.6.1",
   "stage": "STAGE_B",
   "order_execution_enabled": false,
   "broker_auth_excluded": true,
   "phase_3f_excluded": true,
-  "current_step": "step_01_home_mac_preflight",
-  "last_updated": "2026-11-11T09:52:34+00:00",
-  "last_successful_checkpoint": null,
+  "current_step": "step_02_tailscale_home_office",
+  "last_updated": "2026-11-11T17:05:58+00:00",
+  "last_successful_checkpoint": "step_01_home_mac_preflight",
   "manual_confirmations": {},
   "last_checks": {
     "step_08_security_boundary_tests": {
@@ -32,27 +32,36 @@
     "live_drill_verified_at": null,
     "live_drill_note": ""
   },
+  "state_snapshot": {
+    "boot_session_id": "1794399347:420994",
+    "approved_device_ips": {},
+    "approved_device_fingerprints": {},
+    "last_auth_by_device": {},
+    "auth_invalidated_before": {},
+    "tls_fingerprint": null,
+    "supervisor_cfg_ips": []
+  },
   "steps": {
     "step_01_home_mac_preflight": {
       "step_number": 1,
       "step_id": "step_01_home_mac_preflight",
       "title": "Home Mac Preflight",
-      "status": "REQUIRES_OWNER_ACTION",
-      "verified_at": null,
+      "status": "VERIFIED",
+      "verified_at": "2026-11-11T16:23:04+00:00",
       "command_id": "tradelens-stage-b-home-preflight",
-      "verification_result": "Pending check",
+      "verification_result": "Home Mac host, .env (0600 non-symlink), Angel One format keys, and safety lock verified.",
       "owner_confirmation": {
         "confirmed": false,
         "confirmed_at": null,
         "note": ""
       },
-      "failure_reason": "Home Mac .env permissions are 0o644; run `chmod 600 .env` before Stage B."
+      "failure_reason": null
     },
     "step_02_tailscale_home_office": {
       "step_number": 2,
       "step_id": "step_02_tailscale_home_office",
       "title": "Tailscale Installation & Sign-In (Home + Office Mac)",
-      "status": "BLOCKED",
+      "status": "REQUIRES_OWNER_ACTION",
       "verified_at": null,
       "command_id": "tradelens-stage-b-tailscale-check",
       "verification_result": "Pending check",
@@ -61,7 +70,7 @@
         "confirmed_at": null,
         "note": ""
       },
-      "failure_reason": "Locked until prerequisites verified: step_01_home_mac_preflight."
+      "failure_reason": "Tailscale is not installed on Home Mac."
     },
     "step_03_tailscale_acl_verification": {
       "step_number": 3,
@@ -91,7 +100,7 @@
         "confirmed_at": null,
         "note": ""
       },
-      "failure_reason": "Locked until prerequisites verified: step_01_home_mac_preflight, step_02_tailscale_home_office."
+      "failure_reason": "Locked until prerequisites verified: step_02_tailscale_home_office."
     },
     "step_05_office_mac_device_key_gen": {
       "step_number": 5,
@@ -106,7 +115,7 @@
         "confirmed_at": null,
         "note": ""
       },
-      "failure_reason": "Locked until prerequisites verified: step_01_home_mac_preflight, step_04_tls_certificate_setup."
+      "failure_reason": "Locked until prerequisites verified: step_04_tls_certificate_setup."
     },
     "step_06_owner_approval_device_pin": {
       "step_number": 6,

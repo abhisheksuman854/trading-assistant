@@ -13,14 +13,14 @@ This project has been built to run immediately on macOS with **Python 3.12** wit
 ### 1. Run the Terminal Scanner (Instant Shortlist)
 Run the automated trade shortlisting scanner directly in your terminal:
 ```bash
-/opt/homebrew/bin/python3.12 backend/cli_scanner.py
+backend/.venv/bin/python3.12 backend/cli_scanner.py
 ```
 This scans the universe, calculates technical and fundamental scores, runs Black-Scholes option Greeks and OI buildup checks, identifies vetoed setups (e.g., earnings risk), and checks open positions for trailing exits.
 
 ### 2. Start the Backend API Server
 Launch the lightweight REST API server:
 ```bash
-/opt/homebrew/bin/python3.12 backend/app/main.py
+backend/.venv/bin/python3.12 backend/app/main.py
 ```
 The API starts at `http://127.0.0.1:8000`. Available endpoints:
 - `GET /api/scan`: Runs universe scan and returns shortlisted swing trades, options, and vetoed setups.
@@ -84,7 +84,7 @@ The dashboard connects directly to your local backend API at `http://127.0.0.1:8
 ## 📁 Project Structure
 
 ```
-tradelens-ai/
+trading-assistant/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py

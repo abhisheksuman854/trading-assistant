@@ -1082,10 +1082,23 @@ _SAFE_PYTHON_BASENAME_RE = re.compile(r"^python3(?:\.\d+)?$")
 _SHELL_META_RE = re.compile(r"[;&|`$><\r\n\t\s]")
 
 
-def _validate_python_executable(candidate: Any) -> str:
+def _default_python_executable(repo_root: Optional[Path] = None) -> str:
+    """Resolve the active project Python 3.12 interpreter when available."""
+    if repo_root is not None:
+        venv_py = Path(repo_root) / "backend" / ".venv" / "bin" / "python3.12"
+        if venv_py.exists() and os.access(venv_py, os.X_OK):
+            return str(venv_py)
+    if os.path.exists("/opt/homebrew/bin/python3.12") and os.access("/opt/homebrew/bin/python3.12", os.X_OK):
+        return "/opt/homebrew/bin/python3.12"
+    if sys.executable and _SAFE_PYTHON_BASENAME_RE.fullmatch(Path(sys.executable).name):
+        return str(sys.executable)
+    return "/opt/homebrew/bin/python3.12"
+
+
+def _validate_python_executable(candidate: Any, repo_root: Optional[Path] = None) -> str:
     raw = str(candidate or "").strip()
     if not raw:
-        return "/opt/homebrew/bin/python3.12"
+        return _default_python_executable(repo_root)
     if _SHELL_META_RE.search(raw):
         raise ValueError("INVALID_PYTHON_EXECUTABLE: Shell metacharacters or whitespace are not allowed.")
     p = Path(raw)
@@ -3123,7 +3136,7 @@ class StageBSetupCoordinator:
             elif lowered == "tradelens-stage-b-render-launchd":
                 out_dir = self.repo_root / "deploy" / "launchd"
                 sup_cfg = _probe_supervisor_runtime(self.state_dir).get("_raw_cfg", {})
-                validated_py = _validate_python_executable(extra_args.get("python_executable"))
+                validated_py = _validate_python_executable(extra_args.get("python_executable"), repo_root=self.repo_root)
                 rendered = render_launchd_plists(
                     output_dir=out_dir,
                     repo_root=self.repo_root,

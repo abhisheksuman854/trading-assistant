@@ -6,8 +6,8 @@
   <string>com.tradelens.frontend-dashboard</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/deploy/scripts/run_launchd_service.sh</string>
-    <string>/opt/homebrew/bin/python3.12</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/deploy/scripts/run_launchd_service.sh</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/backend/.venv/bin/python3.12</string>
     <string>-m</string>
     <string>backend.app.runtime.cli</string>
     <string>serve-frontend</string>
@@ -19,11 +19,11 @@
     <string>8000</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai</string>
+  <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PYTHONPATH</key>
-    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai:/Users/abhisheksuman/Documents/GitHub/tradelens-ai/backend</string>
+    <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant:/Users/abhisheksuman/Documents/GitHub/trading-assistant/backend</string>
     <key>PYTHONUNBUFFERED</key>
     <string>1</string>
   </dict>
@@ -37,8 +37,8 @@
   <key>ThrottleInterval</key>
   <integer>15</integer>
   <key>StandardOutPath</key>
-  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_logs/launchd.frontend.stdout.log</string>
+  <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/runtime_logs/launchd.frontend.stdout.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_logs/launchd.frontend.stderr.log</string>
+  <string>/Users/abhisheksuman/Documents/GitHub/trading-assistant/runtime_logs/launchd.frontend.stderr.log</string>
 </dict>
 </plist>

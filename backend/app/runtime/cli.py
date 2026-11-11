@@ -28,7 +28,11 @@ from urllib.parse import urlparse
 from .frontend_server import run_frontend_server
 from .launchd_config import get_launchd_lifecycle_commands, render_launchd_plists
 from .power_policy import PowerAndSleepMonitor
-from .stage_b_setup import MANUAL_CONFIRMATION_ALLOWED_STEPS, StageBSetupCoordinator
+from .stage_b_setup import (
+    MANUAL_CONFIRMATION_ALLOWED_STEPS,
+    StageBSetupCoordinator,
+    _default_python_executable,
+)
 from .security import (
     DeviceKeyCrypto,
     MacOSKeychainKeyStore,
@@ -1347,7 +1351,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_ld = sub.add_parser("render-launchd", help="Render macOS launchd plist templates")
     p_ld.add_argument("--output-dir", default=str(REPO_ROOT / "deploy" / "launchd"))
-    p_ld.add_argument("--python-exe", default="/opt/homebrew/bin/python3.12")
+    p_ld.add_argument("--python-exe", default=_default_python_executable(REPO_ROOT))
     p_ld.add_argument("--bind-host", default="127.0.0.1")
     p_ld.add_argument("--backend-port", type=int, default=8000)
     p_ld.add_argument("--frontend-port", type=int, default=8080)
@@ -1487,7 +1491,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_sb.add_argument("--note", default="")
     p_sb.add_argument("--no-save", action="store_true")
     p_sb.add_argument("--record-live-drill", action="store_true")
-    p_sb.add_argument("--python-exe", default="/opt/homebrew/bin/python3.12")
+    p_sb.add_argument("--python-exe", default=None)
     p_sb.add_argument("--progress-path", default=None)
     p_sb.add_argument("--out", default=None)
     p_sb.add_argument("--stdout", action="store_true")

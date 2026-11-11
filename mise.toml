@@ -13,6 +13,50 @@
 PYTHONPATH = "{{config_root}}:{{config_root}}/backend"
 _.path = ["{{config_root}}/backend/.venv/bin", "/opt/homebrew/bin"]
 
+# ---------------------------------------------------------------------------
+# Local Home Mac Runtime, Browser & Test Hub (Loopback Only, Read-Only Safe)
+# ---------------------------------------------------------------------------
+
+[tasks.tradelens-start]
+description = "[Local Runtime] Start foreground loopback supervisor on 127.0.0.1:8000 (API) and 127.0.0.1:8080 (UI) with zero auto broker auth"
+run = "python3.12 -m backend.app.runtime.cli supervise --bind-host 127.0.0.1 --backend-port 8000 --frontend-port 8080"
+
+[tasks.tradelens-start-sim]
+description = "[Local Runtime + Sample Data] Start loopback supervisor with offline sample market data for UI preview (order_execution_enabled=False)"
+run = "TRADELENS_ALLOW_SIMULATED_FALLBACK=1 python3.12 -m backend.app.runtime.cli supervise --bind-host 127.0.0.1 --backend-port 8000 --frontend-port 8080"
+
+[tasks.tradelens-open]
+description = "[Browser] Open hardened local dashboard at http://127.0.0.1:8080"
+run = "open http://127.0.0.1:8080"
+
+[tasks.tradelens-health]
+description = "[Health Check] Probe local backend (/api/health) and frontend (/frontend-health) listeners"
+run = "python3.12 -m backend.app.runtime.cli health-check --bind-host 127.0.0.1 --backend-port 8000 --frontend-port 8080"
+
+[tasks.tradelens-status]
+description = "[Status] Show supervisor, services, and Home Mac power/sleep policy status"
+run = "python3.12 -m backend.app.runtime.cli status"
+
+[tasks.tradelens-stop]
+description = "[Stop] Gracefully stop running supervisor and release ports 8000/8080"
+run = "python3.12 -m backend.app.runtime.cli stop"
+
+[tasks.tradelens-restart]
+description = "[Restart] Gracefully restart supervisor preserving prior security configuration"
+run = "python3.12 -m backend.app.runtime.cli restart"
+
+[tasks.tradelens-test-smoke]
+description = "[Tests - Fast] Run core engine smoke checks (backend/test_api.py)"
+run = "python3.12 backend/test_api.py"
+
+[tasks.tradelens-test]
+description = "[Tests - Full] Run full backend unittest regression suite (489 tests)"
+run = "python3.12 -m unittest discover -s backend/tests -p 'test_*.py'"
+
+# ---------------------------------------------------------------------------
+# Stage B Setup, Verification Gates & Diagnostics
+# ---------------------------------------------------------------------------
+
 [tasks.tradelens-stage-b-preflight]
 description = "[Read-Only Inspector] Evaluate full Stage B preflight (updates local progress store; exit 0 only means inspection ran — check stage_verdict)"
 run = "python3.12 -m backend.app.runtime.cli stage-b --action preflight"

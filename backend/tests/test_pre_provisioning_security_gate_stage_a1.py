@@ -556,7 +556,7 @@ class TestPreProvisioningSecurityGateStageA1(unittest.TestCase):
                 [
                     "/bin/sh",
                     str(WRAPPER_SH),
-                    "/opt/homebrew/bin/python3.12",
+                    sys.executable,
                     "-c",
                     "import os; print(len(os.environ['TRADELENS_STATE_HMAC_SECRET']))",
                     "--remote-access",
@@ -1312,7 +1312,7 @@ class TestPreProvisioningSecurityGateStageA1(unittest.TestCase):
                 [
                     "/bin/sh",
                     str(WRAPPER_SH),
-                    "/opt/homebrew/bin/python3.12",
+                    sys.executable,
                     "-c",
                     f"import json, os; print(json.dumps({{k: os.environ.get(k) for k in {keys_to_dump!r}}}))",
                 ],

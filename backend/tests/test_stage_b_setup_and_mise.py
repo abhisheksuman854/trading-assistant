@@ -644,67 +644,106 @@ class TestStageBSetupAndMise(unittest.TestCase):
         for rec in RECOVERY_PLAYBOOKS:
             self.assertIn(rec["doc_anchor"], doc_text, f"Missing recovery anchor #{rec['doc_anchor']}")
 
-        # Non-gating read-only inspectors / guides / simulated selftest exit 0 without claiming live verification
-        for action in ("status", "preflight", "register-device-guide", "revocation-selftest"):
-            buf = StringIO()
-            with redirect_stdout(buf):
-                rc = cli_main(
-                    [
-                        "--state-dir",
-                        str(self.state_dir),
-                        "stage-b",
-                        "--action",
-                        action,
-                        "--no-save",
-                        "--progress-path",
-                        str(self.progress_path),
-                    ]
-                )
-            self.assertEqual(rc, 0, f"CLI stage-b --action {action} should exit 0")
-            payload = json.loads(buf.getvalue())
-            self.assertEqual(payload.get("exit_code"), 0)
-            if action == "status":
-                self.assertFalse(payload["stage_b_complete"])
-                self.assertFalse(payload["exit_0_means_stage_b_verified"])
-            elif action == "register-device-guide":
-                self.assertFalse(payload["registered_any_device"])
-                self.assertFalse(payload["verification_passed"])
-            elif action == "revocation-selftest":
-                tr_sub = payload.get("task_result", {})
-                self.assertTrue(tr_sub["simulated_only"])
-                self.assertFalse(tr_sub["proves_live_office_mac_revocation"])
-                self.assertFalse(tr_sub["verification_passed"])
-                self.assertFalse(payload["verification_passed"])
+        # Isolate CLI verification from the real Home Mac repository/.env/environment
+        isolated_repo = self.root / "isolated_repo"
+        isolated_repo.mkdir(parents=True, exist_ok=True)
+        isolated_env_path = isolated_repo / ".env"
+        _write_hardened_env(isolated_env_path)
+        os.chmod(isolated_env_path, 0o644)
+        isolated_os_env = {k: v for k, v in os.environ.items() if not k.startswith(("ANGEL_", "TRADELENS_"))}
 
-        # Unprovisioned verification gates and argless register-device MUST fail non-zero (rc == 2)
-        for gate_action in (
-            "home-preflight",
-            "tailscale-check",
-            "tls-check",
-            "register-device",
-            "verify-device",
-            "remote-check",
-            "security-check",
-            "revocation-check",
-            "launchd-status",
+        with (
+            patch("backend.app.runtime.cli.REPO_ROOT", isolated_repo),
+            patch.dict(os.environ, isolated_os_env, clear=True),
         ):
-            buf = StringIO()
-            with redirect_stdout(buf):
-                rc = cli_main(
+            # Non-gating read-only inspectors / guides / simulated selftest exit 0 without claiming live verification
+            for action in ("status", "preflight", "register-device-guide", "revocation-selftest"):
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    rc = cli_main(
+                        [
+                            "--state-dir",
+                            str(self.state_dir),
+                            "stage-b",
+                            "--action",
+                            action,
+                            "--no-save",
+                            "--progress-path",
+                            str(self.progress_path),
+                        ]
+                    )
+                self.assertEqual(rc, 0, f"CLI stage-b --action {action} should exit 0")
+                payload = json.loads(buf.getvalue())
+                self.assertEqual(payload.get("exit_code"), 0)
+                if action == "status":
+                    self.assertFalse(payload["stage_b_complete"])
+                    self.assertFalse(payload["exit_0_means_stage_b_verified"])
+                elif action == "register-device-guide":
+                    self.assertFalse(payload["registered_any_device"])
+                    self.assertFalse(payload["verification_passed"])
+                elif action == "revocation-selftest":
+                    tr_sub = payload.get("task_result", {})
+                    self.assertTrue(tr_sub["simulated_only"])
+                    self.assertFalse(tr_sub["proves_live_office_mac_revocation"])
+                    self.assertFalse(tr_sub["verification_passed"])
+                    self.assertFalse(payload["verification_passed"])
+
+            # Insecure temporary .env (0644) MUST fail home-preflight and all unprovisioned gates exit 2
+            for gate_action in (
+                "home-preflight",
+                "tailscale-check",
+                "tls-check",
+                "register-device",
+                "verify-device",
+                "remote-check",
+                "security-check",
+                "revocation-check",
+                "launchd-status",
+            ):
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    rc = cli_main(
+                        [
+                            "--state-dir",
+                            str(self.state_dir),
+                            "stage-b",
+                            "--action",
+                            gate_action,
+                            "--no-save",
+                            "--progress-path",
+                            str(self.progress_path),
+                        ]
+                    )
+                self.assertEqual(rc, 2, f"Unprovisioned gate --action {gate_action} must exit 2, got {rc}")
+                payload = json.loads(buf.getvalue())
+                self.assertEqual(payload.get("exit_code"), 2)
+                if gate_action == "home-preflight":
+                    self.assertFalse(payload.get("verification_passed"))
+                    steps_by_id = {s["step_id"]: s for s in payload.get("steps", [])}
+                    self.assertEqual(steps_by_id["step_01_home_mac_preflight"]["status"], "REQUIRES_OWNER_ACTION")
+
+            # Hardened temporary .env (0600) MUST pass home-preflight cleanly
+            os.chmod(isolated_env_path, 0o600)
+            buf_ok = StringIO()
+            with redirect_stdout(buf_ok):
+                rc_ok = cli_main(
                     [
                         "--state-dir",
                         str(self.state_dir),
                         "stage-b",
                         "--action",
-                        gate_action,
+                        "home-preflight",
                         "--no-save",
                         "--progress-path",
                         str(self.progress_path),
                     ]
                 )
-            self.assertEqual(rc, 2, f"Unprovisioned gate --action {gate_action} must exit 2, got {rc}")
-            payload = json.loads(buf.getvalue())
-            self.assertEqual(payload.get("exit_code"), 2)
+            self.assertEqual(rc_ok, 0, "Secure temporary .env (0600) must pass home-preflight")
+            payload_ok = json.loads(buf_ok.getvalue())
+            self.assertEqual(payload_ok.get("exit_code"), 0)
+            self.assertTrue(payload_ok.get("verification_passed"))
+            steps_ok = {s["step_id"]: s for s in payload_ok.get("steps", [])}
+            self.assertEqual(steps_ok["step_01_home_mac_preflight"]["status"], "VERIFIED")
 
     def test_07_frontend_setup_ui_accessibility_and_csp_compliance(self) -> None:
         html = INDEX_HTML.read_text(encoding="utf-8")
