@@ -26,8 +26,12 @@ Architectural Guarantees:
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
 import os
 import json
+import re
 import time
 import urllib.request
 import urllib.error
@@ -35,7 +39,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, date, time as dt_time, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple, Union, Set
+from pathlib import Path
+from typing import Dict, List, Optional, Any, Tuple, Union, Set, Callable, Iterable
 import zoneinfo
 
 from backend.app.data.session_clock import IndianMarketSessionClock, IST_ZONE
@@ -69,6 +74,276 @@ class IntervalClassification(str, Enum):
     SPECIAL_SESSION = "SPECIAL_SESSION"
     UNVERIFIED_CALENDAR = "UNVERIFIED_CALENDAR"
     PROVIDER_DATA_UNAVAILABLE = "PROVIDER_DATA_UNAVAILABLE"
+
+
+ANGEL_CREDENTIAL_KEYS: Tuple[str, ...] = (
+    "ANGEL_API_KEY",
+    "ANGEL_CLIENT_CODE",
+    "ANGEL_PASSWORD",
+    "ANGEL_TOTP_SECRET",
+)
+
+_PLACEHOLDER_LITERALS: Set[str] = {
+    "your_api_key_here",
+    "your_client_code_here",
+    "your_password_or_mpin_here",
+    "your_totp_secret_here",
+    "your_api_key",
+    "your_client_code",
+    "your_password",
+    "your_totp_secret",
+    "changeme",
+    "change_me",
+    "placeholder",
+    "replace_me",
+    "dummy",
+    "example",
+    "test_key",
+    "none",
+    "null",
+    "na",
+    "n/a",
+    "xxx",
+    "xxxx",
+}
+
+_ANGEL_INTERVAL_MAP: Dict[str, str] = {
+    "1M": "ONE_MINUTE",
+    "1MIN": "ONE_MINUTE",
+    "ONE_MINUTE": "ONE_MINUTE",
+    "3M": "THREE_MINUTE",
+    "3MIN": "THREE_MINUTE",
+    "THREE_MINUTE": "THREE_MINUTE",
+    "5M": "FIVE_MINUTE",
+    "5MIN": "FIVE_MINUTE",
+    "FIVE_MINUTE": "FIVE_MINUTE",
+    "10M": "TEN_MINUTE",
+    "10MIN": "TEN_MINUTE",
+    "TEN_MINUTE": "TEN_MINUTE",
+    "15M": "FIFTEEN_MINUTE",
+    "15MIN": "FIFTEEN_MINUTE",
+    "FIFTEEN_MINUTE": "FIFTEEN_MINUTE",
+    "30M": "THIRTY_MINUTE",
+    "30MIN": "THIRTY_MINUTE",
+    "THIRTY_MINUTE": "THIRTY_MINUTE",
+    "1H": "ONE_HOUR",
+    "ONE_HOUR": "ONE_HOUR",
+    "1D": "ONE_DAY",
+    "D": "ONE_DAY",
+    "ONE_DAY": "ONE_DAY",
+}
+
+_SENSITIVE_KV_RE = re.compile(
+    r'(?i)\b(authorization|x-privatekey|x-private-key|jwttoken|refreshtoken|feedtoken|'
+    r'api_key|apikey|clientcode|client_code|password|mpin|totp_secret|totp)\b'
+    r'(["\']?\s*[:=]\s*["\']?)([^"\',}\s]+)'
+)
+_BEARER_RE = re.compile(r'(?i)\bBearer\s+(?:\[REDACTED\]|[A-Za-z0-9._-]+)')
+_JWT_RE = re.compile(r'\beyJ[A-Za-z0-9_-]{3,}(?:\.[A-Za-z0-9_-]*){1,2}')
+
+
+def is_placeholder_credential(value: Optional[str]) -> bool:
+    """Returns True if value resembles a template/dummy placeholder rather than a real credential."""
+    if value is None:
+        return False
+    stripped = str(value).strip()
+    if not stripped:
+        return False
+    lower = stripped.lower()
+    if lower in _PLACEHOLDER_LITERALS:
+        return True
+    if lower.startswith("your_") or lower.endswith("_here"):
+        return True
+    if (lower.startswith("<") and lower.endswith(">")) or "placeholder" in lower:
+        return True
+    if len(set(lower)) == 1 and len(lower) >= 4:
+        return True
+    return False
+
+
+def validate_totp_secret_format(secret: Optional[str]) -> str:
+    """Classifies TOTP secret as PRESENT_VALID_FORMAT, MISSING, PLACEHOLDER, or INVALID_FORMAT."""
+    if secret is None or not str(secret).strip():
+        return "MISSING"
+    raw = str(secret).strip()
+    if is_placeholder_credential(raw):
+        return "PLACEHOLDER"
+    if any(ch in raw for ch in ("\n", "\r", "\x00")):
+        return "INVALID_FORMAT"
+    clean = raw.upper().replace(" ", "")
+    if not clean or any(ch not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=" for ch in clean):
+        return "INVALID_FORMAT"
+    no_pad = clean.rstrip("=")
+    if not no_pad or "=" in no_pad:
+        return "INVALID_FORMAT"
+    missing_padding = len(no_pad) % 8
+    padded = no_pad + ("=" * (8 - missing_padding) if missing_padding else "")
+    try:
+        decoded = base64.b32decode(padded, casefold=False)
+    except (binascii.Error, ValueError):
+        return "INVALID_FORMAT"
+    if len(decoded) < 5:
+        return "INVALID_FORMAT"
+    return "PRESENT_VALID_FORMAT"
+
+
+def validate_single_credential(key: str, value: Optional[str]) -> str:
+    """Classifies a credential into PRESENT_VALID_FORMAT, MISSING, PLACEHOLDER, or INVALID_FORMAT."""
+    if key == "ANGEL_TOTP_SECRET":
+        return validate_totp_secret_format(value)
+    if value is None or not str(value).strip():
+        return "MISSING"
+    raw = str(value).strip()
+    if is_placeholder_credential(raw):
+        return "PLACEHOLDER"
+    if any(ch in raw for ch in ("\n", "\r", "\x00")) or len(raw) < 2:
+        return "INVALID_FORMAT"
+    return "PRESENT_VALID_FORMAT"
+
+
+def load_dotenv_key_values(dotenv_path: Union[str, Path]) -> Dict[str, str]:
+    """Parses key=value pairs from a .env file cleanly without mutating os.environ."""
+    parsed: Dict[str, str] = {}
+    p = Path(dotenv_path)
+    if not p.is_file():
+        return parsed
+    with p.open("r", encoding="utf-8") as fh:
+        for raw_line in fh:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].strip()
+            if "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k_s = k.strip()
+            v_s = v.strip()
+            if len(v_s) >= 2 and (
+                (v_s[0] == '"' and v_s[-1] == '"')
+                or (v_s[0] == "'" and v_s[-1] == "'")
+            ):
+                v_s = v_s[1:-1]
+            if k_s:
+                parsed[k_s] = v_s
+    return parsed
+
+
+def resolve_angel_credentials(
+    api_key: Optional[str] = None,
+    client_code: Optional[str] = None,
+    password: Optional[str] = None,
+    totp_secret: Optional[str] = None,
+    environ: Optional[Dict[str, str]] = None,
+    dotenv_paths: Optional[Iterable[Union[str, Path]]] = None,
+) -> Dict[str, Any]:
+    """
+    Resolves all 4 Angel One credentials with process env precedence and optional .env fallback.
+    Never exposes or returns raw values in status summaries; caller handles values in memory only.
+    """
+    env_map = os.environ if environ is None else environ
+    explicit = {
+        "ANGEL_API_KEY": api_key,
+        "ANGEL_CLIENT_CODE": client_code,
+        "ANGEL_PASSWORD": password,
+        "ANGEL_TOTP_SECRET": totp_secret,
+    }
+    values: Dict[str, str] = {}
+    sources: Dict[str, str] = {}
+
+    for key in ANGEL_CREDENTIAL_KEYS:
+        if explicit[key] is not None and str(explicit[key]).strip():
+            values[key] = str(explicit[key]).strip()
+            sources[key] = "EXPLICIT"
+        else:
+            env_val = env_map.get(key, "")
+            if env_val is not None and str(env_val).strip():
+                values[key] = str(env_val).strip()
+                sources[key] = "PROCESS_ENV"
+            else:
+                values[key] = ""
+                sources[key] = "UNSET"
+
+    if any(not values[k] for k in ANGEL_CREDENTIAL_KEYS) and dotenv_paths is not None:
+        for ep in dotenv_paths:
+            if not any(not values[k] for k in ANGEL_CREDENTIAL_KEYS):
+                break
+            parsed = load_dotenv_key_values(ep)
+            for key in ANGEL_CREDENTIAL_KEYS:
+                if not values[key] and key in parsed and parsed[key].strip():
+                    values[key] = parsed[key].strip()
+                    sources[key] = "DOTENV"
+
+    statuses = {key: validate_single_credential(key, values[key]) for key in ANGEL_CREDENTIAL_KEYS}
+    all_valid = all(status == "PRESENT_VALID_FORMAT" for status in statuses.values())
+
+    blocking_reason = None
+    if not all_valid:
+        if any(s == "PLACEHOLDER" for s in statuses.values()):
+            blocking_reason = "BLOCKED_PLACEHOLDER_CREDENTIALS"
+        elif any(s == "INVALID_FORMAT" for s in statuses.values()):
+            blocking_reason = "BLOCKED_INVALID_CREDENTIALS"
+        else:
+            blocking_reason = "BLOCKED_MISSING_CREDENTIALS"
+
+    return {
+        "values": values,
+        "sources": sources,
+        "statuses": statuses,
+        "all_valid": all_valid,
+        "blocking_reason": blocking_reason,
+    }
+
+
+def redact_sensitive_text(text: Any, extra_secrets: Optional[Iterable[Optional[str]]] = None) -> str:
+    """Redacts known credential secrets, JWT/refresh/feed tokens, and auth headers from strings."""
+    if text is None:
+        return ""
+    sanitized = str(text)
+    if extra_secrets:
+        unique_secrets = sorted(
+            {str(s).strip() for s in extra_secrets if s and len(str(s).strip()) >= 3},
+            key=len,
+            reverse=True,
+        )
+        for sec in unique_secrets:
+            sanitized = sanitized.replace(sec, "[REDACTED]")
+    sanitized = _BEARER_RE.sub("Bearer [REDACTED]", sanitized)
+    sanitized = _JWT_RE.sub("[REDACTED_JWT]", sanitized)
+
+    def _replace_kv(m: re.Match) -> str:
+        key_lower = m.group(1).lower()
+        if key_lower in ("jwttoken", "refreshtoken", "feedtoken"):
+            return "[REDACTED_TOKEN_FIELD]"
+        val = m.group(3)
+        if val.startswith("[REDACTED"):
+            return f"{m.group(1)}{m.group(2)}[REDACTED]"
+        return f"{m.group(1)}{m.group(2)}[REDACTED]"
+
+    sanitized = _SENSITIVE_KV_RE.sub(_replace_kv, sanitized)
+    return sanitized
+
+
+def normalize_angel_one_interval(interval: str) -> str:
+    """Normalizes interval shorthands (1m, 5m, etc.) to official Angel One API intervals."""
+    key = str(interval or "").strip().upper()
+    if key in _ANGEL_INTERVAL_MAP:
+        return _ANGEL_INTERVAL_MAP[key]
+    raise ValueError(f"Unsupported Angel One candle interval: {interval}")
+
+
+def resolve_angel_one_instrument(symbol: str) -> Tuple[str, str]:
+    """Resolves (symboltoken, exchange) against FNO_TOKEN_MAP for NSE index/equity queries."""
+    sym_clean = str(symbol or "").strip().upper()
+    if sym_clean in ("NIFTY", "NIFTY 50", "^NSEI"):
+        entry = FNO_TOKEN_MAP.get("NIFTY 50", {})
+        token = str(entry.get("token") or "99926000")
+        return token, str(entry.get("exchange", "NSE"))
+    entry = FNO_TOKEN_MAP.get(sym_clean, {})
+    token = str(entry.get("token", ""))
+    if not token:
+        raise ValueError(f"Unsupported instrument symbol: {symbol}")
+    return token, str(entry.get("exchange", "NSE"))
 
 
 # ============================================================================
@@ -110,6 +385,8 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
     """
 
     BASE_URL = "https://apiconnect.angelone.in"
+    LOGIN_ENDPOINT = "/rest/auth/angelbroking/user/v1/loginByPassword"
+    CANDLE_ENDPOINT = "/rest/secure/angelbroking/historical/v1/getCandleData"
 
     def __init__(
         self,
@@ -118,16 +395,33 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
         password: Optional[str] = None,
         totp_secret: Optional[str] = None,
         max_chunk_days: int = 15,
-        rate_limit_pause_sec: float = 0.5
+        rate_limit_pause_sec: float = 0.5,
+        max_auth_attempts: int = 2,
+        connect_timeout_sec: float = 10.0,
+        read_timeout_sec: float = 12.0,
+        env_paths: Optional[List[str]] = None,
+        http_request_guard: Optional[Callable[[str], None]] = None,
     ):
-        self.api_key = api_key or os.environ.get("ANGEL_API_KEY", "")
-        self.client_code = client_code or os.environ.get("ANGEL_CLIENT_CODE", "")
-        self.password = password or os.environ.get("ANGEL_PASSWORD", "")
-        self.totp_secret = totp_secret or os.environ.get("ANGEL_TOTP_SECRET", "")
+        self.api_key = (api_key if api_key is not None else os.environ.get("ANGEL_API_KEY", "")) or ""
+        self.client_code = (client_code if client_code is not None else os.environ.get("ANGEL_CLIENT_CODE", "")) or ""
+        self.password = (password if password is not None else os.environ.get("ANGEL_PASSWORD", "")) or ""
+        self.totp_secret = (totp_secret if totp_secret is not None else os.environ.get("ANGEL_TOTP_SECRET", "")) or ""
         self.max_chunk_days = max_chunk_days
         self.rate_limit_pause_sec = rate_limit_pause_sec
+        self.max_auth_attempts = max_auth_attempts
+        self.connect_timeout_sec = connect_timeout_sec
+        self.read_timeout_sec = read_timeout_sec
+        self.env_paths = env_paths
+        self.http_request_guard = http_request_guard
         self.jwt_token: Optional[str] = None
         self.is_authenticated = False
+        self._auth_attempts: int = 0
+        self.last_auth_error: Optional[str] = None
+        self.last_credential_statuses: Dict[str, str] = {}
+        self.last_fetch_metadata: Dict[str, Any] = {}
+
+    def _secret_values(self) -> List[Optional[str]]:
+        return [self.api_key, self.client_code, self.password, self.totp_secret, self.jwt_token]
 
     def get_provider_name(self) -> str:
         return "ANGEL_ONE"
@@ -135,9 +429,9 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
     def get_provider_capabilities(self) -> Dict[str, Any]:
         return {
             "provider": "Angel One SmartAPI",
-            "endpoint": "/rest/secure/angelbroking/historical/v1/getCandleData",
+            "endpoint": self.CANDLE_ENDPOINT,
             "supported_intervals": ["ONE_MINUTE", "THREE_MINUTE", "FIVE_MINUTE", "FIFTEEN_MINUTE", "ONE_DAY"],
-            "supported_instruments": ["NIFTY 50 (token 99926000)", "BANKNIFTY (token 99926009)"],
+            "supported_instruments": ["NIFTY 50 (token 99926000)", "BANKNIFTY (token 99926009)", "RELIANCE (token 2885)"],
             "max_chunk_days_safe": self.max_chunk_days,
             "provider_silent_truncation_limit_days": 30,
             "rate_limit_per_second": 3,
@@ -146,37 +440,68 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
         }
 
     def _load_env_if_needed(self) -> None:
-        """Loads .env file if credentials are not in environment."""
-        if not (self.api_key and self.client_code and self.password):
-            env_paths = [".env", "backend/.env", "../.env"]
-            for ep in env_paths:
-                if os.path.exists(ep):
-                    with open(ep, "r", encoding="utf-8") as f:
-                        for line in f:
-                            line = line.strip()
-                            if line and not line.startswith("#") and "=" in line:
-                                k, v = line.split("=", 1)
-                                k_s = k.strip()
-                                v_s = v.strip().strip('"').strip("'")
-                                if k_s == "ANGEL_API_KEY" and not self.api_key:
-                                    self.api_key = v_s
-                                elif k_s == "ANGEL_CLIENT_CODE" and not self.client_code:
-                                    self.client_code = v_s
-                                elif k_s == "ANGEL_PASSWORD" and not self.password:
-                                    self.password = v_s
-                                elif k_s == "ANGEL_TOTP_SECRET" and not self.totp_secret:
-                                    self.totp_secret = v_s
+        """Loads missing credentials from process env and .env file without overwriting set values."""
+        if not self.api_key:
+            self.api_key = os.environ.get("ANGEL_API_KEY", "") or ""
+        if not self.client_code:
+            self.client_code = os.environ.get("ANGEL_CLIENT_CODE", "") or ""
+        if not self.password:
+            self.password = os.environ.get("ANGEL_PASSWORD", "") or ""
+        if not self.totp_secret:
+            self.totp_secret = os.environ.get("ANGEL_TOTP_SECRET", "") or ""
+
+        if not (self.api_key and self.client_code and self.password and self.totp_secret):
+            if self.env_paths is not None:
+                candidate_paths = self.env_paths
+            else:
+                repo_env = str(Path(__file__).resolve().parents[3] / ".env")
+                candidate_paths = [".env", "backend/.env", "../.env"]
+                if repo_env not in candidate_paths:
+                    candidate_paths.append(repo_env)
+
+            for ep in candidate_paths:
+                parsed = load_dotenv_key_values(ep)
+                if not parsed:
+                    continue
+                if not self.api_key and parsed.get("ANGEL_API_KEY"):
+                    self.api_key = parsed["ANGEL_API_KEY"].strip()
+                if not self.client_code and parsed.get("ANGEL_CLIENT_CODE"):
+                    self.client_code = parsed["ANGEL_CLIENT_CODE"].strip()
+                if not self.password and parsed.get("ANGEL_PASSWORD"):
+                    self.password = parsed["ANGEL_PASSWORD"].strip()
+                if not self.totp_secret and parsed.get("ANGEL_TOTP_SECRET"):
+                    self.totp_secret = parsed["ANGEL_TOTP_SECRET"].strip()
+                if self.api_key and self.client_code and self.password and self.totp_secret:
+                    break
 
     def connect(self) -> bool:
-        """Authenticates with Angel One using loginByPassword endpoint."""
+        """Authenticates with Angel One using loginByPassword endpoint with strict preflight guards."""
         self._load_env_if_needed()
-        if not self.api_key or not self.client_code or not self.password:
+        cred_check = resolve_angel_credentials(
+            api_key=self.api_key,
+            client_code=self.client_code,
+            password=self.password,
+            totp_secret=self.totp_secret,
+            environ={},
+            dotenv_paths=None,
+        )
+        self.last_credential_statuses = dict(cred_check["statuses"])
+        if not cred_check["all_valid"]:
+            self.is_authenticated = False
+            self.jwt_token = None
+            self.last_auth_error = cred_check["blocking_reason"] or "BLOCKED_MISSING_CREDENTIALS"
             return False
 
+        if self._auth_attempts >= self.max_auth_attempts:
+            self.is_authenticated = False
+            self.jwt_token = None
+            self.last_auth_error = "AUTH_REFRESH_LIMIT_EXCEEDED"
+            return False
+
+        url = f"{self.BASE_URL}{self.LOGIN_ENDPOINT}"
         try:
             from backend.app.data.angel_one import generate_totp_code
-            totp_code = generate_totp_code(self.totp_secret) if self.totp_secret else ""
-            url = f"{self.BASE_URL}/rest/auth/angelbroking/user/v1/loginByPassword"
+            totp_code = generate_totp_code(self.totp_secret)
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
@@ -193,16 +518,51 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
                 "totp": totp_code
             }).encode("utf-8")
 
+            if self.http_request_guard is not None:
+                self.http_request_guard(url)
+            self._auth_attempts += 1
+
             req = urllib.request.Request(url, data=payload, headers=headers)
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=self.connect_timeout_sec) as resp:
                 res_data = json.loads(resp.read().decode("utf-8"))
 
-            if res_data.get("status") and "data" in res_data:
+            if res_data.get("status") and isinstance(res_data.get("data"), dict) and res_data["data"].get("jwtToken"):
                 self.jwt_token = res_data["data"].get("jwtToken")
                 self.is_authenticated = True
+                self.last_auth_error = None
                 return True
+
+            self.is_authenticated = False
+            self.jwt_token = None
+            err_code = res_data.get("errorcode", "")
+            err_msg = res_data.get("message", "LOGIN_FAILED")
+            self.last_auth_error = redact_sensitive_text(
+                f"Login failed (errorcode={err_code}): {err_msg}",
+                extra_secrets=self._secret_values(),
+            )
             return False
-        except Exception:
+        except PermissionError:
+            raise
+        except urllib.error.HTTPError as he:
+            self.is_authenticated = False
+            self.jwt_token = None
+            body = ""
+            try:
+                body = he.read().decode("utf-8", errors="replace")
+            except Exception:
+                body = str(he)
+            self.last_auth_error = redact_sensitive_text(
+                f"HTTP {he.code}: {body or he.reason}",
+                extra_secrets=self._secret_values(),
+            )
+            return False
+        except Exception as exc:
+            self.is_authenticated = False
+            self.jwt_token = None
+            self.last_auth_error = redact_sensitive_text(
+                str(exc),
+                extra_secrets=self._secret_values(),
+            )
             return False
 
     def fetch_candles(
@@ -213,23 +573,43 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
         to_dt: datetime
     ) -> Tuple[List[Dict[str, Any]], str]:
         """
-        Fetches genuine 1m candles for symbol.
+        Fetches genuine historical candles for symbol.
         Normalizes interval and returns (raw_rows, raw_payload_hash).
         """
-        if not self.is_authenticated or not self.jwt_token:
-            if not self.connect():
-                raise ConnectionError("Angel One SmartAPI authentication failed: missing credentials or network unreachable.")
-
-        sym_clean = symbol.strip().upper()
-        token = "99926000" if sym_clean in ("NIFTY", "NIFTY 50", "^NSEI") else FNO_TOKEN_MAP.get(sym_clean, {}).get("token", "")
-        if not token:
-            raise ValueError(f"Unsupported instrument symbol: {symbol}")
-
+        token, exchange = resolve_angel_one_instrument(symbol)
+        api_interval = normalize_angel_one_interval(interval)
         from_str = from_dt.strftime("%Y-%m-%d %H:%M")
         to_str = to_dt.strftime("%Y-%m-%d %H:%M")
-        api_interval = "ONE_MINUTE" if interval in ("1m", "1min", "ONE_MINUTE") else interval
 
-        url = f"{self.BASE_URL}/rest/secure/angelbroking/historical/v1/getCandleData"
+        self.last_fetch_metadata = {
+            "instrument": str(symbol).strip().upper(),
+            "token": str(token),
+            "exchange": exchange,
+            "interval": api_interval,
+            "from_str": from_str,
+            "to_str": to_str,
+            "http_attempts": 0,
+            "retry_count": 0,
+            "http_status": None,
+            "api_status": None,
+            "errorcode": "",
+            "redacted_error": None,
+            "auth_attempts_total": self._auth_attempts,
+            "raw_sha256": "",
+        }
+
+        if not self.is_authenticated or not self.jwt_token:
+            if not self.connect():
+                redacted_auth_err = redact_sensitive_text(
+                    self.last_auth_error or "missing credentials or network unreachable.",
+                    extra_secrets=self._secret_values(),
+                )
+                self.last_fetch_metadata["redacted_error"] = redacted_auth_err
+                self.last_fetch_metadata["auth_attempts_total"] = self._auth_attempts
+                self.last_fetch_metadata["api_status"] = False
+                raise ConnectionError(f"Angel One SmartAPI authentication failed: {redacted_auth_err}")
+
+        url = f"{self.BASE_URL}{self.CANDLE_ENDPOINT}"
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -242,58 +622,132 @@ class AngelOneHistoricalSpotProvider(HistoricalSpotProvider):
             "Authorization": f"Bearer {self.jwt_token}"
         }
         payload = json.dumps({
-            "exchange": "NSE",
+            "exchange": exchange,
             "symboltoken": str(token),
             "interval": api_interval,
             "fromdate": from_str,
             "todate": to_str
         }).encode("utf-8")
 
-        # Controlled retry loop for rate limiting and token expiry
+        # Controlled retry loop for rate limiting and bounded token expiry refresh
         max_retries = 3
-        last_error = None
+        last_error: Optional[str] = None
+        attempts_made = 0
 
         for attempt in range(max_retries):
             try:
-                time.sleep(self.rate_limit_pause_sec)
+                if self.rate_limit_pause_sec > 0:
+                    time.sleep(self.rate_limit_pause_sec)
+                if self.http_request_guard is not None:
+                    self.http_request_guard(url)
+                attempts_made += 1
+
                 req = urllib.request.Request(url, data=payload, headers=headers)
-                with urllib.request.urlopen(req, timeout=12) as response:
+                with urllib.request.urlopen(req, timeout=self.read_timeout_sec) as response:
+                    http_status = getattr(response, "status", 200) or 200
                     raw_bytes = response.read()
-                    import hashlib
                     raw_sha256 = hashlib.sha256(raw_bytes).hexdigest()
                     res = json.loads(raw_bytes.decode("utf-8"))
 
-                errorcode = res.get("errorcode", "")
+                errorcode = str(res.get("errorcode") or "")
+                raw_msg = res.get("message", "")
+                redacted_msg = redact_sensitive_text(raw_msg, extra_secrets=self._secret_values()) if raw_msg else ""
+
+                self.last_fetch_metadata.update({
+                    "http_attempts": attempts_made,
+                    "retry_count": max(0, attempts_made - 1),
+                    "http_status": http_status,
+                    "api_status": bool(res.get("status")),
+                    "errorcode": errorcode,
+                    "redacted_error": None if res.get("status") else redact_sensitive_text(
+                        f"API status=False errorcode={errorcode} message={redacted_msg}",
+                        extra_secrets=self._secret_values(),
+                    ),
+                    "auth_attempts_total": self._auth_attempts,
+                    "raw_sha256": raw_sha256,
+                })
+
                 if errorcode in ("AG8001", "AG8002"):
-                    # Token expired; reconnect and retry
+                    # Bounded token refresh retry
                     self.jwt_token = None
                     self.is_authenticated = False
+                    if self._auth_attempts >= self.max_auth_attempts:
+                        last_error = f"AUTH_REFRESH_LIMIT_EXCEEDED after {errorcode}"
+                        self.last_fetch_metadata["redacted_error"] = redact_sensitive_text(
+                            last_error, extra_secrets=self._secret_values()
+                        )
+                        break
                     if self.connect():
                         headers["Authorization"] = f"Bearer {self.jwt_token}"
+                        last_error = f"Token expired ({errorcode}); refreshed"
                         continue
+                    last_error = self.last_auth_error or f"Re-authentication failed after {errorcode}"
+                    self.last_fetch_metadata["redacted_error"] = redact_sensitive_text(
+                        last_error, extra_secrets=self._secret_values()
+                    )
+                    break
                 elif errorcode == "AB1004":
-                    # Rate limit; back off exponentially
-                    time.sleep(2.0 * (attempt + 1))
+                    last_error = redact_sensitive_text(
+                        f"Rate limit errorcode=AB1004: {redacted_msg}",
+                        extra_secrets=self._secret_values(),
+                    )
+                    self.last_fetch_metadata["redacted_error"] = last_error
+                    if attempt + 1 < max_retries:
+                        time.sleep(2.0 * (attempt + 1))
                     continue
 
                 if res.get("status") and "data" in res:
                     return res["data"] or [], raw_sha256
                 elif not res.get("status"):
                     return [], raw_sha256
+            except PermissionError:
+                raise
             except urllib.error.HTTPError as he:
-                last_error = he
+                body = ""
+                try:
+                    body = he.read().decode("utf-8", errors="replace")
+                except Exception:
+                    body = str(he)
+                last_error = redact_sensitive_text(
+                    f"HTTP {he.code}: {body or he.reason}",
+                    extra_secrets=self._secret_values(),
+                )
+                self.last_fetch_metadata.update({
+                    "http_attempts": attempts_made,
+                    "retry_count": max(0, attempts_made - 1),
+                    "http_status": he.code,
+                    "api_status": False,
+                    "redacted_error": last_error,
+                    "auth_attempts_total": self._auth_attempts,
+                })
                 if he.code in (401, 403):
                     self.jwt_token = None
                     self.is_authenticated = False
+                    if self._auth_attempts >= self.max_auth_attempts:
+                        last_error = f"AUTH_REFRESH_LIMIT_EXCEEDED after HTTP {he.code}"
+                        self.last_fetch_metadata["redacted_error"] = last_error
+                        break
                     if self.connect():
                         headers["Authorization"] = f"Bearer {self.jwt_token}"
                         continue
-                time.sleep(1.5 * (attempt + 1))
+                    break
+                if attempt + 1 < max_retries:
+                    time.sleep(1.5 * (attempt + 1))
             except Exception as e:
-                last_error = e
-                time.sleep(1.0 * (attempt + 1))
+                last_error = redact_sensitive_text(str(e), extra_secrets=self._secret_values())
+                self.last_fetch_metadata.update({
+                    "http_attempts": attempts_made,
+                    "retry_count": max(0, attempts_made - 1),
+                    "api_status": False,
+                    "redacted_error": last_error,
+                    "auth_attempts_total": self._auth_attempts,
+                })
+                if attempt + 1 < max_retries:
+                    time.sleep(1.0 * (attempt + 1))
 
-        raise RuntimeError(f"Failed to fetch historical candles from Angel One after {max_retries} attempts: {last_error}")
+        sanitized_err = redact_sensitive_text(last_error or "Unknown provider error", extra_secrets=self._secret_values())
+        self.last_fetch_metadata["redacted_error"] = sanitized_err
+        raise RuntimeError(f"Failed to fetch historical candles from Angel One after {attempts_made or max_retries} attempts: {sanitized_err}")
 
 
 # ============================================================================

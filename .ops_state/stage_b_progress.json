@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0",
+  "phase": "Phase 3E.5.2.6",
+  "stage": "STAGE_B",
+  "order_execution_enabled": false,
+  "broker_auth_excluded": true,
+  "phase_3f_excluded": true,
+  "current_step": "step_01_home_mac_preflight",
+  "last_updated": "2026-11-11T09:52:34+00:00",
+  "last_successful_checkpoint": null,
+  "manual_confirmations": {},
+  "last_checks": {
+    "step_08_security_boundary_tests": {
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-security-check",
+      "verification_result": "Offline boundary checks passed; awaiting live Tailscale/TLS/peer checks.",
+      "passed": false,
+      "failure_reason": "Live transport/peer checks incomplete."
+    },
+    "step_09_revocation_re_enrollment_test": {
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-revocation-check",
+      "verification_result": "Isolated cross-process revocation self-test PASSED; live Office Mac drill pending Steps 2-8.",
+      "passed": false,
+      "failure_reason": "Awaiting live Steps 2-8 & Office Mac drill."
+    }
+  },
+  "revocation_drill": {
+    "offline_mechanism_verified": true,
+    "offline_verified_at": "2026-11-11T09:52:27+00:00",
+    "live_drill_verified": false,
+    "live_drill_verified_at": null,
+    "live_drill_note": ""
+  },
+  "steps": {
+    "step_01_home_mac_preflight": {
+      "step_number": 1,
+      "step_id": "step_01_home_mac_preflight",
+      "title": "Home Mac Preflight",
+      "status": "REQUIRES_OWNER_ACTION",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-home-preflight",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Home Mac .env permissions are 0o644; run `chmod 600 .env` before Stage B."
+    },
+    "step_02_tailscale_home_office": {
+      "step_number": 2,
+      "step_id": "step_02_tailscale_home_office",
+      "title": "Tailscale Installation & Sign-In (Home + Office Mac)",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-tailscale-check",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_01_home_mac_preflight."
+    },
+    "step_03_tailscale_acl_verification": {
+      "step_number": 3,
+      "step_id": "step_03_tailscale_acl_verification",
+      "title": "Tailscale ACL Verification",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-tailscale-check",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_02_tailscale_home_office."
+    },
+    "step_04_tls_certificate_setup": {
+      "step_number": 4,
+      "step_id": "step_04_tls_certificate_setup",
+      "title": "TLS Certificate Setup (SAN + Fingerprint)",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-tls-check",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_01_home_mac_preflight, step_02_tailscale_home_office."
+    },
+    "step_05_office_mac_device_key_gen": {
+      "step_number": 5,
+      "step_id": "step_05_office_mac_device_key_gen",
+      "title": "Office Mac Device Key Generation & Registration",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-verify-device",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_01_home_mac_preflight, step_04_tls_certificate_setup."
+    },
+    "step_06_owner_approval_device_pin": {
+      "step_number": 6,
+      "step_id": "step_06_owner_approval_device_pin",
+      "title": "Owner Approval & Exact IP Pin Verification",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-verify-device",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_05_office_mac_device_key_gen."
+    },
+    "step_07_remote_https_challenge_verify": {
+      "step_number": 7,
+      "step_id": "step_07_remote_https_challenge_verify",
+      "title": "Remote HTTPS Challenge-Response Verification",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-remote-check",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_03_tailscale_acl_verification, step_04_tls_certificate_setup, step_06_owner_approval_device_pin."
+    },
+    "step_08_security_boundary_tests": {
+      "step_number": 8,
+      "step_id": "step_08_security_boundary_tests",
+      "title": "Security Boundary & Negative Tests",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-security-check",
+      "verification_result": "Offline boundary checks passed; awaiting live Tailscale/TLS/peer checks.",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_07_remote_https_challenge_verify."
+    },
+    "step_09_revocation_re_enrollment_test": {
+      "step_number": 9,
+      "step_id": "step_09_revocation_re_enrollment_test",
+      "title": "Revocation & Re-Enrolment Test",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-revocation-check",
+      "verification_result": "Isolated cross-process revocation self-test PASSED; live Office Mac drill pending Steps 2-8.",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked until prerequisites verified: step_08_security_boundary_tests."
+    },
+    "step_10_launchagent_installation": {
+      "step_number": 10,
+      "step_id": "step_10_launchagent_installation",
+      "title": "LaunchAgent Installation (Locked Until Steps 2-9 Verified)",
+      "status": "BLOCKED",
+      "verified_at": null,
+      "command_id": "tradelens-stage-b-launchd-status",
+      "verification_result": "Pending check",
+      "owner_confirmation": {
+        "confirmed": false,
+        "confirmed_at": null,
+        "note": ""
+      },
+      "failure_reason": "Locked by policy: LaunchAgents MUST NOT be installed until Steps 2 through 9 are all VERIFIED."
+    }
+  }
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tradelens.frontend-dashboard</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/deploy/scripts/run_launchd_service.sh</string>
+    <string>/opt/homebrew/bin/python3.12</string>
+    <string>-m</string>
+    <string>backend.app.runtime.cli</string>
+    <string>serve-frontend</string>
+    <string>--bind-host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>8080</string>
+    <string>--backend-port</string>
+    <string>8000</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai:/Users/abhisheksuman/Documents/GitHub/tradelens-ai/backend</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>15</integer>
+  <key>StandardOutPath</key>
+  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_logs/launchd.frontend.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/abhisheksuman/Documents/GitHub/tradelens-ai/runtime_logs/launchd.frontend.stderr.log</string>
+</dict>
+</plist>

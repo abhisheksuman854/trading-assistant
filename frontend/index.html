@@ -4,26 +4,221 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TradeLens AI - Indian Stock Decision Support & Trade Shortlist Assistant</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
+    .hidden { display: none !important; }
+    .block { display: block; }
+    .inline-block { display: inline-block; }
+    .flex { display: flex; }
+    .inline-flex { display: inline-flex; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .flex-1 { flex: 1 1 0%; }
+    .shrink-0 { flex-shrink: 0; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .items-baseline { align-items: baseline; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .justify-end { justify-content: flex-end; }
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .col-span-full { grid-column: 1 / -1; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-1\.5 { gap: 0.375rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .space-y-1 > * + * { margin-top: 0.25rem; }
+    .space-y-1\.5 > * + * { margin-top: 0.375rem; }
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .space-y-2\.5 > * + * { margin-top: 0.625rem; }
+    .space-y-3 > * + * { margin-top: 0.75rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .space-y-5 > * + * { margin-top: 1.25rem; }
+    .space-y-6 > * + * { margin-top: 1.5rem; }
+    @media (min-width: 640px) {
+      .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (min-width: 768px) {
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+      .lg\:flex { display: flex !important; }
+      .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .lg\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+      .lg\:col-span-4 { grid-column: span 4 / span 4; }
+      .lg\:col-span-5 { grid-column: span 5 / span 5; }
+      .lg\:col-span-7 { grid-column: span 7 / span 7; }
+      .lg\:col-span-8 { grid-column: span 8 / span 8; }
+    }
+    .max-w-7xl { max-width: 80rem; }
+    .max-w-md { max-width: 28rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .min-h-screen { min-height: 100vh; }
+    .w-full { width: 100%; }
+    .w-2 { width: 0.5rem; }
+    .h-2 { height: 0.5rem; }
+    .w-2\.5 { width: 0.625rem; }
+    .h-2\.5 { height: 0.625rem; }
+    .w-8 { width: 2rem; }
+    .h-8 { height: 2rem; }
+    .w-10 { width: 2.5rem; }
+    .h-10 { height: 2.5rem; }
+    .w-14 { width: 3.5rem; }
+    .h-14 { height: 3.5rem; }
+    .p-1 { padding: 0.25rem; }
+    .p-1\.5 { padding: 0.375rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-2\.5 { padding: 0.625rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
+    .p-8 { padding: 2rem; }
+    .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+    .px-1\.5 { padding-left: 0.375rem; padding-right: 0.375rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-3\.5 { padding-left: 0.875rem; padding-right: 0.875rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    .pb-3 { padding-bottom: 0.75rem; }
+    .pb-4 { padding-bottom: 1rem; }
+    .pt-1\.5 { padding-top: 0.375rem; }
+    .pt-2 { padding-top: 0.5rem; }
+    .mr-1 { margin-right: 0.25rem; }
+    .mt-0\.5 { margin-top: 0.125rem; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-1\.5 { margin-top: 0.375rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mb-1 { margin-bottom: 0.25rem; }
+    .mb-1\.5 { margin-bottom: 0.375rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .my-2\.5 { margin-top: 0.625rem; margin-bottom: 0.625rem; }
+    .my-3 { margin-top: 0.75rem; margin-bottom: 0.75rem; }
+    .fixed { position: fixed; }
+    .sticky { position: sticky; }
+    .relative { position: relative; }
+    .inset-0 { inset: 0; }
+    .top-0 { top: 0; }
+    .z-50 { z-index: 50; }
+    .overflow-hidden { overflow: hidden; }
+    .overflow-x-auto { overflow-x: auto; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rounded { border-radius: 0.25rem; }
+    .rounded-md { border-radius: 0.375rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border { border: 1px solid; }
+    .border-t { border-top: 1px solid; }
+    .border-b { border-bottom: 1px solid; }
+    .text-left { text-align: left; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-\[9px\] { font-size: 9px; }
+    .text-\[10px\] { font-size: 10px; }
+    .text-\[11px\] { font-size: 11px; }
+    .text-xs { font-size: 0.75rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-base { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .font-normal { font-weight: 400; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .font-extrabold { font-weight: 800; }
+    .font-black { font-weight: 900; }
+    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-wide { letter-spacing: 0.025em; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .cursor-pointer { cursor: pointer; }
+    .text-white { color: #ffffff; }
+    .text-emerald-400, .dark .dark\:text-emerald-400, .dark .dark\:text-emerald-300 { color: #34d399; }
+    .text-emerald-500, .text-emerald-600, .text-emerald-700 { color: #10b981; }
+    .text-amber-400, .text-amber-500, .text-amber-600, .text-amber-700, .dark .dark\:text-amber-300, .dark .dark\:text-amber-400 { color: #f59e0b; }
+    .text-rose-400, .text-rose-500, .text-rose-600, .text-rose-700, .dark .dark\:text-rose-300, .dark .dark\:text-rose-400 { color: #f43f5e; }
+    .text-blue-400, .text-blue-500, .text-blue-600, .text-blue-700, .dark .dark\:text-blue-300, .dark .dark\:text-blue-400 { color: #60a5fa; }
+    .bg-emerald-600 { background-color: #059669; }
+    .bg-emerald-500 { background-color: #10b981; }
+    .bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.12); }
+    .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.22); }
+    .bg-emerald-500\/5 { background-color: rgba(16, 185, 129, 0.06); }
+    .bg-amber-500 { background-color: #f59e0b; }
+    .bg-amber-500\/10 { background-color: rgba(245, 158, 11, 0.12); }
+    .bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.22); }
+    .bg-rose-500 { background-color: #f43f5e; }
+    .bg-rose-500\/10 { background-color: rgba(244, 63, 94, 0.12); }
+    .bg-rose-500\/20 { background-color: rgba(244, 63, 94, 0.22); }
+    .bg-blue-500\/10 { background-color: rgba(59, 130, 246, 0.12); }
+    .bg-blue-500\/20 { background-color: rgba(59, 130, 246, 0.22); }
+    .bg-slate-950\/70 { background-color: rgba(2, 6, 23, 0.78); }
+    .border-emerald-500\/20, .border-emerald-500\/30, .border-emerald-500\/40, .border-emerald-500\/50 { border-color: rgba(16, 185, 129, 0.35); }
+    .border-amber-500\/20, .border-amber-500\/30, .border-amber-500\/50 { border-color: rgba(245, 158, 11, 0.35); }
+    .border-rose-500\/20, .border-rose-500\/30, .border-rose-500\/50 { border-color: rgba(244, 63, 94, 0.35); }
+    .border-blue-500\/20, .border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.35); }
+    button { cursor: pointer; font-family: inherit; }
+    input, select { font-family: inherit; }
+    .dark .dark\:hidden { display: none; }
+    .dark .dark\:inline { display: inline; }
+    /* Self-contained offline icons (zero external CDN CSS dependencies) */
+    .fa-solid { font-style: normal; font-weight: 700; display: inline-block; }
+    .fa-chevron-left::before { content: "◀"; }
+    .fa-chevron-right::before { content: "▶"; }
+    .fa-shield-halved::before, .fa-shield-virus::before, .fa-shield-check::before, .fa-shield-heart::before { content: "🛡"; }
+    .fa-sun::before { content: "☀"; }
+    .fa-moon::before { content: "🌙"; }
+    .fa-arrows-rotate::before { content: "↻"; }
+    .fa-key::before { content: "🔑"; }
+    .fa-circle-info::before { content: "ℹ"; }
+    .fa-fire::before { content: "🔥"; }
+    .fa-bolt::before { content: "⚡"; }
+    .fa-list-check::before { content: "☑"; }
+    .fa-chart-pie::before, .fa-chart-line::before { content: "📈"; }
+    .fa-briefcase::before { content: "💼"; }
+    .fa-ban::before, .fa-circle-xmark::before { content: "⛔"; }
+    .fa-wallet::before { content: "👛"; }
+    .fa-check::before, .fa-circle-check::before { content: "✔"; }
+    .fa-triangle-exclamation::before, .fa-circle-exclamation::before { content: "⚠"; }
+    .fa-bell::before { content: "🔔"; }
+    .fa-crown::before { content: "👑"; }
+    .fa-filter::before { content: "🔍"; }
+    .fa-gear::before { content: "⚙"; }
+    .fa-plus::before, .fa-plus-circle::before { content: "➕"; }
+    .fa-clock-rotate-left::before { content: "🕒"; }
+    .fa-book::before { content: "📘"; }
+    .fa-file-invoice::before { content: "📄"; }
+    .fa-compass::before { content: "🧭"; }
+    .fa-trash-can::before { content: "🗑"; }
+    .fa-door-open::before { content: "🚪"; }
+    .fa-arrow-up-right-dots::before, .fa-arrow-trend-up::before { content: "↗"; }
+    .fa-caret-up::before { content: "▲"; }
+    .fa-caret-down::before { content: "▼"; }
+    .fa-spinner::before { content: "⏳"; }
     /* Dark Theme Styles */
     html.dark body {
       background-color: #0b0f19;
@@ -82,6 +277,70 @@
       color: #10b981 !important;
       font-weight: 700;
     }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 2px solid #10b981;
+      outline-offset: 2px;
+    }
+    .copy-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .copy-status-pill {
+      font-size: 11px;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.375rem;
+      background: rgba(16, 185, 129, 0.16);
+      color: #10b981;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      pointer-events: none;
+    }
+    .copy-status-pill.is-visible {
+      opacity: 1;
+    }
+    dialog.setup-dialog {
+      border: 1px solid rgba(55, 65, 81, 0.75);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      max-width: 38rem;
+      width: calc(100% - 2rem);
+      background: #0f172a;
+      color: #f9fafb;
+      overscroll-behavior: contain;
+    }
+    dialog.setup-dialog:modal {
+      overscroll-behavior: contain;
+    }
+    html.light dialog.setup-dialog {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+    dialog.setup-dialog::backdrop {
+      background: rgba(2, 6, 23, 0.78);
+      overflow: hidden;
+      overscroll-behavior: contain;
+    }
+    details.setup-details > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.85rem;
+      border-radius: 0.5rem;
+    }
+    details.setup-details > summary::-webkit-details-marker {
+      display: none;
+    }
+    details.setup-details[open] > summary .details-chevron {
+      transform: rotate(90deg);
+    }
+    .details-chevron {
+      display: inline-block;
+      transition: transform 0.15s ease;
+    }
   </style>
 </head>
 <body class="min-h-screen transition-colors duration-200">
@@ -90,7 +349,7 @@
   <div class="header-theme border-b border-theme py-2.5 px-4 transition-colors relative shadow-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
       <!-- Left scroll button -->
-      <button onclick="scrollIndices(-240)" class="h-8 w-8 rounded-lg sub-card-theme border border-theme text-theme-secondary hover:text-theme-primary flex items-center justify-center shrink-0 transition" title="Scroll Left">
+      <button type="button" data-action="scroll-indices" data-amount="-240" class="h-8 w-8 rounded-lg sub-card-theme border border-theme text-theme-secondary hover:text-theme-primary flex items-center justify-center shrink-0 transition" title="Scroll Left">
         <i class="fa-solid fa-chevron-left text-xs"></i>
       </button>
 
@@ -100,7 +359,7 @@
       </div>
 
       <!-- Right scroll button -->
-      <button onclick="scrollIndices(240)" class="h-8 w-8 rounded-lg sub-card-theme border border-theme text-theme-secondary hover:text-theme-primary flex items-center justify-center shrink-0 transition" title="Scroll Right">
+      <button type="button" data-action="scroll-indices" data-amount="240" class="h-8 w-8 rounded-lg sub-card-theme border border-theme text-theme-secondary hover:text-theme-primary flex items-center justify-center shrink-0 transition" title="Scroll Right">
         <i class="fa-solid fa-chevron-right text-xs"></i>
       </button>
 
@@ -129,23 +388,66 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- Office Remote Session Auth Trigger -->
+        <button type="button" data-action="open-remote-auth" id="remoteAuthBtn" class="sub-card-theme border border-theme text-theme-primary hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 transition" title="Authenticate temporary remote session (in-memory only)">
+          <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+          <span id="remoteAuthBtnText">Session Auth</span>
+        </button>
+
         <!-- Theme Toggle Button -->
-        <button onclick="toggleTheme()" id="themeBtn" class="sub-card-theme border border-theme text-theme-primary hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 transition" title="Toggle Dark/Light Mode">
+        <button type="button" data-action="toggle-theme" id="themeBtn" class="sub-card-theme border border-theme text-theme-primary hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 transition" title="Toggle Dark/Light Mode">
           <i class="fa-solid fa-sun text-amber-500 dark:hidden"></i>
           <i class="fa-solid fa-moon text-blue-400 hidden dark:inline"></i>
           <span id="themeText">Light Mode</span>
         </button>
 
         <!-- Rescan Universe Button -->
-        <button id="refreshBtn" onclick="refreshScan()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-2 transition shadow-md shadow-emerald-600/20">
+        <button type="button" id="refreshBtn" data-action="refresh-scan" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-2 transition shadow-md shadow-emerald-600/20">
           <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i> Rescan Universe
         </button>
       </div>
     </div>
   </header>
 
+  <!-- REMOTE SESSION AUTH MODAL (Cryptographic challenge-response; in-memory token ONLY) -->
+  <div id="remoteAuthModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="card-theme border border-theme rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-theme-primary flex items-center gap-2">
+          <i class="fa-solid fa-key text-emerald-500"></i> Home Mac Cryptographic Session Auth
+        </h3>
+        <button type="button" data-action="close-remote-auth" class="text-theme-secondary hover:text-theme-primary text-sm">&times;</button>
+      </div>
+      <p class="text-xs text-theme-secondary">Short-lived session token is kept strictly in page memory (no Home Mac owner secret needed), and remote access is read-only (order execution is permanently disabled). Choose one explicit auth path (do not reuse the same Device ID across both paths):<br/><strong>Path A (Persistent Keychain CLI):</strong> Safari/Chrome cannot read macOS Keychain directly — click <em>1. Request Challenge</em>, run <code>sign-challenge</code> in Office Mac Terminal, and paste the Base64 signature.<br/><strong>Path B (Ephemeral Browser RAM Key):</strong> Click <em>Use Browser RAM Key (HTTPS)</em>, register the displayed PEM on Home Mac (e.g. as <code>office-mac-web-1</code>), then click <em>1. Request Challenge</em> (lost on reload; requires fresh approval).</p>
+      <div class="space-y-2.5 text-xs">
+        <input id="remoteDeviceId" type="text" placeholder="Trusted Device ID (e.g. office-mac-1)" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary" autocomplete="off" />
+        <div class="flex items-center gap-2">
+          <button type="button" data-action="request-remote-challenge" class="px-3 py-1.5 rounded-lg border border-theme sub-card-theme text-theme-primary font-semibold">1. Request Challenge</button>
+          <button type="button" data-action="generate-webcrypto-key" class="px-3 py-1.5 rounded-lg border border-theme sub-card-theme text-emerald-500 font-semibold">Use Browser RAM Key (HTTPS)</button>
+        </div>
+        <input id="remoteChallengeRaw" type="text" readonly placeholder="Raw Challenge String (copy exact value for CLI sign-challenge)" class="hidden w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary font-mono text-[10px]" />
+        <div id="remoteChallengeBox" class="hidden p-2 rounded-lg sub-card-theme border border-theme font-mono text-[10px] text-theme-secondary break-all"></div>
+        <input id="remoteChallengeId" type="text" placeholder="Challenge ID (from Step 1)" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary font-mono" autocomplete="off" />
+        <input id="remoteChallengeSignature" type="text" placeholder="Base64 ECDSA Signature (paste from Keychain CLI or auto-filled by RAM key)" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary font-mono" autocomplete="off" />
+      </div>
+      <div id="remoteAuthFeedback" class="text-xs text-rose-500 hidden"></div>
+      <div class="flex items-center justify-end gap-2">
+        <button type="button" data-action="logout-remote-session" class="px-3 py-1.5 rounded-lg border border-theme text-xs text-theme-secondary hover:text-theme-primary">Revoke Session</button>
+        <button type="button" data-action="submit-remote-auth" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">Authenticate</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN LAYOUT -->
   <main class="max-w-7xl mx-auto px-4 py-6">
+    <!-- ENGINE HEALTH & FAILURE DIAGNOSTIC BANNER -->
+    <div id="engineStatusBanner" class="mb-4 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300 text-xs flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-circle-info"></i>
+        <span id="engineStatusBannerText">Checking Home Mac engine status, broker auth, and market data freshness...</span>
+      </div>
+      <span id="engineStatusCode" class="font-mono text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-slate-900/20">INITIALIZING</span>
+    </div>
 
     <!-- Top Metric Overview Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -195,30 +497,33 @@
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="border-b border-theme mb-6 flex gap-6 text-sm font-medium overflow-x-auto scrollbar-none transition-colors">
-      <button onclick="switchTab('shortlist')" id="tab-shortlist" class="pb-3 text-emerald-600 dark:text-emerald-400 tab-active flex items-center gap-2 shrink-0">
+    <div role="tablist" aria-label="Dashboard Sections" class="border-b border-theme mb-6 flex gap-6 text-sm font-medium overflow-x-auto scrollbar-none transition-colors">
+      <button type="button" role="tab" aria-selected="true" aria-controls="panel-shortlist" data-action="switch-tab" data-tab="shortlist" id="tab-shortlist" class="pb-3 text-emerald-600 dark:text-emerald-400 tab-active flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-fire"></i> Top Shortlisted Trades
       </button>
-      <button onclick="switchTab('options')" id="tab-options" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-options" data-action="switch-tab" data-tab="options" id="tab-options" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-bolt"></i> F&O Option Strike Selector
       </button>
-      <button onclick="switchTab('watchlist')" id="tab-watchlist" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-watchlist" data-action="switch-tab" data-tab="watchlist" id="tab-watchlist" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-list-check"></i> Watchlist Quick Scanner
       </button>
-      <button onclick="switchTab('fundamentals')" id="tab-fundamentals" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-fundamentals" data-action="switch-tab" data-tab="fundamentals" id="tab-fundamentals" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-chart-pie"></i> Fundamental Health & DCF
       </button>
-      <button onclick="switchTab('positions')" id="tab-positions" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-positions" data-action="switch-tab" data-tab="positions" id="tab-positions" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-briefcase"></i> Position Exit & Trailing Monitor
       </button>
-      <button onclick="switchTab('vetoed')" id="tab-vetoed" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-vetoed" data-action="switch-tab" data-tab="vetoed" id="tab-vetoed" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-ban"></i> 'Why NOT to Trade' Gatekeeper
       </button>
-      <button onclick="switchTab('verifier')" id="tab-verifier" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-verifier" data-action="switch-tab" data-tab="verifier" id="tab-verifier" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-shield-virus"></i> Tip Sanity Verifier
       </button>
-      <button onclick="switchTab('ledger')" id="tab-ledger" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-ledger" data-action="switch-tab" data-tab="ledger" id="tab-ledger" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
         <i class="fa-solid fa-wallet"></i> Capital & P&L Ledger
+      </button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-setup" data-action="switch-tab" data-tab="setup" id="tab-setup" class="pb-3 text-theme-secondary hover:text-theme-primary flex items-center gap-2 shrink-0">
+        <i class="fa-solid fa-gear"></i> Setup & Remote Access
       </button>
     </div>
 
@@ -246,16 +551,16 @@
           </div>
           <!-- Timeframe / Strategy Filter Pills -->
           <div class="flex items-center gap-1.5 bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-lg border border-theme text-xs font-semibold">
-            <button onclick="setShortlistFilter('ALL')" id="filterBtn-ALL" class="px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition">
+            <button type="button" data-action="set-filter" data-filter="ALL" id="filterBtn-ALL" class="px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition">
               All Setups (<span id="filterCount-ALL">5</span>)
             </button>
-            <button onclick="setShortlistFilter('INTRADAY')" id="filterBtn-INTRADAY" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
+            <button type="button" data-action="set-filter" data-filter="INTRADAY" id="filterBtn-INTRADAY" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
               ⚡ Intraday 15m (<span id="filterCount-INTRADAY">3</span>)
             </button>
-            <button onclick="setShortlistFilter('SWING')" id="filterBtn-SWING" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
+            <button type="button" data-action="set-filter" data-filter="SWING" id="filterBtn-SWING" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
               📈 Swing 1D (<span id="filterCount-SWING">4</span>)
             </button>
-            <button onclick="setShortlistFilter('OPTIONS')" id="filterBtn-OPTIONS" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
+            <button type="button" data-action="set-filter" data-filter="OPTIONS" id="filterBtn-OPTIONS" class="px-3 py-1 rounded-md text-theme-secondary hover:text-theme-primary transition">
               🎯 Options Scalp (<span id="filterCount-OPTIONS">3</span>)
             </button>
           </div>
@@ -365,14 +670,14 @@
           <div>
             <label class="text-[11px] text-theme-secondary font-medium">Quick Test with Broker History:</label>
             <div class="flex flex-wrap gap-1.5 mt-1">
-              <button type="button" onclick="loadTipPreset('MOTILALOFS', 'CE', 26.5, 23, 30, 37, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/10 transition">🔥 Motilal 1080 CE (Tipster Call)</button>
-              <button type="button" onclick="loadTipPreset('NESTLEIND', 'CE', 28, 22, 33, 36, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Nestle 28 CE (Nov 4 Trap)</button>
-              <button type="button" onclick="loadTipPreset('RELIANCE', 'CE', 22, 18, 26, 30, 2)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Reliance 22 CE (2 Lots)</button>
-              <button type="button" onclick="loadTipPreset('TCS', 'CE', 38, 32, 50, 60, 1)" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">TCS 38 CE (1 Lot)</button>
+              <button type="button" data-action="load-tip-preset" data-sym="MOTILALOFS" data-inst="CE" data-entry="26.5" data-sl="23" data-t1="30" data-t2="37" data-lots="1" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/10 transition">🔥 Motilal 1080 CE (Tipster Call)</button>
+              <button type="button" data-action="load-tip-preset" data-sym="NESTLEIND" data-inst="CE" data-entry="28" data-sl="22" data-t1="33" data-t2="36" data-lots="1" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Nestle 28 CE (Nov 4 Trap)</button>
+              <button type="button" data-action="load-tip-preset" data-sym="RELIANCE" data-inst="CE" data-entry="22" data-sl="18" data-t1="26" data-t2="30" data-lots="2" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">Reliance 22 CE (2 Lots)</button>
+              <button type="button" data-action="load-tip-preset" data-sym="TCS" data-inst="CE" data-entry="38" data-sl="32" data-t1="50" data-t2="60" data-lots="1" class="px-2 py-1 text-[10px] rounded sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition">TCS 38 CE (1 Lot)</button>
             </div>
           </div>
 
-          <form id="tipForm" onsubmit="handleVerifyTip(event)" class="space-y-3 text-xs">
+          <form id="tipForm" data-form-action="verify-tip" class="space-y-3 text-xs">
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-theme-secondary font-medium mb-1">Stock / Index Symbol</label>
@@ -449,7 +754,7 @@
           <h2 class="text-base font-semibold text-theme-primary">Capital & Daily P&L Ledger</h2>
           <p class="text-xs text-theme-secondary">Tracks net performance starting from your initial capital. Enforces a daily drawdown circuit breaker to prevent emotional over-trading.</p>
         </div>
-        <button onclick="openLedgerSettingsModal()" class="sub-card-theme border border-theme text-theme-primary hover:border-emerald-500 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 transition">
+        <button type="button" data-action="open-ledger-settings" class="sub-card-theme border border-theme text-theme-primary hover:border-emerald-500 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 transition">
           <i class="fa-solid fa-gear"></i> Set Capital & Risk Limits
         </button>
       </div>
@@ -497,7 +802,7 @@
           <h3 class="text-sm font-bold text-theme-primary flex items-center gap-2 border-b border-theme pb-3">
             <i class="fa-solid fa-plus-circle text-emerald-500"></i> Record Closed Trade
           </h3>
-          <form id="recordTradeForm" onsubmit="handleRecordTrade(event)" class="space-y-3 text-xs">
+          <form id="recordTradeForm" data-form-action="record-trade" class="space-y-3 text-xs">
             <div>
               <label class="block text-theme-secondary font-medium mb-1">Symbol & Strike</label>
               <input type="text" id="recSymbol" required placeholder="e.g. NIFTY 23800 CE" class="w-full px-3 py-2 rounded-lg sub-card-theme border border-theme text-theme-primary uppercase font-bold focus:outline-none focus:border-emerald-500">
@@ -546,10 +851,10 @@
               <span class="badge bg-emerald-500/10 text-emerald-500 text-[10px]" id="ledgerTotalTradesCount">0 Trades</span>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="importChatHistory()" class="px-2.5 py-1 text-[11px] rounded-lg sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition flex items-center gap-1.5" title="Reconstruct all 19 verified trades from WhatsApp chat">
+              <button type="button" data-action="import-chat-history" class="px-2.5 py-1 text-[11px] rounded-lg sub-card-theme border border-theme hover:border-emerald-500 text-theme-primary transition flex items-center gap-1.5" title="Reconstruct all 19 verified trades from WhatsApp chat">
                 <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> Load Chat Trades (19)
               </button>
-              <button onclick="clearLedgerHistory()" class="px-2.5 py-1 text-[11px] rounded-lg sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary transition" title="Clear journal history">
+              <button type="button" data-action="clear-ledger-history" class="px-2.5 py-1 text-[11px] rounded-lg sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary transition" title="Clear journal history">
                 Clear
               </button>
             </div>
@@ -578,9 +883,123 @@
       </div>
     </section>
 
+    <!-- TAB 9: Setup & Remote Access (Stage B Wizard, Command Catalog & Recovery Center) -->
+    <section id="panel-setup" role="tabpanel" aria-labelledby="tab-setup" class="space-y-6 hidden" hidden>
+      <!-- Top Policy & Action Strip -->
+      <div class="card-theme rounded-2xl p-5 border">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="badge bg-blue-500/10 text-blue-400 border border-blue-500/30">Phase 3E.5.2.6.1 · Stage B Provisioning</span>
+              <span id="setupOverallVerdictBadge" class="badge bg-amber-500/10 text-amber-400 border border-amber-500/30">⏳ LOADING...</span>
+              <span id="setupFreshnessBadge" class="badge hidden" hidden></span>
+            </div>
+            <h2 class="text-xl font-bold text-theme-primary">Setup &amp; Remote Access Control Center</h2>
+            <p class="text-xs text-theme-secondary">
+              Home Mac remains the permanent Angel One engine · Order execution permanently disabled · Broker auth &amp; Phase 3F excluded · Reference: <span class="font-mono">docs/operations/STAGE_B_SETUP.md</span>
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="setupRefreshBtn" data-action="refresh-setup-state" class="px-3 py-2 rounded-lg text-xs font-semibold sub-card-theme border border-theme text-theme-primary hover:border-emerald-500/40">
+              <i class="fa-solid fa-arrows-rotate"></i> Refresh Live Checks
+            </button>
+            <button type="button" id="setupPreflightBtn" data-action="run-setup-preflight" class="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 text-white">
+              <i class="fa-solid fa-shield-check"></i> Run Safe Preflight &amp; Save Progress
+            </button>
+          </div>
+        </div>
+        <div id="setupActionBanner" role="status" aria-live="polite" class="mt-3 text-xs text-theme-secondary"></div>
+      </div>
+
+      <!-- A. Setup Overview (9 Live Readiness Cards + Host/Device Details) -->
+      <div class="card-theme rounded-2xl p-5 border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-lg font-bold text-theme-primary">A. Setup Overview &amp; Live Component Status</h3>
+          <span class="text-xs text-theme-secondary font-mono" id="setupProgressFileLabel">.ops_state/stage_b_progress.json</span>
+        </div>
+        <div id="setupOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Rendered cleanly by JS via escapeHtml -->
+        </div>
+        <div id="setupEnvAndDevicesSummary" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+          <!-- Rendered cleanly by JS via escapeHtml -->
+        </div>
+      </div>
+
+      <!-- B. Guided 10-Step Setup Wizard -->
+      <div class="card-theme rounded-2xl p-5 border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-bold text-theme-primary">B. Guided Sequential Stage B Setup Wizard (Steps 1–10)</h3>
+            <p class="text-xs text-theme-secondary">
+              Each step follows strict prerequisites. Copying a command or clicking confirmation never bypasses automated verification; Step 10 remains locked until Steps 2–9 are VERIFIED.
+            </p>
+          </div>
+        </div>
+        <div id="setupWizardList" class="space-y-4">
+          <!-- Rendered cleanly by JS via escapeHtml -->
+        </div>
+      </div>
+
+      <!-- C. Setup Recovery Center -->
+      <div id="setupRecoverySection" class="card-theme rounded-2xl p-5 border space-y-4">
+        <div>
+          <h3 class="text-lg font-bold text-theme-primary">C. Operational Recovery Center</h3>
+          <p class="text-xs text-theme-secondary">
+            Step-by-step recovery guidance for restarts, sleep/network drops, Tailscale disconnections, IP changes, TLS expiration, revocation, and LaunchAgent failures.
+          </p>
+        </div>
+        <div id="setupRecoveryList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Rendered cleanly by JS via escapeHtml -->
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <script>
+  <dialog id="setupConfirmDialog" class="setup-dialog" closedby="closerequest" aria-labelledby="setupConfirmDialogTitle">
+    <form method="dialog" id="setupConfirmForm" class="space-y-4" novalidate>
+      <div class="space-y-1">
+        <span id="setupConfirmTierBadge" class="badge bg-amber-500/10 text-amber-400 border border-amber-500/30">Owner Confirmation Required</span>
+        <h3 id="setupConfirmDialogTitle" class="text-lg font-bold text-theme-primary">Confirm Local Home Mac Setup Action</h3>
+        <p id="setupConfirmDialogSummary" class="text-xs text-theme-secondary"></p>
+      </div>
+      <div class="sub-card-theme border border-theme rounded-lg p-3 space-y-1">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-theme-secondary">Exact Operation / Command Preview</div>
+        <pre id="setupConfirmDialogCmd" class="text-xs font-mono overflow-x-auto text-emerald-400" style="margin:0; white-space:pre-wrap;"></pre>
+      </div>
+      <div class="space-y-1">
+        <label for="setupConfirmNoteInput" class="block text-xs font-semibold text-theme-primary">Owner Audit Note (stored cleanly without secrets in .ops_state/stage_b_progress.json)</label>
+        <input id="setupConfirmNoteInput" type="text" placeholder="e.g., Verified Office Mac tailnet sign-in & least-privilege ACL on Home Mac" class="w-full px-3 py-2 rounded-lg text-xs sub-card-theme border border-theme text-theme-primary" />
+        <p id="setupConfirmError" class="text-xs text-rose-400 hidden"></p>
+      </div>
+      <div class="flex flex-wrap justify-end gap-2 pt-2">
+        <button type="submit" value="cancel" autofocus class="px-4 py-2 rounded-lg text-xs font-semibold sub-card-theme border border-theme text-theme-primary">
+          Cancel
+        </button>
+        <button type="submit" value="confirm" id="setupConfirmSubmitBtn" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 text-white">
+          Confirm &amp; Execute
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <script nonce="__CSP_NONCE__">
+    // Strict HTML escaping helper for all server/user strings interpolated into DOM templates
+    function escapeHtml(val) {
+      return String(val ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/`/g, '&#96;');
+    }
+
+    function safeNum(val, fallback = 0) {
+      const n = Number(val);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
     // Theme Management (Dark / Light)
     function initTheme() {
       const savedTheme = localStorage.getItem('tradelens_theme') || 'dark';
@@ -1204,6 +1623,230 @@
     };
 
     let scanData = fallbackData;
+    // Security invariant: short-lived office session token and any ephemeral key stay strictly in RAM, never localStorage/sessionStorage/cookies.
+    let remoteSessionToken = null;
+    let remoteSessionExpiresAt = null;
+    let remoteEphemeralKeyPair = null;
+
+    function resolveApiCandidates(path) {
+      const cleanPath = path.startsWith('/') ? path : '/' + path;
+      if (window.location.protocol === 'file:') {
+        return ['http://127.0.0.1:8000' + cleanPath];
+      }
+      const host = window.location.hostname || '127.0.0.1';
+      const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      const fmtHost = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+      if (window.location.port === '8080') {
+        return [`${proto}//${fmtHost}:8000${cleanPath}`, cleanPath];
+      }
+      return [cleanPath, `${proto}//${fmtHost}:8000${cleanPath}`];
+    }
+
+    async function apiFetch(path, options = {}) {
+      const headers = new Headers(options.headers || {});
+      if (remoteSessionToken) {
+        headers.set('Authorization', `Bearer ${remoteSessionToken}`);
+      }
+      const candidates = resolveApiCandidates(path);
+      let lastErr = null;
+      let lastRes = null;
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { ...options, headers, cache: 'no-store' });
+          if (res.status === 401 || res.status === 403 || res.ok) {
+            return res;
+          }
+          lastRes = res;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      if (lastRes) return lastRes;
+      throw lastErr || new Error('Home Mac backend unreachable');
+    }
+
+    function arrayBufferToBase64(buf) {
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+
+    function trimDerInt(arr) {
+      let i = 0;
+      while (i < arr.length - 1 && arr[i] === 0) i += 1;
+      const sliced = arr.slice(i);
+      if (sliced[0] & 0x80) return Uint8Array.from([0, ...sliced]);
+      return sliced;
+    }
+
+    function p1363ToDerBase64(rawSig) {
+      const bytes = new Uint8Array(rawSig);
+      const r = trimDerInt(bytes.slice(0, 32));
+      const s = trimDerInt(bytes.slice(32, 64));
+      const seqLen = 2 + r.length + 2 + s.length;
+      const out = new Uint8Array(2 + seqLen);
+      let offset = 0;
+      out[offset++] = 0x30;
+      out[offset++] = seqLen;
+      out[offset++] = 0x02;
+      out[offset++] = r.length;
+      out.set(r, offset);
+      offset += r.length;
+      out[offset++] = 0x02;
+      out[offset++] = s.length;
+      out.set(s, offset);
+      return arrayBufferToBase64(out.buffer);
+    }
+
+    function formatSpkiPem(spkiBuf) {
+      const b64 = arrayBufferToBase64(spkiBuf);
+      const lines = b64.match(/.{1,64}/g) || [b64];
+      return `-----BEGIN PUBLIC KEY-----\n${lines.join('\n')}\n-----END PUBLIC KEY-----`;
+    }
+
+    async function generateWebCryptoKeypair() {
+      const box = document.getElementById('remoteChallengeBox');
+      const feedback = document.getElementById('remoteAuthFeedback');
+      if (feedback) { feedback.classList.add('hidden'); feedback.textContent = ''; }
+      if (!window.crypto || !window.crypto.subtle) {
+        if (feedback) {
+          feedback.textContent = 'WebCrypto requires HTTPS or localhost; use macOS Keychain CLI on Home/Office Mac.';
+          feedback.classList.remove('hidden');
+        }
+        return;
+      }
+      remoteEphemeralKeyPair = await window.crypto.subtle.generateKey(
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['sign', 'verify']
+      );
+      const spki = await window.crypto.subtle.exportKey('spki', remoteEphemeralKeyPair.publicKey);
+      const pem = formatSpkiPem(spki);
+      const digest = await window.crypto.subtle.digest('SHA-256', spki);
+      const fpHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+      if (box) {
+        box.textContent = `RAM Public Key SHA-256: ${fpHex}\nRegister on Home Mac first (lost on reload; requires fresh approval):\n${pem}`;
+        box.classList.remove('hidden');
+      }
+    }
+
+    function openRemoteAuthModal() {
+      const m = document.getElementById('remoteAuthModal');
+      if (m) m.classList.remove('hidden');
+    }
+
+    function closeRemoteAuthModal() {
+      const m = document.getElementById('remoteAuthModal');
+      if (m) m.classList.add('hidden');
+      ['remoteChallengeRaw', 'remoteChallengeId', 'remoteChallengeSignature'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    }
+
+    async function requestRemoteChallenge() {
+      const feedback = document.getElementById('remoteAuthFeedback');
+      const box = document.getElementById('remoteChallengeBox');
+      const rawChEl = document.getElementById('remoteChallengeRaw');
+      const devId = (document.getElementById('remoteDeviceId')?.value || '').trim();
+      if (feedback) { feedback.classList.add('hidden'); feedback.textContent = ''; }
+      try {
+        const res = await apiFetch('/api/remote/challenge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device_id: devId })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (feedback) {
+            feedback.textContent = `${data.reason_code || 'CHALLENGE_REJECTED'}: ${data.error || 'Rejected'}`;
+            feedback.classList.remove('hidden');
+          }
+          return;
+        }
+        const chIdEl = document.getElementById('remoteChallengeId');
+        if (chIdEl) chIdEl.value = data.challenge_id || '';
+        if (rawChEl) {
+          rawChEl.value = data.challenge_string || '';
+          rawChEl.classList.remove('hidden');
+        }
+        if (remoteEphemeralKeyPair && window.crypto && window.crypto.subtle && data.challenge_string) {
+          if (box) {
+            box.textContent = `Path B (Browser RAM Key) auto-signed challenge ${data.challenge_id || ''}.`;
+            box.classList.remove('hidden');
+          }
+          const sigRaw = await window.crypto.subtle.sign(
+            { name: 'ECDSA', hash: 'SHA-256' },
+            remoteEphemeralKeyPair.privateKey,
+            new TextEncoder().encode(data.challenge_string)
+          );
+          const sigEl = document.getElementById('remoteChallengeSignature');
+          if (sigEl) sigEl.value = p1363ToDerBase64(sigRaw);
+        } else if (box) {
+          box.textContent =
+            `Path A (Keychain CLI): Run on Office Mac: /opt/homebrew/bin/python3.12 -m backend.app.runtime.cli sign-challenge --device-id ${devId} --challenge "${data.challenge_string}" (then paste JSON signature field below).`;
+          box.classList.remove('hidden');
+        }
+      } catch (err) {
+        if (feedback) {
+          feedback.textContent = 'Network/VPN unreachable requesting challenge from Home Mac.';
+          feedback.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function submitRemoteAuth() {
+      const feedback = document.getElementById('remoteAuthFeedback');
+      const devId = (document.getElementById('remoteDeviceId')?.value || '').trim();
+      const challengeId = (document.getElementById('remoteChallengeId')?.value || '').trim();
+      const signature = (document.getElementById('remoteChallengeSignature')?.value || '').trim();
+      if (feedback) { feedback.classList.add('hidden'); feedback.textContent = ''; }
+      try {
+        const res = await apiFetch('/api/remote/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_id: devId,
+            challenge_id: challengeId,
+            signature: signature
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (feedback) {
+            feedback.textContent = `${data.reason_code || 'AUTH_FAILED'}: ${data.error || 'Rejected'}`;
+            feedback.classList.remove('hidden');
+          }
+          return;
+        }
+        remoteSessionToken = data.access_token;
+        remoteSessionExpiresAt = data.expires_at;
+        const btnText = document.getElementById('remoteAuthBtnText');
+        if (btnText) btnText.textContent = `Session: ${data.device_id}`;
+        closeRemoteAuthModal();
+        refreshScan();
+      } catch (err) {
+        if (feedback) {
+          feedback.textContent = 'Network/VPN unreachable connecting to Home Mac.';
+          feedback.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function logoutRemoteSession() {
+      if (remoteSessionToken) {
+        try {
+          await apiFetch('/api/remote/logout', { method: 'POST', body: '{}' });
+        } catch (e) {}
+      }
+      remoteSessionToken = null;
+      remoteSessionExpiresAt = null;
+      const btnText = document.getElementById('remoteAuthBtnText');
+      if (btnText) btnText.textContent = 'Session Auth';
+      closeRemoteAuthModal();
+      refreshScan();
+    }
 
     // Render Prominent Index Cards in Horizontal Scroll Bar
     function renderIndices(indices) {
@@ -1211,7 +1854,10 @@
       if (!container) return;
       container.innerHTML = '';
       (indices || defaultIndices).forEach(idx => {
-        const isPos = idx.change_pct >= 0;
+        const chgPct = safeNum(idx.change_pct, 0);
+        const chgPts = safeNum(idx.change_pts, 0);
+        const val = safeNum(idx.value, 0);
+        const isPos = chgPct >= 0;
         const colorClass = isPos
           ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
           : 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30';
@@ -1222,14 +1868,14 @@
           <div>
             <div class="text-[10px] font-bold uppercase tracking-wider text-theme-secondary flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full ${isPos ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
-              ${idx.symbol}
+              ${escapeHtml(idx.symbol)}
             </div>
-            <div class="text-sm font-extrabold text-theme-primary mt-0.5">₹${idx.value.toLocaleString()}</div>
+            <div class="text-sm font-extrabold text-theme-primary mt-0.5">₹${escapeHtml(val.toLocaleString())}</div>
           </div>
           <div class="border rounded-lg px-2.5 py-1 text-xs font-bold ${colorClass} flex items-center gap-1">
             <i class="fa-solid ${icon}"></i>
-            <span>${isPos ? '+' : ''}${idx.change_pct.toFixed(2)}%</span>
-            <span class="text-[10px] font-medium opacity-80">(${isPos ? '+' : ''}${idx.change_pts ? idx.change_pts.toFixed(1) : ''})</span>
+            <span>${isPos ? '+' : ''}${chgPct.toFixed(2)}%</span>
+            <span class="text-[10px] font-medium opacity-80">(${isPos ? '+' : ''}${chgPts ? chgPts.toFixed(1) : ''})</span>
           </div>
         `;
         container.appendChild(card);
@@ -1243,11 +1889,14 @@
 
     // Switch Tabs
     function switchTab(tabId) {
-      ['shortlist', 'options', 'watchlist', 'fundamentals', 'positions', 'vetoed', 'verifier', 'ledger'].forEach(t => {
+      ['shortlist', 'options', 'watchlist', 'fundamentals', 'positions', 'vetoed', 'verifier', 'ledger', 'setup'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
         const panel = document.getElementById(`panel-${t}`);
         if (!btn || !panel) return;
-        if (t === tabId) {
+        const active = (t === tabId);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        panel.hidden = !active;
+        if (active) {
           btn.classList.add('tab-active');
           btn.classList.remove('text-theme-secondary');
           panel.classList.remove('hidden');
@@ -1259,6 +1908,8 @@
       });
       if (tabId === 'ledger') {
         loadLedger();
+      } else if (tabId === 'setup') {
+        loadSetupState();
       }
     }
 
@@ -1319,10 +1970,10 @@
       if (moversList) {
         const movers = data.top_movers || fallbackData.top_movers || [];
         moversList.innerHTML = movers.map(m => `
-          <button onclick="filterBySymbol('${m.symbol}')" class="sub-card-theme border border-theme hover:border-emerald-500/50 px-2.5 py-1 rounded-md flex items-center gap-1.5 transition text-xs shrink-0 cursor-pointer" title="Click to view ${m.symbol}">
-            <span class="font-extrabold text-theme-primary">${m.symbol}</span>
-            <span class="${m.change_pct >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}">${m.change_pct >= 0 ? '+' : ''}${m.change_pct.toFixed(2)}%</span>
-            <span class="text-[10px] text-theme-secondary bg-slate-200/50 dark:bg-slate-800/80 px-1 py-0.5 rounded font-mono">${m.rvol}x RVOL</span>
+          <button type="button" data-action="filter-symbol" data-symbol="${escapeHtml(m.symbol)}" class="sub-card-theme border border-theme hover:border-emerald-500/50 px-2.5 py-1 rounded-md flex items-center gap-1.5 transition text-xs shrink-0 cursor-pointer" title="Click to view ${escapeHtml(m.symbol)}">
+            <span class="font-extrabold text-theme-primary">${escapeHtml(m.symbol)}</span>
+            <span class="${safeNum(m.change_pct, 0) >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}">${safeNum(m.change_pct, 0) >= 0 ? '+' : ''}${safeNum(m.change_pct, 0).toFixed(2)}%</span>
+            <span class="text-[10px] text-theme-secondary bg-slate-200/50 dark:bg-slate-800/80 px-1 py-0.5 rounded font-mono">${escapeHtml(safeNum(m.rvol, 1.0))}x RVOL</span>
           </button>
         `).join('');
       }
@@ -1368,7 +2019,7 @@
           <div class="col-span-full card-theme border rounded-xl p-8 text-center text-theme-secondary">
             <i class="fa-solid fa-filter text-2xl mb-2 text-amber-500"></i>
             <p class="font-bold">No setups match the selected filter.</p>
-            <button onclick="setShortlistFilter('ALL')" class="mt-3 text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-semibold">Reset Filter</button>
+            <button type="button" data-action="set-filter" data-filter="ALL" class="mt-3 text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-semibold">Reset Filter</button>
           </div>
         `;
         return;
@@ -1378,20 +2029,22 @@
         const ts = s.trade_setup || {};
         const prob = s.probability || { target_first_rate_pct: 62.3, sample_size: 300, net_expectancy_pct: 1.45 };
         const isLivePos = (s.live_change_pct !== undefined ? s.live_change_pct : 0.0) >= 0;
-        const changeStr = s.live_change_pct !== undefined ? `${isLivePos ? '+' : ''}${s.live_change_pct.toFixed(2)}%` : '';
+        const changeStr = s.live_change_pct !== undefined ? `${isLivePos ? '+' : ''}${safeNum(s.live_change_pct, 0).toFixed(2)}%` : '';
         const changeColor = isLivePos ? 'text-emerald-500' : 'text-rose-500';
 
         // Best offer option recommendation
-        const strikeStep = s.cmp > 2000 ? 100 : (s.cmp > 1000 ? 50 : (s.cmp > 500 ? 20 : (s.cmp > 200 ? 10 : 5)));
-        const defaultStrike = Math.round(s.cmp / strikeStep) * strikeStep;
-        const defaultPrem = Math.max(2.5, +(s.cmp * 0.025).toFixed(2));
+        const cmpVal = safeNum(s.cmp, 0);
+        const lotVal = safeNum(s.lot_size, 250);
+        const strikeStep = cmpVal > 2000 ? 100 : (cmpVal > 1000 ? 50 : (cmpVal > 500 ? 20 : (cmpVal > 200 ? 10 : 5)));
+        const defaultStrike = Math.round(cmpVal / strikeStep) * strikeStep;
+        const defaultPrem = Math.max(2.5, +(cmpVal * 0.025).toFixed(2));
         const optRec = s.option_recommendation || {
           strike: defaultStrike,
           type: "CE",
           premium: defaultPrem,
           delta: 0.52,
-          lot_size: s.lot_size || 250,
-          capital_required: Math.round(defaultPrem * (s.lot_size || 250)),
+          lot_size: lotVal,
+          capital_required: Math.round(defaultPrem * lotVal),
           pcr: s.pcr || 0.78
         };
 
@@ -1410,17 +2063,17 @@
                 <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
                   <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">#${idx + 1}</span>
                   ${timeframeBadge}
-                  <span class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-semibold">${s.strategy_name || ts.setup_name || 'Momentum'}</span>
+                  <span class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-semibold">${escapeHtml(s.strategy_name || ts.setup_name || 'Momentum')}</span>
                 </div>
                 <div class="flex items-baseline gap-2">
-                  <h3 class="text-xl font-extrabold text-theme-primary">${s.symbol}</h3>
-                  ${changeStr ? `<span class="text-xs font-bold ${changeColor}">${changeStr}</span>` : ''}
+                  <h3 class="text-xl font-extrabold text-theme-primary">${escapeHtml(s.symbol)}</h3>
+                  ${changeStr ? `<span class="text-xs font-bold ${changeColor}">${escapeHtml(changeStr)}</span>` : ''}
                 </div>
-                <p class="text-[11px] text-theme-secondary">${s.name || s.symbol} · ${s.category || 'F&O'}</p>
+                <p class="text-[11px] text-theme-secondary">${escapeHtml(s.name || s.symbol)} · ${escapeHtml(s.category || 'F&O')}</p>
               </div>
               <div class="text-right">
                 <div class="text-[10px] text-theme-secondary font-bold uppercase tracking-wider">Setup Score</div>
-                <div class="text-xl font-black text-emerald-600 dark:text-emerald-400">${s.composite_score || 85.0}<span class="text-xs text-theme-secondary font-normal">/100</span></div>
+                <div class="text-xl font-black text-emerald-600 dark:text-emerald-400">${safeNum(s.composite_score, 85.0)}<span class="text-xs text-theme-secondary font-normal">/100</span></div>
               </div>
             </div>
 
@@ -1428,23 +2081,23 @@
             <div class="grid grid-cols-4 gap-1.5 my-3 text-[11px]">
               <div class="sub-card-theme border border-theme rounded-md p-1.5 text-center">
                 <div class="text-[9px] uppercase tracking-wider text-theme-secondary font-bold">PCR Ratio</div>
-                <div class="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">${s.pcr || 0.78}</div>
-                <div class="text-[9px] text-theme-secondary font-medium truncate">${(s.pcr || 0.78) < 0.9 ? 'Put Support' : 'Neutral'}</div>
+                <div class="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">${safeNum(s.pcr, 0.78)}</div>
+                <div class="text-[9px] text-theme-secondary font-medium truncate">${safeNum(s.pcr, 0.78) < 0.9 ? 'Put Support' : 'Neutral'}</div>
               </div>
               <div class="sub-card-theme border border-theme rounded-md p-1.5 text-center">
                 <div class="text-[9px] uppercase tracking-wider text-theme-secondary font-bold">RVOL (Vol)</div>
-                <div class="font-extrabold ${(s.rvol || 1.2) >= 2.0 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5">${s.rvol || 1.2}x</div>
-                <div class="text-[9px] text-theme-secondary font-medium truncate">${(s.rvol || 1.2) >= 3.0 ? 'Huge Surge' : 'Active'}</div>
+                <div class="font-extrabold ${safeNum(s.rvol, 1.2) >= 2.0 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5">${safeNum(s.rvol, 1.2)}x</div>
+                <div class="text-[9px] text-theme-secondary font-medium truncate">${safeNum(s.rvol, 1.2) >= 3.0 ? 'Huge Surge' : 'Active'}</div>
               </div>
               <div class="sub-card-theme border border-theme rounded-md p-1.5 text-center">
                 <div class="text-[9px] uppercase tracking-wider text-theme-secondary font-bold">RSI(14)</div>
-                <div class="font-extrabold ${(s.rsi || 58) > 70 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5">${s.rsi || 58.5}</div>
-                <div class="text-[9px] text-theme-secondary font-medium truncate">${(s.rsi || 58) > 60 ? 'Bullish' : 'Neutral'}</div>
+                <div class="font-extrabold ${safeNum(s.rsi, 58) > 70 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5">${safeNum(s.rsi, 58.5)}</div>
+                <div class="text-[9px] text-theme-secondary font-medium truncate">${safeNum(s.rsi, 58) > 60 ? 'Bullish' : 'Neutral'}</div>
               </div>
               <div class="sub-card-theme border border-theme rounded-md p-1.5 text-center">
                 <div class="text-[9px] uppercase tracking-wider text-theme-secondary font-bold">Win Rate</div>
-                <div class="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">${prob.target_first_rate_pct}%</div>
-                <div class="text-[9px] text-theme-secondary font-medium truncate">EV +${prob.net_expectancy_pct}%</div>
+                <div class="font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">${safeNum(prob.target_first_rate_pct, 0)}%</div>
+                <div class="text-[9px] text-theme-secondary font-medium truncate">EV +${safeNum(prob.net_expectancy_pct, 0)}%</div>
               </div>
             </div>
 
@@ -1452,19 +2105,19 @@
             <div class="sub-card-theme border rounded-lg p-2.5 grid grid-cols-2 gap-2 my-2.5 text-xs">
               <div>
                 <span class="text-theme-secondary">CMP:</span>
-                <span class="font-bold text-theme-primary">₹${s.cmp ? s.cmp.toLocaleString() : 'N/A'}</span>
+                <span class="font-bold text-theme-primary">₹${cmpVal ? escapeHtml(cmpVal.toLocaleString()) : 'N/A'}</span>
               </div>
               <div>
                 <span class="text-theme-secondary">Entry Zone:</span>
-                <span class="font-bold text-emerald-600 dark:text-emerald-400">₹${ts.entry_range ? ts.entry_range[0] + ' - ' + ts.entry_range[1] : (s.cmp ? (s.cmp*0.998).toFixed(1) + ' - ' + (s.cmp*1.004).toFixed(1) : '')}</span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400">₹${ts.entry_range ? escapeHtml(ts.entry_range[0]) + ' - ' + escapeHtml(ts.entry_range[1]) : (cmpVal ? (cmpVal*0.998).toFixed(1) + ' - ' + (cmpVal*1.004).toFixed(1) : '')}</span>
               </div>
               <div>
                 <span class="text-theme-secondary">Stop-Loss:</span>
-                <span class="font-bold text-rose-600 dark:text-rose-400">₹${ts.stop_loss || (s.cmp ? (s.cmp*0.98).toFixed(1) : '')}</span>
+                <span class="font-bold text-rose-600 dark:text-rose-400">₹${ts.stop_loss ? escapeHtml(ts.stop_loss) : (cmpVal ? (cmpVal*0.98).toFixed(1) : '')}</span>
               </div>
               <div>
                 <span class="text-theme-secondary">Target 1:</span>
-                <span class="font-bold text-emerald-600 dark:text-emerald-400">₹${ts.target_1 || (s.cmp ? (s.cmp*1.03).toFixed(1) : '')}</span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400">₹${ts.target_1 ? escapeHtml(ts.target_1) : (cmpVal ? (cmpVal*1.03).toFixed(1) : '')}</span>
               </div>
             </div>
 
@@ -1474,22 +2127,22 @@
                 <span class="text-[11px] font-bold text-amber-500 flex items-center gap-1">
                   <i class="fa-solid fa-crown text-[10px]"></i> Best Offer Option Contract
                 </span>
-                <span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Delta: ${optRec.delta}</span>
+                <span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">Delta: ${safeNum(optRec.delta, 0.52)}</span>
               </div>
               <div class="flex justify-between items-center text-xs">
                 <div>
-                  <span class="font-extrabold text-theme-primary text-sm">${s.symbol} ${optRec.strike} ${optRec.type}</span>
-                  <span class="text-[10px] text-theme-secondary block">Lot: ${optRec.lot_size} · Premium: <b class="text-theme-primary">₹${optRec.premium}</b></span>
+                  <span class="font-extrabold text-theme-primary text-sm">${escapeHtml(s.symbol)} ${safeNum(optRec.strike, 0)} ${escapeHtml(optRec.type)}</span>
+                  <span class="text-[10px] text-theme-secondary block">Lot: ${safeNum(optRec.lot_size, 250)} · Premium: <b class="text-theme-primary">₹${safeNum(optRec.premium, 0)}</b></span>
                 </div>
                 <div class="text-right">
-                  <span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹${optRec.capital_required.toLocaleString('en-IN')}</span>
+                  <span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹${escapeHtml(safeNum(optRec.capital_required, 0).toLocaleString('en-IN'))}</span>
                   <span class="text-[10px] text-theme-secondary block">Capital Required</span>
                 </div>
               </div>
               <div class="flex justify-between items-center text-[10px] text-theme-secondary pt-1.5 mt-1.5 border-t border-theme">
-                <span>Targets: <b class="text-emerald-600 dark:text-emerald-400">₹${(optRec.premium * 1.15).toFixed(1)} / ₹${(optRec.premium * 1.35).toFixed(1)}</b></span>
-                <span>SL: <b class="text-rose-500">₹${(optRec.premium * 0.85).toFixed(1)}</b></span>
-                <span>PCR: <b class="text-theme-primary">${optRec.pcr}</b></span>
+                <span>Targets: <b class="text-emerald-600 dark:text-emerald-400">₹${(safeNum(optRec.premium, 0) * 1.15).toFixed(1)} / ₹${(safeNum(optRec.premium, 0) * 1.35).toFixed(1)}</b></span>
+                <span>SL: <b class="text-rose-500">₹${(safeNum(optRec.premium, 0) * 0.85).toFixed(1)}</b></span>
+                <span>PCR: <b class="text-theme-primary">${safeNum(optRec.pcr, 0.78)}</b></span>
               </div>
             </div>
 
@@ -1497,20 +2150,20 @@
             <div class="my-2.5">
               <div class="text-[10px] font-bold text-theme-secondary uppercase tracking-wider mb-1">Why Shortlisted:</div>
               <ul class="text-[11px] text-theme-primary space-y-1">
-                ${(s.why_shortlisted || []).slice(0, 3).map(w => `<li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-500 text-[10px] mt-0.5"></i> <span>${w}</span></li>`).join('')}
+                ${(s.why_shortlisted || []).slice(0, 3).map(w => `<li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-emerald-500 text-[10px] mt-0.5"></i> <span>${escapeHtml(w)}</span></li>`).join('')}
               </ul>
             </div>
 
             ${s.risk_flags && s.risk_flags.length ? `
               <div class="bg-rose-500/10 border border-rose-500/20 rounded p-1.5 text-[11px] text-rose-600 dark:text-rose-400 mb-2">
-                <i class="fa-solid fa-triangle-exclamation mr-1"></i> ${s.risk_flags[0]}
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> ${escapeHtml(s.risk_flags[0])}
               </div>
             ` : ''}
           </div>
 
           <!-- Direct Assistant Action Button -->
           <div class="pt-2 border-t border-theme mt-2">
-            <button onclick="sendToTipVerifier('${s.symbol}', '${optRec.strike}', '${optRec.premium}', '${(optRec.premium * 0.85).toFixed(1)}', '${(optRec.premium * 1.15).toFixed(1)}', '${(optRec.premium * 1.35).toFixed(1)}')" class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm">
+            <button type="button" data-action="send-to-verifier" data-sym="${escapeHtml(s.symbol)}" data-strike="${safeNum(optRec.strike, 0)}" data-premium="${safeNum(optRec.premium, 0)}" data-sl="${(safeNum(optRec.premium, 0) * 0.85).toFixed(1)}" data-t1="${(safeNum(optRec.premium, 0) * 1.15).toFixed(1)}" data-t2="${(safeNum(optRec.premium, 0) * 1.35).toFixed(1)}" class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm">
               <i class="fa-solid fa-shield-halved"></i> Verify & Plan Order in Assistant
             </button>
           </div>
@@ -1530,17 +2183,17 @@
         const card = document.createElement('div');
         card.className = "card-theme border rounded-xl p-5";
         
-        let strikeRows = opt.strike_matrix.map(m => {
+        let strikeRows = (opt.strike_matrix || []).map(m => {
           const isRec = m.strike === opt.recommended_strike;
           return `
             <tr class="border-b border-theme hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">
-              <td class="py-2.5 px-3 font-semibold text-theme-primary">${m.role}</td>
-              <td class="py-2.5 px-3"><span class="badge ${isRec ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 font-bold' : 'sub-card-theme text-theme-secondary'}">${m.strike} ${m.type}</span></td>
-              <td class="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-bold">₹${m.ltp}</td>
-              <td class="py-2.5 px-3 font-mono text-theme-primary">${m.delta}</td>
-              <td class="py-2.5 px-3 text-rose-600 dark:text-rose-400 font-mono">${m.theta_daily}/day</td>
-              <td class="py-2.5 px-3 text-theme-primary">${(m.oi / 100000).toFixed(1)}L <span class="text-xs ${m.oi_change_pct >= 0 ? 'text-emerald-500' : 'text-rose-500'}">(${m.oi_change_pct >= 0 ? '+' : ''}${m.oi_change_pct}%)</span></td>
-              <td class="py-2.5 px-3 font-semibold text-theme-primary">₹${m.capital_required.toLocaleString()}</td>
+              <td class="py-2.5 px-3 font-semibold text-theme-primary">${escapeHtml(m.role)}</td>
+              <td class="py-2.5 px-3"><span class="badge ${isRec ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 font-bold' : 'sub-card-theme text-theme-secondary'}">${safeNum(m.strike, 0)} ${escapeHtml(m.type)}</span></td>
+              <td class="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-bold">₹${safeNum(m.ltp, 0)}</td>
+              <td class="py-2.5 px-3 font-mono text-theme-primary">${safeNum(m.delta, 0)}</td>
+              <td class="py-2.5 px-3 text-rose-600 dark:text-rose-400 font-mono">${safeNum(m.theta_daily, 0)}/day</td>
+              <td class="py-2.5 px-3 text-theme-primary">${(safeNum(m.oi, 0) / 100000).toFixed(1)}L <span class="text-xs ${safeNum(m.oi_change_pct, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">(${safeNum(m.oi_change_pct, 0) >= 0 ? '+' : ''}${safeNum(m.oi_change_pct, 0)}%)</span></td>
+              <td class="py-2.5 px-3 font-semibold text-theme-primary">₹${escapeHtml(safeNum(m.capital_required, 0).toLocaleString())}</td>
             </tr>
           `;
         }).join('');
@@ -1549,10 +2202,10 @@
           <div class="flex justify-between items-center mb-4">
             <div>
               <h3 class="text-lg font-bold text-theme-primary flex items-center gap-2">
-                ${o.symbol} Options Intelligence
-                <span class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">PCR: ${opt.pcr} (${opt.pcr_sentiment})</span>
+                ${escapeHtml(o.symbol)} Options Intelligence
+                <span class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">PCR: ${safeNum(opt.pcr, 0)} (${escapeHtml(opt.pcr_sentiment)})</span>
               </h3>
-              <p class="text-xs text-theme-secondary">Spot Price: ₹${o.cmp.toLocaleString()} · Recommended Strike: <b class="text-emerald-600 dark:text-emerald-400">${opt.recommended_strike} CE</b></p>
+              <p class="text-xs text-theme-secondary">Spot Price: ₹${escapeHtml(safeNum(o.cmp, 0).toLocaleString())} · Recommended Strike: <b class="text-emerald-600 dark:text-emerald-400">${safeNum(opt.recommended_strike, 0)} CE</b></p>
             </div>
           </div>
 
@@ -1578,7 +2231,7 @@
           ${opt.oi_alerts && opt.oi_alerts.length ? `
             <div class="mt-3 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded p-2">
               <i class="fa-solid fa-bell"></i>
-              <span><b>OI Alert:</b> ${opt.oi_alerts[0]}</span>
+              <span><b>OI Alert:</b> ${escapeHtml(opt.oi_alerts[0])}</span>
             </div>
           ` : ''}
         `;
@@ -1596,31 +2249,35 @@
       container.innerHTML = '';
 
       stocks.forEach(stk => {
-        const isPos = stk.change_pct >= 0;
+        const chgPct = safeNum(stk.change_pct, 0);
+        const scoreVal = safeNum(stk.score, 0);
+        const cmpVal = safeNum(stk.cmp, 0);
+        const swingText = String(stk.swing || '');
+        const isPos = chgPct >= 0;
         const colorClass = isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
         const row = document.createElement('tr');
         row.className = "hover:bg-slate-100 dark:hover:bg-slate-800/40 transition";
         row.innerHTML = `
           <td class="py-3 px-4">
-            <div class="font-bold text-theme-primary">${stk.symbol}</div>
-            <div class="text-[11px] text-theme-secondary">${stk.name}</div>
+            <div class="font-bold text-theme-primary">${escapeHtml(stk.symbol)}</div>
+            <div class="text-[11px] text-theme-secondary">${escapeHtml(stk.name)}</div>
           </td>
-          <td class="py-3 px-4 text-theme-secondary">${stk.category}</td>
+          <td class="py-3 px-4 text-theme-secondary">${escapeHtml(stk.category)}</td>
           <td class="py-3 px-4">
-            <div class="font-bold text-theme-primary">₹${stk.cmp.toLocaleString()}</div>
-            <div class="text-[11px] ${colorClass} font-semibold">${isPos ? '+' : ''}${stk.change_pct.toFixed(2)}%</div>
-          </td>
-          <td class="py-3 px-4">
-            <span class="font-extrabold ${stk.score >= 75 ? 'text-emerald-600 dark:text-emerald-400' : (stk.score >= 60 ? 'text-amber-500' : 'text-rose-500')}">${stk.score}</span>/100
+            <div class="font-bold text-theme-primary">₹${escapeHtml(cmpVal.toLocaleString())}</div>
+            <div class="text-[11px] ${colorClass} font-semibold">${isPos ? '+' : ''}${chgPct.toFixed(2)}%</div>
           </td>
           <td class="py-3 px-4">
-            <span class="badge ${stk.swing.startsWith('Active') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">${stk.swing}</span>
+            <span class="font-extrabold ${scoreVal >= 75 ? 'text-emerald-600 dark:text-emerald-400' : (scoreVal >= 60 ? 'text-amber-500' : 'text-rose-500')}">${scoreVal}</span>/100
           </td>
           <td class="py-3 px-4">
-            <span class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">${stk.opt}</span>
+            <span class="badge ${swingText.startsWith('Active') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'}">${escapeHtml(swingText)}</span>
           </td>
           <td class="py-3 px-4">
-            <button onclick="switchTab('shortlist')" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-600/20 px-2.5 py-1 rounded text-xs font-semibold">
+            <span class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">${escapeHtml(stk.opt)}</span>
+          </td>
+          <td class="py-3 px-4">
+            <button type="button" data-action="switch-tab" data-tab="shortlist" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-600/20 px-2.5 py-1 rounded text-xs font-semibold">
               Analyze
             </button>
           </td>
@@ -1775,7 +2432,7 @@
 
       // Auto-log to Capital Ledger API
       try {
-        await fetch('http://127.0.0.1:8000/api/ledger/trade', {
+        await apiFetch('/api/ledger/trade', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1894,31 +2551,31 @@
 
         livePositions.forEach(p => {
           const isClosed = !p.is_open;
-          const isProfit = p.realised > 0 || p.pnl > 0;
+          const isProfit = safeNum(p.realised, 0) > 0 || safeNum(p.pnl, 0) > 0;
           html += `
             <div class="card-theme border ${isProfit ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-theme'} rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 transition shadow-sm">
               <div class="flex items-center gap-3">
                 <div class="h-10 w-10 rounded-lg ${p.option_type === 'PE' ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
-                  ${p.option_type || 'OPT'}
+                  ${escapeHtml(p.option_type || 'OPT')}
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="font-bold text-theme-primary text-base">${p.tradingsymbol}</span>
-                    <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${p.product} · ${p.lotsize} Qty</span>
-                    <span class="badge ${isClosed ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'bg-amber-500/20 text-amber-500'}">${p.status}</span>
+                    <span class="font-bold text-theme-primary text-base">${escapeHtml(p.tradingsymbol)}</span>
+                    <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${escapeHtml(p.product)} · ${safeNum(p.lotsize, 1)} Qty</span>
+                    <span class="badge ${isClosed ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'bg-amber-500/20 text-amber-500'}">${escapeHtml(p.status)}</span>
                   </div>
                   <p class="text-xs text-theme-secondary mt-0.5">
-                    Buy Avg: <b>₹${p.buy_price.toFixed(2)}</b> · Sell Avg: <b>₹${p.sell_price.toFixed(2)}</b> · Current Option LTP: <b>₹${p.ltp.toFixed(2)}</b>
+                    Buy Avg: <b>₹${safeNum(p.buy_price, 0).toFixed(2)}</b> · Sell Avg: <b>₹${safeNum(p.sell_price, 0).toFixed(2)}</b> · Current Option LTP: <b>₹${safeNum(p.ltp, 0).toFixed(2)}</b>
                   </p>
                 </div>
               </div>
 
               <div class="text-right">
                 <div class="text-lg font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">
-                  ${isProfit ? '+' : ''}₹${p.realised.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                  ${isProfit ? '+' : ''}₹${escapeHtml(safeNum(p.realised, 0).toLocaleString('en-IN', {minimumFractionDigits: 2}))}
                 </div>
                 <div class="text-[11px] text-theme-secondary mt-0.5 font-medium flex items-center justify-end gap-1">
-                  <i class="fa-solid fa-circle-check text-emerald-500"></i> ${p.advice}
+                  <i class="fa-solid fa-circle-check text-emerald-500"></i> ${escapeHtml(p.advice)}
                 </div>
               </div>
             </div>
@@ -1937,31 +2594,30 @@
           <div class="mt-6">
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-bold uppercase tracking-wider text-theme-secondary">Custom Tracked Holdings</span>
-              <button onclick="toggleAddPositionForm()" class="text-xs text-emerald-500 hover:underline">+ Add Manual Position</button>
+              <button type="button" data-action="toggle-add-position" class="text-xs text-emerald-500 hover:underline">+ Add Manual Position</button>
             </div>
             <div class="space-y-3">
         `;
 
         userPositions.forEach((p, idx) => {
-          const totalQty = p.lots * p.lot_size;
-          const currentEstPnl = Math.round((p.cmp - p.entry) * totalQty);
-          const isPos = currentEstPnl >= 0;
-          const isTrailed = p.trailed_to_cost;
+          const totalQty = safeNum(p.lots, 1) * safeNum(p.lot_size, 1);
+          const symStr = String(p.symbol || '');
+          const isTrailed = Boolean(p.trailed_to_cost);
 
           html += `
             <div class="card-theme border ${isTrailed ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-theme'} rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 transition shadow-sm">
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 rounded-lg ${p.symbol.includes('PE') ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
-                  ${p.symbol.includes('PE') ? 'PE' : 'CE'}
+                <div class="h-10 w-10 rounded-lg ${symStr.includes('PE') ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'} flex items-center justify-center font-bold text-xs">
+                  ${symStr.includes('PE') ? 'PE' : 'CE'}
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="font-bold text-theme-primary text-base">${p.symbol}</span>
-                    <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${p.lots} Lot (${totalQty} Qty)</span>
+                    <span class="font-bold text-theme-primary text-base">${escapeHtml(symStr)}</span>
+                    <span class="badge bg-blue-500/20 text-blue-600 dark:text-blue-300">${safeNum(p.lots, 1)} Lot (${totalQty} Qty)</span>
                     ${isTrailed ? '<span class="badge bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">SL AT COST (RISK ₹0)</span>' : '<span class="badge bg-amber-500/20 text-amber-500">ACTIVE POSITION</span>'}
                   </div>
                   <p class="text-xs text-theme-secondary mt-0.5">
-                    Entry: <b>₹${p.entry}</b> · SL: <b class="text-rose-500">₹${p.sl}</b> · Target 1: <b class="text-emerald-500">₹${p.t1}</b> ${p.t2 ? '· Target 2: ₹' + p.t2 : ''}
+                    Entry: <b>₹${safeNum(p.entry, 0)}</b> · SL: <b class="text-rose-500">₹${safeNum(p.sl, 0)}</b> · Target 1: <b class="text-emerald-500">₹${safeNum(p.t1, 0)}</b> ${p.t2 ? '· Target 2: ₹' + safeNum(p.t2, 0) : ''}
                   </p>
                 </div>
               </div>
@@ -1969,16 +2625,16 @@
               <!-- Action Controls -->
               <div class="flex items-center gap-2">
                 ${!isTrailed ? `
-                  <button onclick="trailPositionToCost(${idx})" class="sub-card-theme border border-theme hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Modify SL to Entry Price in Angel One">
+                  <button type="button" data-action="trail-position" data-idx="${idx}" class="sub-card-theme border border-theme hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Modify SL to Entry Price in Angel One">
                     <i class="fa-solid fa-arrow-up-right-dots"></i> Trail SL to Cost
                   </button>
                 ` : ''}
 
-                <button onclick="closePositionModal(${idx})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
+                <button type="button" data-action="close-position" data-idx="${idx}" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
                   <i class="fa-solid fa-door-open"></i> Close & Save P&L
                 </button>
 
-                <button onclick="deletePosition(${idx})" class="sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary text-xs px-2 py-1.5 rounded-lg transition" title="Remove without logging">
+                <button type="button" data-action="delete-position" data-idx="${idx}" class="sub-card-theme border border-theme hover:text-rose-500 text-theme-secondary text-xs px-2 py-1.5 rounded-lg transition" title="Remove without logging">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
@@ -2000,7 +2656,7 @@
             </div>
             <h4 class="text-base font-bold text-theme-primary mb-1">No Active Positions Open</h4>
             <p class="text-xs text-theme-secondary max-w-md mb-4">You have zero open holdings. Your capital is 100% safe in cash, with zero overnight gap risk and zero theta decay burn.</p>
-            <button onclick="toggleAddPositionForm()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shadow-md shadow-emerald-600/20 flex items-center gap-2">
+            <button type="button" data-action="toggle-add-position" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shadow-md shadow-emerald-600/20 flex items-center gap-2">
               <i class="fa-solid fa-plus"></i> Enter Active Trade to Track
             </button>
           </div>
@@ -2024,15 +2680,15 @@
         card.className = "card-theme border border-rose-500/30 rounded-xl p-4 bg-rose-50 dark:bg-rose-950/10";
         card.innerHTML = `
           <div class="flex justify-between items-center mb-2">
-            <h3 class="text-base font-bold text-theme-primary">${v.symbol}</h3>
+            <h3 class="text-base font-bold text-theme-primary">${escapeHtml(v.symbol)}</h3>
             <span class="badge bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30">REJECTED</span>
           </div>
-          <p class="text-xs text-theme-secondary mb-3">${v.name || ''}</p>
+          <p class="text-xs text-theme-secondary mb-3">${escapeHtml(v.name || '')}</p>
           <div class="space-y-1.5">
-            ${v.veto_reasons.map(r => `
+            ${(v.veto_reasons || []).map(r => `
               <div class="text-xs text-rose-700 dark:text-rose-300 flex items-start gap-1.5 bg-rose-100 dark:bg-rose-900/20 p-2 rounded border border-rose-200 dark:border-rose-800/30">
                 <i class="fa-solid fa-circle-xmark text-rose-500 mt-0.5"></i>
-                <span>${r}</span>
+                <span>${escapeHtml(r)}</span>
               </div>
             `).join('')}
           </div>
@@ -2074,7 +2730,7 @@
       };
 
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/verify-tip', {
+        const res = await apiFetch('/api/verify-tip', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -2163,14 +2819,14 @@
           <div class="flex flex-wrap justify-between items-center gap-3 border-b border-theme pb-4">
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="text-lg font-bold text-theme-primary">${res.symbol} ${res.instrument_type}</h3>
-                <span class="badge ${badgeClass}">${res.verdict_badge}</span>
+                <h3 class="text-lg font-bold text-theme-primary">${escapeHtml(res.symbol)} ${escapeHtml(res.instrument_type)}</h3>
+                <span class="badge ${badgeClass}">${escapeHtml(res.verdict_badge)}</span>
               </div>
-              <p class="text-xs ${isRejected ? 'text-rose-600 dark:text-rose-400' : 'text-theme-secondary'} mt-1 font-medium">${res.headline}</p>
+              <p class="text-xs ${isRejected ? 'text-rose-600 dark:text-rose-400' : 'text-theme-secondary'} mt-1 font-medium">${escapeHtml(res.headline)}</p>
             </div>
             <div class="text-right">
               <span class="text-[10px] uppercase tracking-wider text-theme-secondary font-bold">Risk : Reward</span>
-              <div class="text-base font-extrabold ${isRejected ? 'text-rose-500' : 'text-emerald-500'}">${res.risk_reward_ratio}</div>
+              <div class="text-base font-extrabold ${isRejected ? 'text-rose-500' : 'text-emerald-500'}">${escapeHtml(res.risk_reward_ratio)}</div>
             </div>
           </div>
 
@@ -2178,26 +2834,26 @@
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div class="sub-card-theme p-3 rounded-lg border border-theme">
               <span class="text-theme-secondary">Entry Price:</span>
-              <div class="text-base font-bold text-theme-primary">₹${res.tip_entry}</div>
-              <span class="text-[10px] text-theme-secondary">Max Chase: ₹${(res.tip_entry * 1.03).toFixed(2)}</span>
+              <div class="text-base font-bold text-theme-primary">₹${safeNum(res.tip_entry, 0)}</div>
+              <span class="text-[10px] text-theme-secondary">Max Chase: ₹${(safeNum(res.tip_entry, 0) * 1.03).toFixed(2)}</span>
             </div>
 
             <div class="sub-card-theme p-3 rounded-lg border border-theme">
               <span class="text-theme-secondary">Stop Loss:</span>
-              <div class="text-base font-bold text-rose-500">₹${res.tip_sl}</div>
-              <span class="text-[10px] text-rose-400">Risk: ₹${res.risk_per_unit}/sh</span>
+              <div class="text-base font-bold text-rose-500">₹${safeNum(res.tip_sl, 0)}</div>
+              <span class="text-[10px] text-rose-400">Risk: ₹${safeNum(res.risk_per_unit, 0)}/sh</span>
             </div>
 
             <div class="sub-card-theme p-3 rounded-lg border border-theme">
               <span class="text-theme-secondary">Target 1:</span>
-              <div class="text-base font-bold text-emerald-500">₹${res.tip_target_1}</div>
-              <span class="text-[10px] text-emerald-400">Profit: +₹${res.profit_t1_rupees.toLocaleString()}</span>
+              <div class="text-base font-bold text-emerald-500">₹${safeNum(res.tip_target_1, 0)}</div>
+              <span class="text-[10px] text-emerald-400">Profit: +₹${escapeHtml(safeNum(res.profit_t1_rupees, 0).toLocaleString())}</span>
             </div>
 
             <div class="sub-card-theme p-3 rounded-lg border border-theme">
-              <span class="text-theme-secondary">Max Loss (${res.lots} Lot):</span>
-              <div class="text-base font-bold text-rose-500">-₹${res.max_loss_rupees.toLocaleString()}</div>
-              <span class="text-[10px] text-theme-secondary">Capital: ₹${res.capital_required.toLocaleString()}</span>
+              <span class="text-theme-secondary">Max Loss (${safeNum(res.lots, 1)} Lot):</span>
+              <div class="text-base font-bold text-rose-500">-₹${escapeHtml(safeNum(res.max_loss_rupees, 0).toLocaleString())}</div>
+              <span class="text-[10px] text-theme-secondary">Capital: ₹${escapeHtml(safeNum(res.capital_required, 0).toLocaleString())}</span>
             </div>
           </div>
 
@@ -2206,14 +2862,14 @@
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-compass text-blue-500"></i>
               <span class="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
-                ${res.exit_guidance.mode === 'SINGLE_LOT' ? '🎯 Single Lot Execution Plan (1 Lot Only)' : '⚡ Multi-Lot Scale-Out Plan (' + res.lots + ' Lots)'}
+                ${res.exit_guidance && res.exit_guidance.mode === 'SINGLE_LOT' ? '🎯 Single Lot Execution Plan (1 Lot Only)' : '⚡ Multi-Lot Scale-Out Plan (' + safeNum(res.lots, 1) + ' Lots)'}
               </span>
             </div>
-            <p class="text-xs text-theme-primary font-medium">${res.exit_guidance.message}</p>
+            <p class="text-xs text-theme-primary font-medium">${escapeHtml(res.exit_guidance?.message)}</p>
             <div class="text-xs space-y-1.5 mt-2 bg-white/60 dark:bg-slate-900/60 p-3 rounded-lg border border-blue-200 dark:border-blue-800/40">
-              <div class="text-emerald-700 dark:text-emerald-300"><b>Target 1:</b> ${res.exit_guidance.target_1_plan}</div>
-              <div class="text-blue-700 dark:text-blue-300"><b>Target 2:</b> ${res.exit_guidance.target_2_plan}</div>
-              <div class="text-amber-700 dark:text-amber-400 text-[11px] font-semibold mt-1">⚠️ ${res.exit_guidance.hard_rule}</div>
+              <div class="text-emerald-700 dark:text-emerald-300"><b>Target 1:</b> ${escapeHtml(res.exit_guidance?.target_1_plan)}</div>
+              <div class="text-blue-700 dark:text-blue-300"><b>Target 2:</b> ${escapeHtml(res.exit_guidance?.target_2_plan)}</div>
+              <div class="text-amber-700 dark:text-amber-400 text-[11px] font-semibold mt-1">⚠️ ${escapeHtml(res.exit_guidance?.hard_rule)}</div>
             </div>
           </div>
 
@@ -2221,13 +2877,13 @@
           <div class="space-y-2">
             <span class="text-[11px] font-bold text-theme-secondary uppercase tracking-wider">Sanity Gatekeeper Verification:</span>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              ${res.checklist.map(c => `
+              ${(res.checklist || []).map(c => `
                 <div class="sub-card-theme p-2.5 rounded-lg border border-theme flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <i class="fa-solid ${c.status === 'PASS' ? 'fa-circle-check text-emerald-500' : (c.status === 'FAIL' ? 'fa-circle-xmark text-rose-500' : 'fa-circle-exclamation text-amber-500')}"></i>
-                    <span class="font-medium text-theme-primary">${c.label}</span>
+                    <span class="font-medium text-theme-primary">${escapeHtml(c.label)}</span>
                   </div>
-                  <span class="text-[11px] ${c.status === 'PASS' ? 'text-emerald-600 dark:text-emerald-400' : (c.status === 'FAIL' ? 'text-rose-500 font-bold' : 'text-amber-500')}">${c.detail}</span>
+                  <span class="text-[11px] ${c.status === 'PASS' ? 'text-emerald-600 dark:text-emerald-400' : (c.status === 'FAIL' ? 'text-rose-500 font-bold' : 'text-amber-500')}">${escapeHtml(c.detail)}</span>
                 </div>
               `).join('')}
             </div>
@@ -2236,7 +2892,7 @@
           <!-- Anti-Averaging Rule Alert -->
           <div class="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
             <i class="fa-solid fa-ban text-sm shrink-0"></i>
-            <span><b>VETO:</b> If price drops below ₹${res.tip_sl}, exit immediately. NEVER buy additional lots to "average" a losing option.</span>
+            <span><b>VETO:</b> If price drops below ₹${safeNum(res.tip_sl, 0)}, exit immediately. NEVER buy additional lots to "average" a losing option.</span>
           </div>
         </div>
       `;
@@ -2247,7 +2903,7 @@
 
     async function loadLedger() {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ledger');
+        const res = await apiFetch('/api/ledger');
         if (res.ok) {
           ledgerSummary = await res.json();
           renderLedger(ledgerSummary);
@@ -2298,19 +2954,22 @@
       }
 
       tableBody.innerHTML = trades.map(t => {
-        const isWin = t.pnl > 0;
-        const statusClass = isWin ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : (t.pnl === 0 ? 'bg-slate-500/20 text-slate-400' : 'bg-rose-500/20 text-rose-500');
+        const pnlVal = safeNum(t.pnl, 0);
+        const lotsVal = safeNum(t.lots, 1);
+        const lotSz = safeNum(t.lot_size, 1);
+        const isWin = pnlVal > 0;
+        const statusClass = isWin ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : (pnlVal === 0 ? 'bg-slate-500/20 text-slate-400' : 'bg-rose-500/20 text-rose-500');
         return `
           <tr class="hover:bg-slate-500/5 transition">
-            <td class="py-2.5 px-3 text-theme-secondary">${t.date} ${t.time || ''}</td>
-            <td class="py-2.5 px-3 font-bold text-theme-primary">${t.symbol}</td>
-            <td class="py-2.5 px-3 text-theme-primary">${t.lots} lot (${(t.lots * (t.lot_size || 1))} sh)</td>
-            <td class="py-2.5 px-3 text-theme-secondary">₹${t.entry_price} → ₹${t.exit_price}</td>
-            <td class="py-2.5 px-3 font-bold ${isWin ? 'text-emerald-500' : 'text-rose-500'}">${isWin ? '+' : ''}₹${t.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-2.5 px-3"><span class="badge ${statusClass}">${t.status}</span></td>
-            <td class="py-2.5 px-3 text-[11px] text-theme-secondary">${t.notes || '—'}</td>
+            <td class="py-2.5 px-3 text-theme-secondary">${escapeHtml(t.date)} ${escapeHtml(t.time || '')}</td>
+            <td class="py-2.5 px-3 font-bold text-theme-primary">${escapeHtml(t.symbol)}</td>
+            <td class="py-2.5 px-3 text-theme-primary">${lotsVal} lot (${lotsVal * lotSz} sh)</td>
+            <td class="py-2.5 px-3 text-theme-secondary">₹${safeNum(t.entry_price, 0)} → ₹${safeNum(t.exit_price, 0)}</td>
+            <td class="py-2.5 px-3 font-bold ${isWin ? 'text-emerald-500' : 'text-rose-500'}">${isWin ? '+' : ''}₹${escapeHtml(pnlVal.toLocaleString('en-IN', { minimumFractionDigits: 2 }))}</td>
+            <td class="py-2.5 px-3"><span class="badge ${statusClass}">${escapeHtml(t.status)}</span></td>
+            <td class="py-2.5 px-3 text-[11px] text-theme-secondary">${escapeHtml(t.notes || '—')}</td>
             <td class="py-2.5 px-3 text-right">
-              <button onclick="deleteLedgerTrade('${t.id}')" class="text-theme-secondary hover:text-rose-500 transition px-1.5 py-0.5 rounded" title="Delete trade">
+              <button type="button" data-action="delete-ledger-trade" data-trade-id="${escapeHtml(t.id)}" class="text-theme-secondary hover:text-rose-500 transition px-1.5 py-0.5 rounded" title="Delete trade">
                 <i class="fa-solid fa-trash-can text-xs"></i>
               </button>
             </td>
@@ -2322,7 +2981,7 @@
     async function deleteLedgerTrade(tradeId) {
       if (!confirm("Are you sure you want to remove this trade from the ledger?")) return;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ledger/trade/delete', {
+        const res = await apiFetch('/api/ledger/trade/delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: tradeId })
@@ -2339,7 +2998,7 @@
     async function importChatHistory() {
       if (!confirm("Load all 19 verified trades from your October-November chat logs?")) return;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ledger/import-chat', {
+        const res = await apiFetch('/api/ledger/import-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({})
@@ -2357,7 +3016,7 @@
     async function clearLedgerHistory() {
       if (!confirm("Clear all trades in the ledger? Starting fresh.")) return;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ledger/clear', {
+        const res = await apiFetch('/api/ledger/clear', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({})
@@ -2385,7 +3044,7 @@
       };
 
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ledger/trade', {
+        const res = await apiFetch('/api/ledger/trade', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -2415,7 +3074,7 @@
       if (!newLimit || isNaN(newLimit)) return;
 
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ledger/settings', {
+        const res = await apiFetch('/api/ledger/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ initial_capital: parseFloat(newCap), max_daily_loss_pct: parseFloat(newLimit) })
@@ -2429,7 +3088,23 @@
       }
     }
 
-    // Refresh Data from Local API or Fallback
+    function updateEngineStatusBanner(statusCode, message, isHealthy) {
+      const banner = document.getElementById('engineStatusBanner');
+      const textEl = document.getElementById('engineStatusBannerText');
+      const codeEl = document.getElementById('engineStatusCode');
+      if (!banner || !textEl || !codeEl) return;
+      codeEl.textContent = statusCode || 'UNKNOWN';
+      textEl.textContent = message || 'Status unavailable';
+      if (isHealthy) {
+        banner.className = "mb-4 px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs flex flex-wrap items-center justify-between gap-2";
+      } else if (statusCode === 'DEGRADED' || statusCode === 'STALE' || statusCode === 'SIMULATED') {
+        banner.className = "mb-4 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs flex flex-wrap items-center justify-between gap-2";
+      } else {
+        banner.className = "mb-4 px-4 py-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs flex flex-wrap items-center justify-between gap-2";
+      }
+    }
+
+    // Refresh Data from Home Mac API or Explicit Offline Diagnostics
     async function refreshScan() {
       const icon = document.getElementById('refreshIcon');
       if (icon) icon.classList.add('fa-spin');
@@ -2437,40 +3112,54 @@
       const badge = document.getElementById('feedStatusBadge');
       const timeStr = new Date().toLocaleTimeString();
 
-      const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-      const endpoints = isLocal
-        ? ['/api/scan', 'http://127.0.0.1:8000/api/scan']
-        : ['http://127.0.0.1:8000/api/scan', '/api/scan'];
-
       let fetchedOk = false;
-      for (const ep of endpoints) {
-        try {
-          const res = await fetch(ep, { cache: 'no-store' });
-          if (res.ok) {
-            scanData = await res.json();
-            fetchedOk = true;
-            console.log("Loaded data from TradeLens API (" + ep + "):", scanData);
-            break;
+      let authError = null;
+      try {
+        const res = await apiFetch('/api/scan');
+        if (res.ok) {
+          scanData = await res.json();
+          fetchedOk = true;
+        } else {
+          try {
+            authError = await res.json();
+          } catch (e) {
+            authError = { reason_code: `HTTP_${res.status}`, error: 'Home Mac rejected request.' };
           }
-        } catch (e) {
-          // ignore and try next
+          if (res.status === 401 || res.status === 403) {
+            remoteSessionToken = null;
+          }
         }
+      } catch (e) {
+        authError = { reason_code: 'HOME_MAC_UNREACHABLE', error: 'Unable to reach Home Mac API over loopback/private VPN.' };
       }
 
-      const isLiveFeed = fetchedOk && scanData.data_status === 'LIVE';
+      const engineStatus = fetchedOk ? (scanData.engine_status || scanData.data_status || 'UNAVAILABLE') : (authError?.reason_code || 'OFFLINE');
+      const dataStatus = fetchedOk ? (scanData.data_status || 'UNAVAILABLE') : 'UNAVAILABLE';
+      const reasons = fetchedOk && Array.isArray(scanData.failure_reasons) && scanData.failure_reasons.length > 0
+        ? scanData.failure_reasons.join(' | ')
+        : (authError ? `${authError.reason_code}: ${authError.error}` : '');
+
+      const isLiveFeed = fetchedOk && dataStatus === 'LIVE' && engineStatus === 'LIVE';
       if (isLiveFeed) {
         if (badge) {
           badge.className = "shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400";
-          badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Angel One Live Streaming</span><span class="text-[10px] opacity-75 font-normal">(${timeStr})</span>`;
+          badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Angel One Live Streaming</span><span class="text-[10px] opacity-75 font-normal">(${escapeHtml(timeStr)})</span>`;
         }
+        updateEngineStatusBanner('LIVE', 'Home Mac engine operational. Broker authenticated and market ticks fresh.', true);
       } else {
         if (!fetchedOk) {
           scanData = fallbackData;
         }
+        const label = !fetchedOk
+          ? `${engineStatus} (Local Fallback Only)`
+          : dataStatus === 'SIMULATED'
+            ? 'SIMULATED Benchmark Feed (Broker Offline)'
+            : `${engineStatus} · Data ${dataStatus} (Not Live)`;
         if (badge) {
           badge.className = "shrink-0 hidden lg:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400";
-          badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>SIMULATED Benchmark Feed (Broker Offline)</span>`;
+          badge.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500"></span><span>${escapeHtml(label)}</span>`;
         }
+        updateEngineStatusBanner(engineStatus, reasons || 'Broker authentication or fresh market feed not confirmed.', false);
       }
 
       try {
@@ -2487,6 +3176,647 @@
         if (icon) icon.classList.remove('fa-spin');
       }
     }
+
+    // CSP-safe delegated UI event handlers (zero inline onclick/onsubmit attributes)
+    document.addEventListener('click', (evt) => {
+      const target = evt.target && evt.target.closest ? evt.target.closest('[data-action]') : null;
+      if (!target) return;
+      const action = target.getAttribute('data-action');
+      if (action === 'scroll-indices') scrollIndices(Number(target.getAttribute('data-amount') || 0));
+      else if (action === 'open-remote-auth') openRemoteAuthModal();
+      else if (action === 'close-remote-auth') closeRemoteAuthModal();
+      else if (action === 'request-remote-challenge') requestRemoteChallenge();
+      else if (action === 'generate-webcrypto-key') generateWebCryptoKeypair();
+      else if (action === 'submit-remote-auth') submitRemoteAuth();
+      else if (action === 'logout-remote-session') logoutRemoteSession();
+      else if (action === 'toggle-theme') toggleTheme();
+      else if (action === 'refresh-scan') refreshScan();
+      else if (action === 'switch-tab') switchTab(target.getAttribute('data-tab'));
+      else if (action === 'set-filter') setShortlistFilter(target.getAttribute('data-filter'));
+      else if (action === 'filter-symbol') filterBySymbol(target.getAttribute('data-symbol'));
+      else if (action === 'load-tip-preset') {
+        loadTipPreset(
+          target.getAttribute('data-sym'),
+          target.getAttribute('data-inst'),
+          target.getAttribute('data-entry'),
+          target.getAttribute('data-sl'),
+          target.getAttribute('data-t1'),
+          target.getAttribute('data-t2'),
+          target.getAttribute('data-lots')
+        );
+      } else if (action === 'send-to-verifier') {
+        sendToTipVerifier(
+          target.getAttribute('data-sym'),
+          target.getAttribute('data-strike'),
+          target.getAttribute('data-premium'),
+          target.getAttribute('data-sl'),
+          target.getAttribute('data-t1'),
+          target.getAttribute('data-t2')
+        );
+      } else if (action === 'open-ledger-settings') openLedgerSettingsModal();
+      else if (action === 'import-chat-history') importChatHistory();
+      else if (action === 'clear-ledger-history') clearLedgerHistory();
+      else if (action === 'delete-ledger-trade') deleteLedgerTrade(target.getAttribute('data-trade-id'));
+      else if (action === 'toggle-add-position') toggleAddPositionForm();
+      else if (action === 'trail-position') trailPositionToCost(Number(target.getAttribute('data-idx')));
+      else if (action === 'close-position') closePositionModal(Number(target.getAttribute('data-idx')));
+      else if (action === 'delete-position') deletePosition(Number(target.getAttribute('data-idx')));
+      else if (action === 'refresh-setup-state') loadSetupState();
+      else if (action === 'run-setup-preflight') triggerSetupPreflight();
+      else if (action === 'copy-setup-cmd') copySetupCommand(target);
+      else if (action === 'run-setup-task') handleRunSetupTaskClick(target);
+      else if (action === 'confirm-manual-step') handleConfirmManualStepClick(target);
+    });
+
+    // --- Stage B Setup & Remote Access Dashboard Controller ---
+    let latestSetupState = null;
+    let pendingSetupDialogAction = null;
+
+    function statusVisualMeta(status) {
+      const s = String(status || 'NOT_STARTED').toUpperCase();
+      if (s === 'VERIFIED' || s === 'STAGE_B_COMPLETE') {
+        return { icon: '✔', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', label: s };
+      }
+      if (s === 'READY' || s === 'IN_PROGRESS') {
+        return { icon: '◐', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/30', label: s };
+      }
+      if (s === 'REQUIRES_OWNER_ACTION' || s === 'STAGE_B_PARTIALLY_COMPLETE') {
+        return { icon: '⚠', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/30', label: s };
+      }
+      if (s === 'BLOCKED' || s === 'REVOKED' || s === 'STAGE_B_BLOCKED') {
+        return { icon: '⛔', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/30', label: s };
+      }
+      return { icon: '○', cls: 'sub-card-theme text-theme-secondary border-theme', label: s };
+    }
+
+    function machineBadgeHtml(machine) {
+      const m = String(machine || 'verification');
+      const labels = {
+        home_mac: { text: 'Home Mac Command', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+        office_mac: { text: 'Office Mac Command', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+        tailscale_admin: { text: 'Manual Tailscale Action', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/30' },
+        home_and_office: { text: 'Home + Office Mac', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+        verification: { text: 'Verification Command', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' }
+      };
+      const meta = labels[m] || labels.verification;
+      return `<span class="badge border ${meta.cls}">${escapeHtml(meta.text)}</span>`;
+    }
+
+    function setSetupBanner(message, isError = false, isWarning = false) {
+      const el = document.getElementById('setupActionBanner');
+      if (!el) return;
+      if (isError) {
+        el.setAttribute('role', 'alert');
+        el.setAttribute('aria-live', 'assertive');
+        el.className = 'mt-3 text-xs text-rose-400 font-medium';
+        el.textContent = message ? `⛔ ${message}` : '';
+      } else if (isWarning) {
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.className = 'mt-3 text-xs text-amber-400 font-medium';
+        el.textContent = message ? `⚠ ${message}` : '';
+      } else {
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.className = 'mt-3 text-xs text-theme-secondary font-medium';
+        el.textContent = message || '';
+      }
+    }
+
+    async function loadSetupState() {
+      setSetupBanner('Checking live Home Mac Stage B readiness...');
+      try {
+        const res = await apiFetch('/api/setup/state', { method: 'GET' });
+        const data = await res.json();
+        if (!res.ok) {
+          setSetupBanner(`Setup state check denied (${res.status}): ${data.error || data.reason_code || 'Error'}`, true);
+          return;
+        }
+        latestSetupState = data;
+        renderSetupPanel(data);
+        if (data.is_stale && Array.isArray(data.stale_reasons) && data.stale_reasons.length) {
+          setSetupBanner(data.stale_reasons[0], false, true);
+        } else {
+          setSetupBanner(
+            data.is_remote_view
+              ? 'Viewing read-only Setup Status from remote workstation. All setup mutations & tasks remain Home Mac local-only.'
+              : 'Live Stage B checks refreshed cleanly.'
+          );
+        }
+      } catch (err) {
+        setSetupBanner(`Unable to load Setup & Remote Access state: ${err.message || err}`, true);
+      }
+    }
+
+    async function copySetupCommand(btn) {
+      const cmdText = btn.getAttribute('data-cmd') || '';
+      const pill = btn.parentElement ? btn.parentElement.querySelector('.copy-status-pill') : null;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(cmdText);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = cmdText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        if (pill) {
+          pill.textContent = 'Copied to clipboard';
+          pill.classList.add('is-visible');
+          setTimeout(() => {
+            pill.classList.remove('is-visible');
+            pill.textContent = '';
+          }, 2200);
+        }
+      } catch (e) {
+        if (pill) {
+          pill.textContent = 'Copy unavailable';
+          pill.classList.add('is-visible');
+        }
+      }
+    }
+
+    function openSetupConfirmDialog(actionObj) {
+      const dlg = document.getElementById('setupConfirmDialog');
+      if (!dlg || typeof dlg.showModal !== 'function') return;
+      pendingSetupDialogAction = actionObj;
+      document.getElementById('setupConfirmTierBadge').textContent =
+        actionObj.tier === 'security_sensitive'
+          ? 'Security-Sensitive Owner Action'
+          : actionObj.tier === 'manual_external'
+            ? 'External Verification Attestation'
+            : 'Owner-Confirmed Host Action';
+      document.getElementById('setupConfirmDialogTitle').textContent = actionObj.title || 'Confirm Setup Action';
+      document.getElementById('setupConfirmDialogSummary').textContent = actionObj.summary || '';
+      document.getElementById('setupConfirmDialogCmd').textContent = actionObj.commandPreview || '';
+      const noteInput = document.getElementById('setupConfirmNoteInput');
+      const errEl = document.getElementById('setupConfirmError');
+      if (noteInput) noteInput.value = actionObj.defaultNote || '';
+      if (errEl) {
+        errEl.classList.add('hidden');
+        errEl.textContent = '';
+      }
+      dlg.showModal();
+    }
+
+    async function triggerSetupPreflight() {
+      if (latestSetupState && latestSetupState.is_remote_view) {
+        setSetupBanner('Blocked: Remote sessions cannot mutate Home Mac setup progress state.', true);
+        return;
+      }
+      await runSetupBackendTask('tradelens-stage-b-preflight', true, 'Owner clicked Run Safe Preflight in Home Mac dashboard');
+    }
+
+    function handleRunSetupTaskClick(btn) {
+      const taskId = btn.getAttribute('data-task-id') || '';
+      const category = btn.getAttribute('data-category') || 'read_only';
+      const cmdPreview = btn.getAttribute('data-cmd') || taskId;
+      if (latestSetupState && latestSetupState.is_remote_view) {
+        setSetupBanner('Blocked: Local setup tasks cannot be triggered from a remote workstation.', true);
+        return;
+      }
+      if (category === 'host_mutation' || category === 'security_sensitive') {
+        openSetupConfirmDialog({
+          kind: 'run-task',
+          tier: category,
+          taskId,
+          title: `Confirm Local Task: ${taskId}`,
+          summary: 'This task modifies local setup files or rendered templates on Home Mac. No broker auth or LaunchAgent installation occurs.',
+          commandPreview: cmdPreview,
+          defaultNote: `Owner approved local execution of ${taskId}`,
+          requireNote: false
+        });
+      } else {
+        runSetupBackendTask(taskId, false, '');
+      }
+    }
+
+    function handleConfirmManualStepClick(btn) {
+      const stepId = btn.getAttribute('data-step-id') || '';
+      const title = btn.getAttribute('data-step-title') || stepId;
+      if (latestSetupState && latestSetupState.is_remote_view) {
+        setSetupBanner('Blocked: Manual external confirmations can only be recorded on Home Mac localhost.', true);
+        return;
+      }
+      openSetupConfirmDialog({
+        kind: 'confirm-step',
+        tier: 'manual_external',
+        stepId,
+        title: `Owner Attestation: ${title}`,
+        summary: 'Confirm ONLY after you have visually verified Tailscale state / Tailscale Admin Console ACLs on Home Mac & Office Mac. Automated checks will still re-verify technical fields.',
+        commandPreview: `python3.12 -m backend.app.runtime.cli stage-b --action confirm-step --step-id ${stepId} --confirm --note "<audit_note>"`,
+        defaultNote: '',
+        requireNote: true
+      });
+    }
+
+    async function runSetupBackendTask(taskId, confirmed, auditNote) {
+      setSetupBanner(`Running local setup task '${taskId}'...`);
+      try {
+        const res = await apiFetch('/api/setup/run-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_id: taskId, confirmed: !!confirmed, audit_note: auditNote || '' })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setSetupBanner(
+            `Task blocked (${res.status}): ${data.error || data.reason_code || 'Error'} — run \`mise run ${taskId}\` via Home Mac Terminal.`,
+            true
+          );
+          await loadSetupState();
+          return;
+        }
+        if (data.setup_state) {
+          latestSetupState = data.setup_state;
+          renderSetupPanel(data.setup_state);
+        }
+        const tr = data.task_result || {};
+        if (tr.simulated_only) {
+          if (tr.passed === false) {
+            setSetupBanner(tr.summary_message || `Simulated task '${taskId}' failed.`, true);
+          } else {
+            setSetupBanner(tr.summary_message || `Simulated self-test '${taskId}' passed (does NOT prove live revocation).`, false, true);
+          }
+          return;
+        }
+        if (tr.passed === false || (tr.gate_task && tr.verification_passed === false)) {
+          setSetupBanner(
+            tr.summary_message || `Verification check '${taskId}' failed or blocked (stage_verdict=${data.setup_state?.stage_verdict || 'BLOCKED'}).`,
+            true
+          );
+          return;
+        }
+        if (tr.templates_only) {
+          setSetupBanner(tr.summary_message || `Rendered template check '${taskId}' passed (templates only; not installed).`, false, true);
+          return;
+        }
+        setSetupBanner(tr.summary_message || `Completed allowlisted task '${taskId}' and updated secret-free progress.`);
+      } catch (err) {
+        setSetupBanner(`Failed task '${taskId}': ${err.message || err}`, true);
+      }
+    }
+
+    async function executeConfirmedSetupAction(act, auditNote) {
+      if (act.kind === 'run-task') {
+        await runSetupBackendTask(act.taskId, true, auditNote);
+        return;
+      }
+      if (act.kind === 'confirm-step') {
+        try {
+          const res = await apiFetch('/api/setup/step/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ step_id: act.stepId, confirmed: true, audit_note: auditNote })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setSetupBanner(
+              `Confirmation rejected (${res.status}): ${data.error || data.reason_code || 'Error'} — confirm via Home Mac CLI (--owner-secret-prompt if owner auth active).`,
+              true
+            );
+            return;
+          }
+          latestSetupState = data;
+          renderSetupPanel(data);
+          setSetupBanner(`Recorded owner external confirmation for ${act.stepId}.`);
+        } catch (err) {
+          setSetupBanner(`Failed confirmation: ${err.message || err}`, true);
+        }
+      }
+    }
+
+    function launchdCardDetail(ldProbe) {
+      const ld = ldProbe || {};
+      if (ld.all_running) return 'Installed, bootstrapped, and actively running in launchctl';
+      if (ld.all_installed_and_loaded) return 'Installed & bootstrapped in launchctl, but service NOT running';
+      if (ld.all_rendered_lint_ok) return 'Plists linted cleanly (templates only; install locked)';
+      return 'Not installed';
+    }
+
+    function renderSetupPanel(state) {
+      const isRemote = !!state.is_remote_view;
+      const ov = state.overview || {};
+      const verdictMeta = statusVisualMeta(state.stage_verdict);
+      const verdictEl = document.getElementById('setupOverallVerdictBadge');
+      if (verdictEl) {
+        verdictEl.className = `badge border ${verdictMeta.cls}`;
+        verdictEl.textContent = `${verdictMeta.icon} ${verdictMeta.label}`;
+      }
+
+      const freshEl = document.getElementById('setupFreshnessBadge');
+      if (freshEl) {
+        const isStale = !!state.is_stale || (state.state_freshness && state.state_freshness !== 'LIVE_CURRENT_BOOT');
+        if (isStale) {
+          freshEl.hidden = false;
+          freshEl.className = 'badge border bg-amber-500/10 text-amber-400 border-amber-500/30';
+          freshEl.textContent = `⚠ STALE: ${state.state_freshness || 'REVERIFY_REQUIRED'}`;
+        } else {
+          freshEl.hidden = true;
+          freshEl.className = 'badge hidden';
+          freshEl.textContent = '';
+        }
+      }
+
+      const pFileEl = document.getElementById('setupProgressFileLabel');
+      if (pFileEl) {
+        pFileEl.textContent = isRemote
+          ? 'Minimized Remote Workstation Projection (Read-Only)'
+          : String(state.progress_file || '.ops_state/stage_b_progress.json');
+      }
+
+      const preflightBtn = document.getElementById('setupPreflightBtn');
+      if (preflightBtn) {
+        preflightBtn.disabled = isRemote;
+        preflightBtn.hidden = isRemote;
+        preflightBtn.classList.toggle('hidden', isRemote);
+        if (isRemote) preflightBtn.title = 'Home Mac local-only action';
+      }
+
+      const stageStep = ov.current_stage_and_step || {};
+      const cards = isRemote
+        ? [
+            { label: 'Home Mac Runtime', status: ov.home_runtime_status, detail: state.probes?.supervisor?.supervisor_running ? 'Home Mac supervisor active' : 'Stopped / Foreground mode pending' },
+            { label: 'Your Workstation Status', status: (state.self_device?.status || '').toUpperCase() === 'ACTIVE' || (state.self_device?.status || '').toUpperCase() === 'APPROVED' ? 'VERIFIED' : (state.self_device?.status || 'NOT_STARTED'), detail: state.self_device ? `Device: ${state.self_device.device_id}` : 'Session metadata verified' },
+            { label: 'Tailscale Tunnel', status: ov.tailscale_status, detail: state.probes?.tailscale?.running ? `BackendState: ${state.probes.tailscale.backend_state || 'Running'}` : 'Tailscale tunnel unavailable' },
+            { label: 'TLS Transport', status: ov.tls_certificate_status, detail: state.probes?.tls?.valid ? 'Valid SAN HTTPS active' : 'TLS not verified' },
+            { label: 'Session Auth State', status: ov.remote_auth_status, detail: state.self_device ? `Active sessions: ${safeNum(state.self_device.active_session_count)}` : 'Challenge-response active' },
+            { label: 'State Freshness', status: state.is_stale ? 'REQUIRES_OWNER_ACTION' : 'VERIFIED', detail: state.is_stale ? (state.stale_reasons?.[0] || state.state_freshness) : 'Current Home Mac boot state' },
+            { label: 'LaunchAgent Readiness', status: ov.launchagent_status, detail: launchdCardDetail(state.probes?.launchd) },
+            { label: 'Last Verified Timestamp', status: ov.last_verified_timestamp ? 'VERIFIED' : 'NOT_STARTED', detail: ov.last_verified_timestamp || 'No persisted preflight saved yet' },
+            { label: 'Current Stage & Step', status: state.stage_verdict, detail: `Verified ${safeNum(stageStep.verified_step_count)} / ${safeNum(stageStep.total_steps || 10)}` }
+          ]
+        : [
+            { label: 'Home Mac Runtime', status: ov.home_runtime_status, detail: state.probes?.supervisor?.supervisor_running ? `Running PID ${state.probes.supervisor.supervisor_pid}` : 'Stopped / Foreground mode pending' },
+            { label: 'Office Device Registration', status: ov.office_device_registration_status, detail: `Registered: ${safeNum(state.probes?.remote_auth?.device_counts?.total)} device(s)` },
+            { label: 'Tailscale Connectivity', status: ov.tailscale_status, detail: state.probes?.tailscale?.detail || '' },
+            { label: 'TLS Certificate (SAN)', status: ov.tls_certificate_status, detail: state.probes?.tls?.detail || '' },
+            { label: 'Remote Authentication', status: ov.remote_auth_status, detail: state.probes?.remote_auth?.owner_initialized ? 'Owner PBKDF2 secret initialized' : 'Owner secret not initialized' },
+            { label: 'Device Approval & IP Pin', status: ov.device_approval_status, detail: `Approved: ${safeNum(state.probes?.remote_auth?.device_counts?.approved)} · Active: ${safeNum(state.probes?.remote_auth?.device_counts?.active)} · Revoked: ${safeNum(state.probes?.remote_auth?.device_counts?.revoked)}` },
+            { label: 'LaunchAgent Status', status: ov.launchagent_status, detail: launchdCardDetail(state.probes?.launchd) },
+            { label: 'Last Verified Timestamp', status: ov.last_verified_timestamp ? 'VERIFIED' : 'NOT_STARTED', detail: ov.last_verified_timestamp || 'No persisted preflight run saved yet' },
+            { label: 'Current Stage & Step', status: state.stage_verdict, detail: `Verified ${safeNum(stageStep.verified_step_count)} / ${safeNum(stageStep.total_steps || 10)} · Next: ${stageStep.current_step_id || ''}` }
+          ];
+
+      const gridEl = document.getElementById('setupOverviewGrid');
+      if (gridEl) {
+        gridEl.innerHTML = cards.map(c => {
+          const m = statusVisualMeta(c.status);
+          return `
+            <div class="sub-card-theme rounded-xl p-3.5 border space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold text-theme-secondary">${escapeHtml(c.label)}</span>
+                <span class="badge border ${m.cls}">${escapeHtml(m.icon)} ${escapeHtml(m.label)}</span>
+              </div>
+              <div class="text-xs text-theme-primary">${escapeHtml(c.detail)}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const summaryEl = document.getElementById('setupEnvAndDevicesSummary');
+      if (summaryEl) {
+        if (isRemote) {
+          const sd = state.self_device || {};
+          summaryEl.innerHTML = `
+            <div class="sub-card-theme rounded-xl p-4 border space-y-2">
+              <h4 class="text-sm font-bold text-theme-primary">Your Remote Workstation Session</h4>
+              <div class="text-xs text-theme-secondary">
+                Device ID: <span class="font-mono text-theme-primary">${escapeHtml(sd.device_id || 'authenticated-remote')}</span> ·
+                Status: <span class="font-mono text-theme-primary">${escapeHtml(sd.status || 'ACTIVE')}</span>
+              </div>
+              <div class="text-xs text-theme-secondary">
+                Peer IP Pinned: <span class="font-mono text-theme-primary">${escapeHtml(String(!!sd.peer_ip_pinned))}</span> ·
+                Active Sessions: <span class="font-mono text-theme-primary">${safeNum(sd.active_session_count)}</span>
+              </div>
+              <div class="text-xs text-theme-secondary">
+                Last Auth: <span class="font-mono text-theme-primary">${escapeHtml(sd.last_auth_at || 'verified')}</span>
+              </div>
+            </div>
+            <div class="sub-card-theme rounded-xl p-4 border space-y-2">
+              <h4 class="text-sm font-bold text-theme-primary">Remote Isolation Boundary Active</h4>
+              <p class="text-xs text-theme-secondary">
+                ${escapeHtml(state.remote_notice || 'Home Mac host paths, .env diagnostics, other devices, peer allowlists, fingerprints, and owner recovery commands are hidden from remote sessions.')}
+              </p>
+            </div>
+          `;
+        } else {
+          const envMeta = state.probes?.dotenv || {};
+          const keyBadges = Object.entries(envMeta.angel_config_keys || {}).map(([k, v]) => {
+            const cls = v === 'PRESENT_VALID_FORMAT' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+            return `<span class="badge border ${cls}">${escapeHtml(k)}: ${escapeHtml(v)}</span>`;
+          }).join(' ');
+          const devs = state.probes?.remote_auth?.devices || [];
+          const devRows = devs.length
+            ? devs.map(d => {
+                const dm = statusVisualMeta((d.status || '').toUpperCase() === 'APPROVED' || (d.status || '').toUpperCase() === 'ACTIVE' ? 'VERIFIED' : (d.status || '').toUpperCase());
+                return `<tr class="border-t border-theme"><td class="py-1.5 pr-2 font-mono">${escapeHtml(d.device_id)}</td><td class="py-1.5 pr-2"><span class="badge border ${dm.cls}">${escapeHtml(d.status)}</span></td><td class="py-1.5 pr-2 font-mono">${escapeHtml((d.allowed_ips || []).join(', ') || 'unpinned')}</td><td class="py-1.5 font-mono truncate">${escapeHtml(d.public_key_fingerprint || '')}</td></tr>`;
+              }).join('')
+            : `<tr><td colspan="4" class="py-2 text-theme-secondary">No remote workstations registered on Home Mac yet.</td></tr>`;
+
+          summaryEl.innerHTML = `
+            <div class="sub-card-theme rounded-xl p-4 border space-y-2">
+              <h4 class="text-sm font-bold text-theme-primary">Home Mac Host &amp; .env Hygiene (Zero Secret Values Displayed)</h4>
+              <div class="text-xs text-theme-secondary">
+                OS: <span class="text-theme-primary font-mono">${escapeHtml(state.probes?.host?.platform || '')} ${escapeHtml(state.probes?.host?.release || '')} (${escapeHtml(state.probes?.host?.machine || '')})</span> ·
+                Python: <span class="text-theme-primary font-mono">${escapeHtml(state.probes?.host?.python_version || '')}</span>
+              </div>
+              <div class="text-xs text-theme-secondary">
+                .env exists: <span class="font-mono text-theme-primary">${escapeHtml(String(!!envMeta.exists))}</span> ·
+                Mode: <span class="font-mono ${envMeta.strict_0600_ok ? 'text-emerald-400' : 'text-amber-400'}">${escapeHtml(envMeta.mode || 'missing')}</span> ·
+                Symlink: <span class="font-mono text-theme-primary">${escapeHtml(String(!!envMeta.is_symlink))}</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5 pt-1">${keyBadges}</div>
+            </div>
+            <div class="sub-card-theme rounded-xl p-4 border space-y-2 overflow-x-auto">
+              <h4 class="text-sm font-bold text-theme-primary">Registered Home / Office Workstations</h4>
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="text-theme-secondary">
+                    <th class="pb-1.5 pr-2">Device ID</th>
+                    <th class="pb-1.5 pr-2">Status</th>
+                    <th class="pb-1.5 pr-2">Pinned IP(s)</th>
+                    <th class="pb-1.5">Key Fingerprint</th>
+                  </tr>
+                </thead>
+                <tbody>${devRows}</tbody>
+              </table>
+            </div>
+          `;
+        }
+      }
+
+      const stepsEl = document.getElementById('setupWizardList');
+      if (stepsEl) {
+        stepsEl.innerHTML = (state.steps || []).map(step => {
+          const sm = statusVisualMeta(step.status);
+          const lockBanner = step.locked
+            ? `<div class="rounded-lg p-2.5 bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300">🔒 Locked until prerequisites pass: <span class="font-mono">${escapeHtml((step.unmet_prerequisites || []).join(', '))}</span></div>`
+            : '';
+
+          if (isRemote) {
+            return `
+              <div class="sub-card-theme rounded-xl p-4 border space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-mono text-theme-secondary">Step ${safeNum(step.step_number)} / 10</span>
+                    ${machineBadgeHtml(step.machine)}
+                    <span class="badge border ${sm.cls}">${escapeHtml(sm.icon)} ${escapeHtml(sm.label)}</span>
+                  </div>
+                </div>
+                <h4 class="text-base font-bold text-theme-primary">${escapeHtml(step.title)}</h4>
+                <div class="text-xs text-theme-secondary">${escapeHtml(step.status_summary || sm.label)}</div>
+                ${lockBanner}
+              </div>
+            `;
+          }
+
+          const cmdsHtml = (step.commands || []).map(cmd => {
+            const execDisabled = isRemote || !cmd.ui_executable || step.locked;
+            const runBtn = cmd.ui_executable && cmd.mise_task
+              ? `<button type="button" data-action="run-setup-task" data-task-id="${escapeHtml(cmd.mise_task)}" data-category="${escapeHtml(cmd.category)}" data-cmd="${escapeHtml(cmd.command_text)}" ${execDisabled ? 'disabled' : ''} class="px-2.5 py-1 rounded text-[11px] font-semibold ${execDisabled ? 'sub-card-theme text-theme-secondary border border-theme opacity-50' : 'bg-emerald-600 text-white'}">${cmd.category === 'read_only' ? 'Verify Check' : 'Run (Confirm)'}</button>`
+              : '';
+            return `
+              <div class="card-theme rounded-lg p-3 border space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-theme-primary">${escapeHtml(cmd.command_name)}</span>
+                    ${machineBadgeHtml(cmd.machine)}
+                    <span class="badge border border-theme sub-card-theme text-theme-secondary">${escapeHtml(cmd.category)}</span>
+                    ${cmd.mutates_host ? '<span class="badge border border-amber-500/30 bg-amber-500/10 text-amber-400">Mutates host</span>' : ''}
+                    ${cmd.requires_owner_approval ? '<span class="badge border border-rose-500/30 bg-rose-500/10 text-rose-400">Owner approval</span>' : ''}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <div class="copy-wrap">
+                      <button type="button" data-action="copy-setup-cmd" data-cmd="${escapeHtml(cmd.command_text)}" aria-label="${escapeHtml('Copy command: ' + cmd.command_name)}" class="px-2.5 py-1 rounded text-[11px] font-semibold sub-card-theme border border-theme text-theme-primary">Copy Command</button>
+                      <span class="copy-status-pill" role="status" aria-live="polite"></span>
+                    </div>
+                    ${runBtn}
+                  </div>
+                </div>
+                <p class="text-xs text-theme-secondary">${escapeHtml(cmd.description)}</p>
+                <pre class="sub-card-theme border border-theme rounded p-2 text-[11px] font-mono overflow-x-auto text-emerald-400" style="margin:0;">${escapeHtml(cmd.command_text)}</pre>
+                <div class="text-[11px] text-theme-secondary">Expected result: <span class="font-mono text-theme-primary">${escapeHtml(cmd.expected_result)}</span></div>
+              </div>
+            `;
+          }).join('');
+
+          const manualBtn = step.manual_external && !step.locked && !isRemote
+            ? `<button type="button" data-action="confirm-manual-step" data-step-id="${escapeHtml(step.step_id)}" data-step-title="${escapeHtml(step.title)}" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/20 border border-blue-500/40 text-blue-400">${step.owner_confirmation?.confirmed ? 'Update Owner Confirmation Note' : 'Record Owner External Confirmation...'}</button>`
+            : '';
+
+          return `
+            <div class="sub-card-theme rounded-xl p-4 border space-y-3">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-mono text-theme-secondary">Step ${safeNum(step.step_number)} / 10</span>
+                    ${machineBadgeHtml(step.machine)}
+                    <span class="badge border ${sm.cls}">${escapeHtml(sm.icon)} ${escapeHtml(sm.label)}</span>
+                  </div>
+                  <h4 class="text-base font-bold text-theme-primary">${escapeHtml(step.title)}</h4>
+                  <p class="text-xs text-theme-secondary">${escapeHtml(step.summary)}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">${manualBtn}</div>
+              </div>
+              ${lockBanner}
+              <div class="text-xs text-theme-primary">
+                ${step.failure_reason ? `<span class="text-amber-400 font-semibold">Current Finding:</span> ${escapeHtml(step.failure_reason)}` : `<span class="text-emerald-400 font-semibold">Verified:</span> ${escapeHtml(step.verification_result || 'Passed')}`}
+              </div>
+              <details class="setup-details card-theme border rounded-lg" ${step.status !== 'VERIFIED' && !step.locked ? 'open' : ''}>
+                <summary class="text-xs font-semibold text-theme-primary">
+                  <span>Commands &amp; Verification Criteria (${(step.commands || []).length} command card(s))</span>
+                  <span class="details-chevron">▶</span>
+                </summary>
+                <div class="p-3 pt-1 space-y-2.5">
+                  <div class="text-[11px] text-theme-secondary">Success criteria: <span class="text-theme-primary">${escapeHtml(step.expected_criteria)}</span></div>
+                  ${cmdsHtml}
+                </div>
+              </details>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const recEl = document.getElementById('setupRecoveryList');
+      if (recEl) {
+        if (isRemote || !(state.recovery_playbooks || []).length) {
+          recEl.innerHTML = isRemote
+            ? `<div class="sub-card-theme rounded-xl p-4 border text-xs text-theme-secondary">Owner recovery procedures and CLI repair commands are restricted to Home Mac localhost sessions. Contact the Home Mac owner if your connection, certificate, or peer IP needs adjustment.</div>`
+            : `<div class="sub-card-theme rounded-xl p-4 border text-xs text-theme-secondary">No recovery playbooks loaded.</div>`;
+        } else {
+          recEl.innerHTML = (state.recovery_playbooks || []).map(rec => {
+            const stepsHtml = (rec.what_to_do || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
+            const cmdHtml = (rec.commands || []).map(c => `
+              <div class="flex flex-wrap items-center justify-between gap-2 card-theme border rounded p-2">
+                <code class="text-[11px] font-mono text-emerald-400 overflow-x-auto">${escapeHtml(c)}</code>
+                <div class="copy-wrap">
+                  <button type="button" data-action="copy-setup-cmd" data-cmd="${escapeHtml(c)}" aria-label="${escapeHtml('Copy recovery command: ' + c)}" class="px-2 py-0.5 rounded text-[11px] font-semibold sub-card-theme border border-theme text-theme-primary">Copy</button>
+                  <span class="copy-status-pill" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+            `).join('');
+            return `
+              <details class="setup-details sub-card-theme rounded-xl border p-1">
+                <summary class="text-sm font-bold text-theme-primary">
+                  <span>${escapeHtml(rec.title)}</span>
+                  <span class="flex items-center gap-2">${machineBadgeHtml(rec.machine)}<span class="details-chevron text-xs">▶</span></span>
+                </summary>
+                <div class="p-3 pt-1 space-y-2.5 text-xs">
+                  <p class="text-theme-secondary"><strong class="text-theme-primary">Likely Cause:</strong> ${escapeHtml(rec.cause)}</p>
+                  <ol class="space-y-1 text-theme-primary" style="padding-left:1.2rem; margin:0;">${stepsHtml}</ol>
+                  <div class="space-y-1.5">${cmdHtml}</div>
+                  <div class="text-[11px] text-theme-secondary">Documentation anchor: <span class="font-mono">docs/operations/STAGE_B_SETUP.md#${escapeHtml(rec.doc_anchor || '')}</span></div>
+                </div>
+              </details>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    const _setupDlg = document.getElementById('setupConfirmDialog');
+    const _setupForm = document.getElementById('setupConfirmForm');
+    if (_setupForm && _setupDlg) {
+      _setupForm.addEventListener('submit', (evt) => {
+        const submitter = evt.submitter;
+        if (submitter && submitter.value === 'confirm' && pendingSetupDialogAction && pendingSetupDialogAction.requireNote) {
+          const noteInput = document.getElementById('setupConfirmNoteInput');
+          const errEl = document.getElementById('setupConfirmError');
+          if (!noteInput || !noteInput.value.trim()) {
+            evt.preventDefault();
+            if (errEl) {
+              errEl.textContent = 'Please enter a brief owner verification note before confirming.';
+              errEl.classList.remove('hidden');
+            }
+            if (noteInput) noteInput.focus();
+            return;
+          }
+        }
+      });
+      _setupDlg.addEventListener('close', async () => {
+        const result = _setupDlg.returnValue;
+        _setupDlg.returnValue = '';
+        const actionToRun = pendingSetupDialogAction;
+        pendingSetupDialogAction = null;
+        if (result !== 'confirm' || !actionToRun) return;
+        const noteInput = document.getElementById('setupConfirmNoteInput');
+        const note = noteInput ? noteInput.value.trim() : '';
+        await executeConfirmedSetupAction(actionToRun, note);
+      });
+    }
+
+    document.addEventListener('submit', (evt) => {
+      const form = evt.target;
+      if (!form || !form.getAttribute) return;
+      const action = form.getAttribute('data-form-action');
+      if (action === 'verify-tip') handleVerifyTip(evt);
+      else if (action === 'record-trade') handleRecordTrade(evt);
+    });
 
     // Initialize and auto-refresh every 5 seconds
     refreshScan();

@@ -8,4 +8,7 @@ venv/
 .DS_Store
 *.log
 .firebase/
+runtime_state/
+runtime_logs/
+
 

@@ -19,6 +19,7 @@ from .sample_universe import INDIAN_STOCKS_DATA
 from .fno_tokens import FNO_TOKEN_MAP
 from .session_clock import IndianMarketSessionClock, IST_ZONE
 from .candle_store import determine_candle_closure
+from .historical_acquisition import redact_sensitive_text
 
 
 def generate_totp_code(secret: str) -> str:
@@ -61,6 +62,38 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         self.is_authenticated = False
         self.cached_quotes: Dict[str, Any] = {}
         self.last_fetch_time: float = 0
+        self._in_connect: bool = False
+        self._skip_prefetch_once: bool = False
+        self._retired_secrets: List[str] = []
+
+    def _retire_session_secrets(self) -> None:
+        for val in (self.jwt_token, self.feed_token):
+            if val and val not in self._retired_secrets:
+                self._retired_secrets.append(val)
+        if len(self._retired_secrets) > 16:
+            self._retired_secrets = self._retired_secrets[-16:]
+
+    def _secret_values(self) -> List[str]:
+        vals = [
+            self.api_key,
+            self.client_code,
+            self.password,
+            self.totp_secret,
+            self.jwt_token,
+            self.feed_token,
+            *self._retired_secrets,
+        ]
+        return [v for v in vals if v]
+
+    def _redact(self, message: Any) -> str:
+        return redact_sensitive_text(str(message), extra_secrets=self._secret_values())
+
+    def _reconnect_without_prefetch(self) -> bool:
+        self._skip_prefetch_once = True
+        try:
+            return bool(self.connect())
+        finally:
+            self._skip_prefetch_once = False
 
     def _headers(self, authenticated: bool = True) -> Dict[str, str]:
         headers = {
@@ -78,11 +111,15 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         return headers
 
     def connect(self) -> bool:
-        """Authenticates with Angel One loginByPassword endpoint."""
+        """Authenticates with Angel One loginByPassword endpoint without recursive prefetch."""
+        if self._in_connect:
+            return False
         if not self.api_key or not self.client_code or not self.password:
             print("[!] Angel One credentials missing in .env.")
             return False
 
+        self._in_connect = True
+        should_prefetch = not self._skip_prefetch_once
         try:
             totp_code = generate_totp_code(self.totp_secret) if self.totp_secret else ""
             url = f"{self.BASE_URL}/rest/auth/angelbroking/user/v1/loginByPassword"
@@ -100,75 +137,87 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
                 self.jwt_token = res_data["data"].get("jwtToken")
                 self.feed_token = res_data["data"].get("feedToken")
                 self.is_authenticated = True
-                print(f"[✔] Successfully authenticated with Angel One SmartAPI for {self.client_code}")
-                # Pre-fetch live quotes
-                self.fetch_live_quotes()
+                print("[✔] Successfully authenticated with Angel One SmartAPI (client identity redacted).")
+                if should_prefetch:
+                    # Strictly non-reconnecting single prefetch to prevent connect <-> fetch recursion loops
+                    self.fetch_live_quotes(_allow_reconnect=False)
                 return True
             else:
-                print(f"[✖] Angel One Login Failed: {res_data.get('message')}")
+                print(f"[✖] Angel One Login Failed: {self._redact(res_data.get('message'))}")
                 return False
         except Exception as e:
-            print(f"[✖] Angel One Connection Exception: {e}")
+            print(f"[✖] Angel One Connection Exception: {self._redact(e)}")
             return False
+        finally:
+            self._in_connect = False
 
-    def fetch_live_quotes(self) -> Dict[str, Any]:
-        """Fetches live market quotes for all tracked tokens in batch with auto-reconnect."""
+    def fetch_live_quotes(self, _allow_reconnect: bool = True) -> Dict[str, Any]:
+        """Fetches live market quotes for all tracked tokens in batch with strictly bounded reconnect."""
+        reconnected = False
         if not self.is_authenticated or not self.jwt_token:
-            if not self.connect():
+            if not _allow_reconnect or not self._reconnect_without_prefetch():
                 return self.cached_quotes
+            reconnected = True
 
         now = time.time()
         # Cache for 2 seconds to avoid excessive rate-limiting
         if self.cached_quotes and (now - self.last_fetch_time) < 2.0:
             return self.cached_quotes
 
-        try:
-            tokens = [v["token"] for v in TOKEN_MAP.values()]
-            # Split tokens into batches of 40 to stay well below Angel One's 50-token batch limit
-            batches = [tokens[i:i + 40] for i in range(0, len(tokens), 40)]
-            for b in batches:
-                url = f"{self.BASE_URL}/rest/secure/angelbroking/market/v1/quote/"
-                payload = json.dumps({
-                    "mode": "FULL",
-                    "exchangeTokens": {"NSE": b}
-                }).encode("utf-8")
+        tokens = [v["token"] for v in TOKEN_MAP.values()]
+        batches = [tokens[i:i + 40] for i in range(0, len(tokens), 40)]
+        max_attempts = 2 if (_allow_reconnect and not reconnected) else 1
 
-                req = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    res = json.loads(response.read().decode("utf-8"))
+        for attempt in range(max_attempts):
+            try:
+                for b in batches:
+                    url = f"{self.BASE_URL}/rest/secure/angelbroking/market/v1/quote/"
+                    payload = json.dumps({
+                        "mode": "FULL",
+                        "exchangeTokens": {"NSE": b}
+                    }).encode("utf-8")
 
-                if res.get("status"):
-                    fetched = res.get("data", {}).get("fetched", [])
-                    for item in fetched:
-                        raw_sym = item.get("tradingSymbol", "")
-                        sym = raw_sym.replace("-EQ", "")
-                        self.cached_quotes[sym] = item
-                        self.cached_quotes[raw_sym] = item
-                        # Standard index mapping
-                        if sym == "Nifty 50":
-                            self.cached_quotes["NIFTY 50"] = item
-                        elif sym == "Nifty Bank":
-                            self.cached_quotes["BANKNIFTY"] = item
-                        elif sym == "Nifty Fin Service":
-                            self.cached_quotes["FINNIFTY"] = item
-                        elif sym == "NIFTY MID SELECT":
-                            self.cached_quotes["MIDCPNIFTY"] = item
-                        elif sym == "India VIX":
-                            self.cached_quotes["INDIA VIX"] = item
+                    req = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        res = json.loads(response.read().decode("utf-8"))
 
-            self.last_fetch_time = now
-            return self.cached_quotes
-        except urllib.error.HTTPError as he:
-            if he.code in (401, 403):
-                print(f"[!] Angel One HTTP {he.code} session expired. Reconnecting...")
-                self.is_authenticated = False
-                self.jwt_token = None
-                if self.connect():
-                    return self.fetch_live_quotes()
-            return self.cached_quotes
-        except Exception as e:
-            print(f"[!] Error fetching live quotes from Angel One: {e}")
-            return self.cached_quotes
+                    if res.get("status"):
+                        fetched = res.get("data", {}).get("fetched", [])
+                        for item in fetched:
+                            raw_sym = item.get("tradingSymbol", "")
+                            sym = raw_sym.replace("-EQ", "")
+                            self.cached_quotes[sym] = item
+                            self.cached_quotes[raw_sym] = item
+                            if sym == "Nifty 50":
+                                self.cached_quotes["NIFTY 50"] = item
+                            elif sym == "Nifty Bank":
+                                self.cached_quotes["BANKNIFTY"] = item
+                            elif sym == "Nifty Fin Service":
+                                self.cached_quotes["FINNIFTY"] = item
+                            elif sym == "NIFTY MID SELECT":
+                                self.cached_quotes["MIDCPNIFTY"] = item
+                            elif sym == "India VIX":
+                                self.cached_quotes["INDIA VIX"] = item
+
+                self.last_fetch_time = now
+                return self.cached_quotes
+            except urllib.error.HTTPError as he:
+                if he.code in (401, 403):
+                    print(f"[!] Angel One HTTP {he.code} session expired.")
+                    self._retire_session_secrets()
+                    self.is_authenticated = False
+                    self.jwt_token = None
+                    if attempt == 0 and _allow_reconnect and not reconnected and self._reconnect_without_prefetch():
+                        reconnected = True
+                        continue
+                else:
+                    print(f"[!] HTTP error fetching live quotes from Angel One: HTTP {he.code}")
+                return self.cached_quotes
+            except Exception as e:
+                print(f"[!] Error fetching live quotes from Angel One: {self._redact(e)}")
+                return self.cached_quotes
+
+        return self.cached_quotes
 
     INTERVAL_MAP = {
         "1m": "ONE_MINUTE", "1min": "ONE_MINUTE", "ONE_MINUTE": "ONE_MINUTE",
@@ -188,7 +237,8 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         interval: str = "ONE_DAY",
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
-        current_exchange_time: Optional[datetime] = None
+        current_exchange_time: Optional[datetime] = None,
+        _allow_reconnect: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         Fetches genuine historical OHLCV candles from Angel One historical API:
@@ -196,11 +246,11 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         Guarantees:
         - Normalizes interval strings to Angel One standard format.
         - Accurately distinguishes completed (is_closed=True, HISTORICAL) from forming (is_closed=False, LIVE) bars.
-        - Handles token expiration (reconnects) and rate limits safely.
+        - Handles token expiration (reconnects when _allow_reconnect=True) and rate limits safely.
         - Returns [] with no fabricated data on failure.
         """
         if not self.is_authenticated or not self.jwt_token:
-            if not self.connect():
+            if not _allow_reconnect or not self._reconnect_without_prefetch():
                 return []
 
         if interval in ("15s", "15sec", "15_SECOND"):
@@ -232,14 +282,17 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
 
             errorcode = res.get("errorcode", "")
             if errorcode in ("AG8001", "AG8002"):
-                # Session expired; reconnect once
-                print(f"[!] Angel One JWT expired ({errorcode}). Re-authenticating...")
+                # Session expired; reconnect at most once cleanly only when _allow_reconnect=True
+                print(f"[!] Angel One JWT expired ({errorcode}).")
+                self._retire_session_secrets()
                 self.jwt_token = ""
                 self.is_authenticated = False
-                if self.connect():
+                if _allow_reconnect and self._reconnect_without_prefetch():
                     req2 = urllib.request.Request(url, data=payload, headers=self._headers(authenticated=True))
                     with urllib.request.urlopen(req2, timeout=10) as resp2:
                         res = json.loads(resp2.read().decode("utf-8"))
+                else:
+                    return []
 
             if res.get("status") and "data" in res and res["data"]:
                 candles = []
@@ -277,12 +330,12 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
                 return []
             return []
         except Exception as e:
-            print(f"[!] Error fetching historical candles from Angel One for token {token}: {e}")
+            print(f"[!] Error fetching historical candles from Angel One for token {token}: {self._redact(e)}")
             return []
 
-    def get_indices(self) -> List[Dict[str, Any]]:
+    def get_indices(self, _allow_reconnect: bool = True) -> List[Dict[str, Any]]:
         """Fetch live index levels for all major indices from Angel One."""
-        self.fetch_live_quotes()
+        self.fetch_live_quotes(_allow_reconnect=_allow_reconnect)
         now_iso = datetime.now().isoformat()
         
         def _build_idx(key: str, default_val: float, default_chg_pts: float, default_chg_pct: float, is_vix: bool = False) -> Dict[str, Any]:
@@ -330,12 +383,12 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         
         return [nifty, bank, fin, mid, sensex, vix]
 
-    def get_all_stocks(self) -> List[Dict[str, Any]]:
+    def get_all_stocks(self, _allow_reconnect: bool = True) -> List[Dict[str, Any]]:
         """
         Returns stock records populated with genuine broker quote data from Angel One.
         Does NOT fabricate synthetic candles, RSI, PCR, or option recommendations.
         """
-        self.fetch_live_quotes()
+        self.fetch_live_quotes(_allow_reconnect=_allow_reconnect)
         stocks_result = []
         sample_funds = {s["symbol"]: s for s in INDIAN_STOCKS_DATA}
         now_iso = datetime.now().isoformat()
@@ -369,7 +422,16 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
 
             # Genuine historical candles fetched if available
             token = meta.get("token")
-            real_candles = self.fetch_historical_candles(token=token, exchange="NSE", interval="ONE_DAY") if token else []
+            real_candles = (
+                self.fetch_historical_candles(
+                    token=token,
+                    exchange="NSE",
+                    interval="ONE_DAY",
+                    _allow_reconnect=_allow_reconnect,
+                )
+                if token
+                else []
+            )
             if real_candles:
                 real_candles.append({
                     "timestamp": now_iso,
@@ -414,8 +476,8 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
 
         return stocks_result
 
-    def get_quote(self, symbol: str) -> Dict[str, Any]:
-        self.fetch_live_quotes()
+    def get_quote(self, symbol: str, _allow_reconnect: bool = True) -> Dict[str, Any]:
+        self.fetch_live_quotes(_allow_reconnect=_allow_reconnect)
         q = self.cached_quotes.get(symbol)
         now_iso = datetime.now().isoformat()
         is_idx = any(meta.get("is_index") for s, meta in TOKEN_MAP.items() if s == symbol)
@@ -452,28 +514,46 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
         from .sample_universe import SampleUniverseProvider
         return SampleUniverseProvider().get_option_chain(symbol, expiry)
 
-    def get_live_positions(self) -> Dict[str, Any]:
-        """Fetches the user's real live positions and today's PnL from Angel One with auto-reconnect."""
+    def get_live_positions(self, _allow_reconnect: bool = True) -> Dict[str, Any]:
+        """Fetches the user's real live positions and today's PnL from Angel One with bounded single reconnect."""
+        empty_positions = {
+            "positions": [],
+            "total_pnl": 0.0,
+            "realised_pnl": 0.0,
+            "unrealised_pnl": 0.0,
+            "has_live_positions": False,
+        }
+        reconnected = False
         if not self.is_authenticated or not self.jwt_token:
-            if not self.connect():
-                return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+            if not _allow_reconnect or not self._reconnect_without_prefetch():
+                return empty_positions
+            reconnected = True
 
-        try:
-            url = f"{self.BASE_URL}/rest/secure/angelbroking/order/v1/getPosition"
-            req = urllib.request.Request(url, headers=self._headers(authenticated=True))
-            with urllib.request.urlopen(req, timeout=10) as response:
-                res = json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as he:
-            if he.code in (401, 403):
-                print(f"[!] Angel One HTTP {he.code} on getPosition. Reconnecting...")
-                self.is_authenticated = False
-                self.jwt_token = None
-                if self.connect():
-                    return self.get_live_positions()
-            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
-        except Exception as e:
-            print(f"[!] Error fetching live positions from Angel One: {e}")
-            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+        res = None
+        max_attempts = 2 if (_allow_reconnect and not reconnected) else 1
+        for attempt in range(max_attempts):
+            try:
+                url = f"{self.BASE_URL}/rest/secure/angelbroking/order/v1/getPosition"
+                req = urllib.request.Request(url, headers=self._headers(authenticated=True))
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res = json.loads(response.read().decode("utf-8"))
+                break
+            except urllib.error.HTTPError as he:
+                if he.code in (401, 403):
+                    print(f"[!] Angel One HTTP {he.code} on getPosition.")
+                    self._retire_session_secrets()
+                    self.is_authenticated = False
+                    self.jwt_token = None
+                    if attempt == 0 and _allow_reconnect and not reconnected and self._reconnect_without_prefetch():
+                        reconnected = True
+                        continue
+                return empty_positions
+            except Exception as e:
+                print(f"[!] Error fetching live positions from Angel One: {self._redact(e)}")
+                return empty_positions
+
+        if not isinstance(res, dict):
+            return empty_positions
 
         try:
             if res.get("status") and res.get("data"):
@@ -526,7 +606,7 @@ class AngelOneSmartAPIProvider(MarketDataProvider):
                     "unrealised_pnl": round(total_unrealised, 2),
                     "has_live_positions": True
                 }
-            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+            return empty_positions
         except Exception as e:
-            print(f"[!] Error fetching live positions from Angel One: {e}")
-            return {"positions": [], "total_pnl": 0.0, "realised_pnl": 0.0, "unrealised_pnl": 0.0, "has_live_positions": False}
+            print(f"[!] Error parsing live positions from Angel One: {self._redact(e)}")
+            return empty_positions

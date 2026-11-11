@@ -1,0 +1,79 @@
+# TradeLens AI — Phase 3E.5.2.6.1 Hardened Stage B Task Runner Configuration
+# Order execution is permanently disabled. Broker authentication and Phase 3F are excluded.
+#
+# Exit-code contract:
+# - Verification gates (home-preflight, tailscale-check, tls-check, verify-device,
+#   remote-check, security-check, revocation-check, launchd-lint, launchd-status)
+#   exit 0 ONLY when their gate passes, and exit 2 when BLOCKED / incomplete.
+# - Read-only inspectors & guides (preflight, status, register-device-guide, report)
+#   exit 0 on successful read/report while emitting stage_verdict & verification_passed=false if blocked.
+# - revocation-selftest runs an isolated simulation ONLY (does NOT prove live Office Mac revocation).
+
+[env]
+PYTHONPATH = "{{config_root}}:{{config_root}}/backend"
+_.path = ["{{config_root}}/backend/.venv/bin", "/opt/homebrew/bin"]
+
+[tasks.tradelens-stage-b-preflight]
+description = "[Read-Only Inspector] Evaluate full Stage B preflight (updates local progress store; exit 0 only means inspection ran — check stage_verdict)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action preflight"
+
+[tasks.tradelens-stage-b-status]
+description = "[Read-Only Inspector] Show live Stage B status overview without mutating disk (exit 0 does NOT imply Stage B verified)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action status --no-save"
+
+[tasks.tradelens-stage-b-home-preflight]
+description = "[Gate: Step 1] Verify macOS host, Python runtime, .env 0600 permissions, and Angel One key format (exits 2 until Step 1 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action home-preflight"
+
+[tasks.tradelens-stage-b-tailscale-check]
+description = "[Gate: Steps 2-3] Verify Tailscale install/status, owner confirmations, and peer IP pinning (exits 2 until Steps 2-3 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action tailscale-check"
+
+[tasks.tradelens-stage-b-tls-check]
+description = "[Gate: Step 4] Verify SAN TLS certificate, expiry, fingerprint, and 0600 private key (exits 2 until Step 4 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action tls-check"
+
+[tasks.tradelens-stage-b-register-device-guide]
+description = "[Read-Only Guide] Print Office Mac Keychain keygen and Home Mac registration CLI instructions without mutating state"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action register-device-guide"
+
+[tasks.tradelens-stage-b-register-device]
+description = "[Mutating CLI] Step 5: Register an approved-pending Office Mac public key on Home Mac (requires --device-id, --public-key-file, --allowed-ip; exits 2 if omitted)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action register-device"
+
+[tasks.tradelens-stage-b-verify-device]
+description = "[Gate: Steps 5-6] Verify owner secret, approved Office Mac device record, and pinned Tailscale IP alignment (exits 2 until Steps 5-6 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action verify-device"
+
+[tasks.tradelens-stage-b-remote-check]
+description = "[Gate: Step 7] Verify remote HTTPS listener and fresh Office Mac challenge-response session (exits 2 until Step 7 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action remote-check"
+
+[tasks.tradelens-stage-b-security-check]
+description = "[Gate: Step 8] Execute non-destructive Stage B security boundary checks (exits 2 until Step 8 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action security-check"
+
+[tasks.tradelens-stage-b-revocation-selftest]
+description = "[Simulated Only] Run isolated temporary cross-process revocation self-test (does NOT verify live Office Mac revocation)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action revocation-selftest"
+
+[tasks.tradelens-stage-b-revocation-check]
+description = "[Gate: Step 9] Strict live revocation gate requiring Steps 2-8 VERIFIED, self-test PASS, and live post-revocation evidence (exits 2 until Step 9 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action revocation-check"
+
+[tasks.tradelens-stage-b-render-launchd]
+description = "[Host Mutation (--confirm)] Step 10 prep: Render LaunchAgent plist templates in deploy/launchd/ (does NOT install into ~/Library/LaunchAgents)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action render-launchd --confirm"
+
+[tasks.tradelens-stage-b-launchd-lint]
+description = "[Gate: Templates Only] Validate rendered deploy/launchd/*.plist files via plutil -lint (exits 2 if missing/invalid; does NOT prove installed or running)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action launchd-lint"
+
+[tasks.tradelens-stage-b-launchd-status]
+description = "[Gate: Step 10] Verify LaunchAgent install, bootstrap, running state, and Step 2-9 lock enforcement (exits 2 until Step 10 VERIFIED)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action launchd-status"
+
+[tasks.tradelens-stage-b-report]
+description = "[Report Generator] Generate secret-free Stage B status report at reports/phase3e_5_2_6_stage_b_provisioning_report.md (exit 0 does NOT imply verified)"
+run = "python3.12 -m backend.app.runtime.cli stage-b --action report"
+
