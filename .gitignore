@@ -4,15 +4,35 @@ __pycache__/
 .venv/
 env/
 venv/
+
+# Environment & direnv files (root and nested), preserving .env.example templates
 .env
+.env.*
+*.env
+.envrc
+.envrc.*
+!.env.example
+!**/.env.example
+
 .DS_Store
 *.log
 .firebase/
+
+# Local runtime state, LaunchAgents, TLS material, and local secret stores
 runtime_state/
 runtime_logs/
 deploy/launchd/*.plist
 *.crt
 *.key
 *.pem
+*.p12
+*.pfx
+*.jks
+remote_auth.json
+remote_auth.json.*
+*.secret
+*.secrets
+secrets.json
+credentials.json
 
 
