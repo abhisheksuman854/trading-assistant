@@ -20,7 +20,10 @@ mise install
 mise tasks
 ```
 
-`mise.toml` reuses the repository's existing Python 3.12 environment (`backend/.venv/bin/python3.12` and `/opt/homebrew/bin/python3.12`) without installing duplicate Python toolchains or loading Angel One secrets.
+`mise.toml` reuses the repository's configured Python 3.12 environment (`backend/.venv/bin/python3.12`, `TRADELENS_PYTHON_EXECUTABLE`, `/opt/homebrew/bin/python3.12`, or `/usr/local/bin/python3.12`) without installing duplicate Python toolchains or loading Angel One secrets.
+
+> **Portability Note (Office Mac vs. Home Mac):**
+> Always run Home Mac provisioning from the Home Mac's own checkout (for example, `/Users/abhisheksuman/Documents/GitHub/trading-assistant`). Never copy `.env`, TLS keys, or `deploy/launchd/*.plist` files generated on an Office Mac to the Home Mac.
 
 ---
 
@@ -219,7 +222,7 @@ mise run tradelens-stage-b-revocation-check
 
 ### Step 10 — LaunchAgent Installation (Strictly Gated Until Steps 2–9 Verified) `[Home Mac]`
 
-Render and lint templates safely before Step 2–9 completion:
+Render and lint fresh LaunchAgent templates **directly on the Home Mac** so `WorkingDirectory`, wrapper paths, `PYTHONPATH`, and Python executable match the Home Mac repository root (for example `/Users/abhisheksuman/Documents/GitHub/trading-assistant`) and active Python interpreter. Never copy Office-Mac-rendered plists, and never treat rendered template files as installed or running services:
 
 ```zsh
 mise run tradelens-stage-b-render-launchd

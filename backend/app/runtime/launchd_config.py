@@ -12,13 +12,64 @@ never fails on `libexpat` symbol mismatches.
 from __future__ import annotations
 
 import os
+import shutil
+import sys
 from html import escape as _xml_escape
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 
 HOME_ENGINE_LABEL = "com.tradelens.home-engine"
 FRONTEND_SERVER_LABEL = "com.tradelens.frontend-dashboard"
+
+
+def resolve_python_executable(
+    repo_root: Optional[Path | str] = None,
+    configured: Optional[str] = None,
+    environ: Optional[Mapping[str, str]] = None,
+) -> str:
+    """
+    Resolve the Python 3.12+ interpreter path portably without hardcoding a single prefix.
+
+    Precedence:
+    1. Explicit `configured` executable path.
+    2. `TRADELENS_PYTHON_EXECUTABLE` from `environ` (or `os.environ`).
+    3. Repository virtualenv (`<repo_root>/backend/.venv/bin/python3.12|python3`).
+    4. Active versioned interpreter (`sys.executable` when Python 3.x executable).
+    5. `python3.12` on PATH / standard macOS locations, then `python3`.
+    """
+    explicit = str(configured or "").strip()
+    if explicit:
+        return explicit
+
+    env_map = environ if environ is not None else os.environ
+    env_py = str(env_map.get("TRADELENS_PYTHON_EXECUTABLE") or "").strip()
+    if env_py:
+        return env_py
+
+    if repo_root is not None:
+        venv_bin = Path(repo_root).resolve() / "backend" / ".venv" / "bin"
+        for name in ("python3.12", "python3"):
+            cand = venv_bin / name
+            if cand.exists() and os.access(cand, os.X_OK):
+                return str(cand)
+
+    cur_py = str(sys.executable or "").strip()
+    if cur_py and Path(cur_py).is_absolute() and os.path.exists(cur_py) and os.access(cur_py, os.X_OK):
+        if Path(cur_py).name.startswith("python3"):
+            return cur_py
+
+    for cand in (
+        shutil.which("python3.12"),
+        "/opt/homebrew/bin/python3.12",
+        "/usr/local/bin/python3.12",
+        shutil.which("python3"),
+        "/usr/bin/python3",
+    ):
+        if cand and os.path.exists(cand) and os.access(cand, os.X_OK):
+            return str(cand)
+
+    return cur_py or "python3.12"
 
 
 def _render_plist_value(val: Any, indent: int) -> List[str]:
@@ -60,7 +111,7 @@ def dumps_plist_xml(plist_dict: Dict[str, Any]) -> str:
 
 def build_home_engine_plist(
     repo_root: Path | str,
-    python_executable: str = "/opt/homebrew/bin/python3.12",
+    python_executable: Optional[str] = None,
     bind_host: str = "127.0.0.1",
     backend_port: int = 8000,
     frontend_port: int = 8080,
@@ -76,6 +127,7 @@ def build_home_engine_plist(
     remote_access_enabled: Optional[bool] = None,
 ) -> Dict[str, Any]:
     root = Path(repo_root).resolve()
+    resolved_python = resolve_python_executable(repo_root=root, configured=python_executable)
     wrapper_script = str(root / "deploy" / "scripts" / "run_launchd_service.sh")
     resolved_state = state_dir or str(root / "runtime_state")
     resolved_logs = log_dir or str(root / "runtime_logs")
@@ -91,7 +143,7 @@ def build_home_engine_plist(
 
     prog_args: List[str] = [
         wrapper_script,
-        python_executable,
+        resolved_python,
         "-m",
         "backend.app.runtime.cli",
         "supervise",
@@ -158,7 +210,7 @@ def build_home_engine_plist(
 
 def build_frontend_plist(
     repo_root: Path | str,
-    python_executable: str = "/opt/homebrew/bin/python3.12",
+    python_executable: Optional[str] = None,
     bind_host: str = "127.0.0.1",
     frontend_port: int = 8080,
     backend_port: int = 8000,
@@ -171,6 +223,7 @@ def build_frontend_plist(
     tls_key_file: Optional[str] = None,
 ) -> Dict[str, Any]:
     root = Path(repo_root).resolve()
+    resolved_python = resolve_python_executable(repo_root=root, configured=python_executable)
     wrapper_script = str(root / "deploy" / "scripts" / "run_launchd_service.sh")
     resolved_logs = log_dir or str(root / "runtime_logs")
     vpn_list = [str(c).strip() for c in (vpn_cidrs or ()) if str(c).strip()]
@@ -180,7 +233,7 @@ def build_frontend_plist(
 
     prog_args: List[str] = [
         wrapper_script,
-        python_executable,
+        resolved_python,
         "-m",
         "backend.app.runtime.cli",
         "serve-frontend",

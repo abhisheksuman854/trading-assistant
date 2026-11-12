@@ -10,5 +10,9 @@ venv/
 .firebase/
 runtime_state/
 runtime_logs/
+deploy/launchd/*.plist
+*.crt
+*.key
+*.pem
 
 

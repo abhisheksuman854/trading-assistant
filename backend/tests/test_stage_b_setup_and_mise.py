@@ -20,6 +20,7 @@ import re
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import tomllib
 import unittest
@@ -32,6 +33,12 @@ from unittest.mock import patch
 
 from backend.app.main import TradeLensAppRuntime, make_api_handler
 from backend.app.runtime.cli import build_parser, main as cli_main
+from backend.app.runtime.launchd_config import (
+    build_frontend_plist,
+    build_home_engine_plist,
+    render_launchd_plists,
+    resolve_python_executable,
+)
 from backend.app.runtime.security import (
     ALLOWED_REMOTE_ROUTE_METHODS,
     DEVICE_STATUS_REVOKED,
@@ -644,106 +651,230 @@ class TestStageBSetupAndMise(unittest.TestCase):
         for rec in RECOVERY_PLAYBOOKS:
             self.assertIn(rec["doc_anchor"], doc_text, f"Missing recovery anchor #{rec['doc_anchor']}")
 
-        # Isolate CLI verification from the real Home Mac repository/.env/environment
-        isolated_repo = self.root / "isolated_repo"
-        isolated_repo.mkdir(parents=True, exist_ok=True)
-        isolated_env_path = isolated_repo / ".env"
-        _write_hardened_env(isolated_env_path)
-        os.chmod(isolated_env_path, 0o644)
-        isolated_os_env = {k: v for k, v in os.environ.items() if not k.startswith(("ANGEL_", "TRADELENS_"))}
+        # Hermetic temporary repo fixture: never read the real Office/Home Mac .env or host ANGEL_*/TRADELENS_* env.
+        isolated_root = Path(self._tmp.name) / "isolated_stage_b_repo"
+        isolated_state = isolated_root / "runtime_state"
+        isolated_progress = isolated_root / ".ops_state" / "stage_b_progress.json"
+        isolated_root.mkdir(parents=True, exist_ok=True)
+        isolated_state.mkdir(parents=True, exist_ok=True)
+        clean_environ = {
+            k: v
+            for k, v in os.environ.items()
+            if not k.startswith(("ANGEL_", "TRADELENS_"))
+        }
 
-        with (
-            patch("backend.app.runtime.cli.REPO_ROOT", isolated_repo),
-            patch.dict(os.environ, isolated_os_env, clear=True),
-        ):
-            # Non-gating read-only inspectors / guides / simulated selftest exit 0 without claiming live verification
-            for action in ("status", "preflight", "register-device-guide", "revocation-selftest"):
-                buf = StringIO()
-                with redirect_stdout(buf):
-                    rc = cli_main(
-                        [
-                            "--state-dir",
-                            str(self.state_dir),
-                            "stage-b",
-                            "--action",
-                            action,
-                            "--no-save",
-                            "--progress-path",
-                            str(self.progress_path),
-                        ]
-                    )
-                self.assertEqual(rc, 0, f"CLI stage-b --action {action} should exit 0")
-                payload = json.loads(buf.getvalue())
-                self.assertEqual(payload.get("exit_code"), 0)
-                if action == "status":
-                    self.assertFalse(payload["stage_b_complete"])
-                    self.assertFalse(payload["exit_0_means_stage_b_verified"])
-                elif action == "register-device-guide":
-                    self.assertFalse(payload["registered_any_device"])
-                    self.assertFalse(payload["verification_passed"])
-                elif action == "revocation-selftest":
-                    tr_sub = payload.get("task_result", {})
-                    self.assertTrue(tr_sub["simulated_only"])
-                    self.assertFalse(tr_sub["proves_live_office_mac_revocation"])
-                    self.assertFalse(tr_sub["verification_passed"])
-                    self.assertFalse(payload["verification_passed"])
-
-            # Insecure temporary .env (0644) MUST fail home-preflight and all unprovisioned gates exit 2
-            for gate_action in (
-                "home-preflight",
-                "tailscale-check",
-                "tls-check",
-                "register-device",
-                "verify-device",
-                "remote-check",
-                "security-check",
-                "revocation-check",
-                "launchd-status",
+        def _run_isolated_cli(action_name: str) -> Tuple[int, Dict[str, Any], str]:
+            buf = StringIO()
+            with (
+                patch("backend.app.runtime.cli.REPO_ROOT", isolated_root),
+                patch.dict(os.environ, clean_environ, clear=True),
+                redirect_stdout(buf),
             ):
-                buf = StringIO()
-                with redirect_stdout(buf):
-                    rc = cli_main(
-                        [
-                            "--state-dir",
-                            str(self.state_dir),
-                            "stage-b",
-                            "--action",
-                            gate_action,
-                            "--no-save",
-                            "--progress-path",
-                            str(self.progress_path),
-                        ]
-                    )
-                self.assertEqual(rc, 2, f"Unprovisioned gate --action {gate_action} must exit 2, got {rc}")
-                payload = json.loads(buf.getvalue())
-                self.assertEqual(payload.get("exit_code"), 2)
-                if gate_action == "home-preflight":
-                    self.assertFalse(payload.get("verification_passed"))
-                    steps_by_id = {s["step_id"]: s for s in payload.get("steps", [])}
-                    self.assertEqual(steps_by_id["step_01_home_mac_preflight"]["status"], "REQUIRES_OWNER_ACTION")
-
-            # Hardened temporary .env (0600) MUST pass home-preflight cleanly
-            os.chmod(isolated_env_path, 0o600)
-            buf_ok = StringIO()
-            with redirect_stdout(buf_ok):
-                rc_ok = cli_main(
+                rc_val = cli_main(
                     [
                         "--state-dir",
-                        str(self.state_dir),
+                        str(isolated_state),
                         "stage-b",
                         "--action",
-                        "home-preflight",
+                        action_name,
                         "--no-save",
                         "--progress-path",
-                        str(self.progress_path),
+                        str(isolated_progress),
                     ]
                 )
-            self.assertEqual(rc_ok, 0, "Secure temporary .env (0600) must pass home-preflight")
-            payload_ok = json.loads(buf_ok.getvalue())
-            self.assertEqual(payload_ok.get("exit_code"), 0)
-            self.assertTrue(payload_ok.get("verification_passed"))
-            steps_ok = {s["step_id"]: s for s in payload_ok.get("steps", [])}
-            self.assertEqual(steps_ok["step_01_home_mac_preflight"]["status"], "VERIFIED")
+            raw_out = buf.getvalue()
+            return rc_val, json.loads(raw_out), raw_out
+
+        isolated_env_path = isolated_root / ".env"
+
+        # Additional Case 1: Missing .env -> home-preflight fails closed (rc == 2)
+        rc_miss, pay_miss, _ = _run_isolated_cli("home-preflight")
+        self.assertEqual(rc_miss, 2)
+        self.assertEqual(pay_miss["stage_verdict"], "STAGE_B_BLOCKED")
+        self.assertFalse(pay_miss["verification_passed"])
+        step1_miss = next(s for s in pay_miss["steps"] if s["step_id"] == "step_01_home_mac_preflight")
+        self.assertEqual(step1_miss["status"], "BLOCKED")
+        self.assertIn("missing", (step1_miss.get("failure_reason") or "").lower())
+
+        # Case 1: Insecure .env (mode 0644 regular file) -> home-preflight fails closed (rc == 2)
+        dummy_secrets = ("dummy_api_key_xyz987", "DUMMY999", "DummyPass!2026", "JBSWY3DPEHPK3PXP")
+        _write_hardened_env(isolated_env_path)
+        isolated_env_path.write_text(
+            f"ANGEL_API_KEY={dummy_secrets[0]}\n"
+            f"ANGEL_CLIENT_CODE={dummy_secrets[1]}\n"
+            f"ANGEL_PASSWORD={dummy_secrets[2]}\n"
+            f"ANGEL_TOTP_SECRET={dummy_secrets[3]}\n",
+            encoding="utf-8",
+        )
+        os.chmod(isolated_env_path, 0o644)
+        rc_0644, pay_0644, raw_0644 = _run_isolated_cli("home-preflight")
+        self.assertEqual(rc_0644, 2)
+        self.assertFalse(pay_0644["verification_passed"])
+        step1_0644 = next(s for s in pay_0644["steps"] if s["step_id"] == "step_01_home_mac_preflight")
+        self.assertEqual(step1_0644["status"], "REQUIRES_OWNER_ACTION")
+        self.assertIn("0o644", step1_0644.get("failure_reason") or "")
+        for sec in dummy_secrets:
+            self.assertNotIn(sec, raw_0644)
+
+        rc_pre_0644, pay_pre_0644, _ = _run_isolated_cli("preflight")
+        self.assertEqual(rc_pre_0644, 0)
+        self.assertEqual(pay_pre_0644["stage_verdict"], "STAGE_B_BLOCKED")
+        self.assertFalse(pay_pre_0644["verification_passed"])
+
+        # Additional Case 2: Symlink .env -> rejected even when target file is 0600
+        symlink_target = isolated_root / "target_secret.env"
+        _write_hardened_env(symlink_target)
+        isolated_env_path.unlink()
+        isolated_env_path.symlink_to(symlink_target)
+        rc_sym, pay_sym, _ = _run_isolated_cli("home-preflight")
+        self.assertEqual(rc_sym, 2)
+        step1_sym = next(s for s in pay_sym["steps"] if s["step_id"] == "step_01_home_mac_preflight")
+        self.assertEqual(step1_sym["status"], "BLOCKED")
+        self.assertIn("symlink", (step1_sym.get("failure_reason") or "").lower())
+        isolated_env_path.unlink()
+
+        # Additional Case 3: Placeholder credentials in 0600 .env -> rejected (rc == 2)
+        isolated_env_path.write_text(
+            "ANGEL_API_KEY=your_api_key_here\n"
+            "ANGEL_CLIENT_CODE=your_client_code_here\n"
+            "ANGEL_PASSWORD=your_password_or_mpin_here\n"
+            "ANGEL_TOTP_SECRET=your_totp_secret_here\n",
+            encoding="utf-8",
+        )
+        os.chmod(isolated_env_path, 0o600)
+        rc_ph, pay_ph, _ = _run_isolated_cli("home-preflight")
+        self.assertEqual(rc_ph, 2)
+        step1_ph = next(s for s in pay_ph["steps"] if s["step_id"] == "step_01_home_mac_preflight")
+        self.assertEqual(step1_ph["status"], "BLOCKED")
+        self.assertIn("placeholder", (step1_ph.get("failure_reason") or "").lower())
+
+        # Additional Case 4: Malformed .env configuration -> rejected without leaking values
+        malformed_canary = "MALFORMED_CANARY_VALUE_999"
+        isolated_env_path.write_text(
+            f"ANGEL_API_KEY={dummy_secrets[0]}\n"
+            f'BROKEN_LINE="{malformed_canary}\n',
+            encoding="utf-8",
+        )
+        os.chmod(isolated_env_path, 0o600)
+        rc_bad, pay_bad, raw_bad = _run_isolated_cli("home-preflight")
+        self.assertEqual(rc_bad, 2)
+        step1_bad = next(s for s in pay_bad["steps"] if s["step_id"] == "step_01_home_mac_preflight")
+        self.assertEqual(step1_bad["status"], "BLOCKED")
+        self.assertIn("syntax", (step1_bad.get("failure_reason") or "").lower())
+        self.assertNotIn(malformed_canary, raw_bad)
+
+        # Case 2: Secure .env (mode 0600 regular file with safe dummy keys) -> home-preflight passes (rc == 0)
+        isolated_env_path.write_text(
+            f"ANGEL_API_KEY={dummy_secrets[0]}\n"
+            f"ANGEL_CLIENT_CODE={dummy_secrets[1]}\n"
+            f"ANGEL_PASSWORD={dummy_secrets[2]}\n"
+            f"ANGEL_TOTP_SECRET={dummy_secrets[3]}\n",
+            encoding="utf-8",
+        )
+        os.chmod(isolated_env_path, 0o600)
+        rc_0600, pay_0600, raw_0600 = _run_isolated_cli("home-preflight")
+        self.assertEqual(rc_0600, 0, f"Secure 0600 dummy .env should pass home-preflight, got: {raw_0600}")
+        self.assertTrue(pay_0600["verification_passed"])
+        step1_0600 = next(s for s in pay_0600["steps"] if s["step_id"] == "step_01_home_mac_preflight")
+        self.assertEqual(step1_0600["status"], "VERIFIED")
+        self.assertFalse(pay_0600["stage_b_complete"])
+        for sec in dummy_secrets:
+            self.assertNotIn(sec, raw_0600)
+
+        # Additional Case 5: Missing HMAC secret for remote mode fails closed in both runtime & wrapper
+        cert_tmp = isolated_root / "dummy.crt"
+        key_tmp = isolated_root / "dummy.key"
+        cert_tmp.write_text("CERT", encoding="utf-8")
+        key_tmp.write_text("KEY", encoding="utf-8")
+        with (
+            patch("backend.app.runtime.cli.REPO_ROOT", isolated_root),
+            patch.dict(os.environ, clean_environ, clear=True),
+            self.assertRaises(PermissionError),
+        ):
+            cli_main(
+                [
+                    "--state-dir",
+                    str(isolated_state),
+                    "supervise",
+                    "--bind-host",
+                    "100.64.0.10",
+                    "--vpn-cidr",
+                    "100.64.0.0/10",
+                    "--allowed-peer-ip",
+                    "100.64.0.25",
+                    "--tls-cert",
+                    str(cert_tmp),
+                    "--tls-key",
+                    str(key_tmp),
+                    "--remote-access",
+                ]
+            )
+        wrapper_script = REPO_ROOT / "deploy" / "scripts" / "run_launchd_service.sh"
+        wrap_proc = subprocess.run(
+            ["/bin/sh", str(wrapper_script), sys.executable, "-c", "print('SHOULD_NOT_RUN')", "--remote-access"],
+            env={**clean_environ, "TRADELENS_ENV_FILE": str(isolated_env_path)},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(wrap_proc.returncode, 78)
+        self.assertNotIn("SHOULD_NOT_RUN", wrap_proc.stdout)
+        self.assertIn("TRADELENS_STATE_HMAC_SECRET", wrap_proc.stderr)
+
+        # Verify coordinator uses isolated_root rather than real repo .env (zero real .env reads)
+        import backend.app.runtime.stage_b_setup as sbs_mod
+
+        inspected_paths: List[Path] = []
+        orig_inspect = sbs_mod._inspect_dotenv_metadata
+
+        def _spy_inspect(env_p: Path, env_map: Dict[str, str]) -> Dict[str, Any]:
+            inspected_paths.append(Path(env_p))
+            return orig_inspect(env_p, env_map)
+
+        with patch.object(sbs_mod, "_inspect_dotenv_metadata", side_effect=_spy_inspect):
+            rc_stat, pay_stat, _ = _run_isolated_cli("status")
+            self.assertEqual(rc_stat, 0)
+            self.assertFalse(pay_stat["stage_b_complete"])
+            self.assertEqual(pay_stat["stage_verdict"], "STAGE_B_PARTIALLY_COMPLETE")
+            self.assertEqual(
+                [s["step_id"] for s in pay_stat["steps"] if s["status"] == "VERIFIED"],
+                ["step_01_home_mac_preflight"],
+            )
+        self.assertEqual(inspected_paths, [isolated_root.resolve() / ".env"])
+        self.assertNotIn(REPO_ROOT.resolve() / ".env", inspected_paths)
+
+        # Non-gating read-only inspectors / guides / simulated selftest exit 0 without claiming live verification
+        for action in ("status", "preflight", "register-device-guide", "revocation-selftest"):
+            rc, payload, _ = _run_isolated_cli(action)
+            self.assertEqual(rc, 0, f"CLI stage-b --action {action} should exit 0")
+            self.assertEqual(payload.get("exit_code"), 0)
+            if action == "status":
+                self.assertFalse(payload["stage_b_complete"])
+                self.assertFalse(payload["exit_0_means_stage_b_verified"])
+            elif action == "register-device-guide":
+                self.assertFalse(payload["registered_any_device"])
+                self.assertFalse(payload["verification_passed"])
+            elif action == "revocation-selftest":
+                tr_sub = payload.get("task_result", {})
+                self.assertTrue(tr_sub["simulated_only"])
+                self.assertFalse(tr_sub["proves_live_office_mac_revocation"])
+                self.assertFalse(tr_sub["verification_passed"])
+                self.assertFalse(payload["verification_passed"])
+
+        # Remaining unprovisioned verification gates and argless register-device MUST still fail non-zero (rc == 2)
+        for gate_action in (
+            "tailscale-check",
+            "tls-check",
+            "register-device",
+            "verify-device",
+            "remote-check",
+            "security-check",
+            "revocation-check",
+            "launchd-status",
+        ):
+            rc, payload, _ = _run_isolated_cli(gate_action)
+            self.assertEqual(rc, 2, f"Unprovisioned gate --action {gate_action} must exit 2, got {rc}")
+            self.assertEqual(payload.get("exit_code"), 2)
 
     def test_07_frontend_setup_ui_accessibility_and_csp_compliance(self) -> None:
         html = INDEX_HTML.read_text(encoding="utf-8")
@@ -778,8 +909,16 @@ class TestStageBSetupAndMise(unittest.TestCase):
         self.assertNotIn("owner_secret:", html)
         self.assertIsNone(re.search(r"\son(?:click|submit|change|load)\s*=", html, re.IGNORECASE))
         # Validate JS syntax if node is available
-        node_bin = shutil.which("node") or "/Users/abhisheksuman/.nvm/versions/node/v22.22.3/bin/node"
-        if os.path.exists(node_bin):
+        node_candidates: List[str] = []
+        which_node = shutil.which("node")
+        if which_node:
+            node_candidates.append(which_node)
+        nvm_dir = Path.home() / ".nvm" / "versions" / "node"
+        if nvm_dir.is_dir():
+            node_candidates.extend(str(p) for p in sorted(nvm_dir.glob("*/bin/node"), reverse=True))
+        node_candidates.extend(["/opt/homebrew/bin/node", "/usr/local/bin/node"])
+        node_bin = next((cand for cand in node_candidates if cand and os.path.exists(cand)), None)
+        if node_bin:
             scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, re.DOTALL)
             js_file = self.root / "check_script.js"
             js_file.write_text(scripts[-1], encoding="utf-8")
@@ -911,7 +1050,10 @@ class TestStageBSetupAndMise(unittest.TestCase):
                 )
 
         # CLI render-launchd with non-python executable fails (raises ValueError -> non-zero process exit)
-        with self.assertRaises(ValueError):
+        with (
+            patch("backend.app.runtime.cli.REPO_ROOT", self.root),
+            self.assertRaises(ValueError),
+        ):
             cli_main(
                 [
                     "--state-dir",
@@ -1370,6 +1512,77 @@ class TestStageBSetupAndMise(unittest.TestCase):
         self.assertIn("remove-device", cmds_joined)
         self.assertIn("PERMANENTLY_RETIRED", cmds_joined)
         self.assertIn("127.0.0.1", "\n".join(rec_rev["what_to_do"] + [cmds_joined]))
+
+    def test_17_portable_launchd_rendering_and_python_resolution(self) -> None:
+        # 1. Mock target-machine Home Mac repo path (e.g. /Users/example_home/Documents/GitHub/trading-assistant)
+        mock_target_root = Path(self._tmp.name) / "mock_home_machine" / "Documents" / "GitHub" / "trading-assistant"
+        mock_venv_bin = mock_target_root / "backend" / ".venv" / "bin"
+        mock_venv_bin.mkdir(parents=True, exist_ok=True)
+        mock_py = mock_venv_bin / "python3.12"
+        mock_py.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        os.chmod(mock_py, 0o755)
+
+        resolved_venv = resolve_python_executable(repo_root=mock_target_root, environ={})
+        self.assertEqual(
+            resolved_venv,
+            str(mock_target_root.resolve() / "backend" / ".venv" / "bin" / "python3.12"),
+        )
+
+        resolved_override = resolve_python_executable(
+            repo_root=mock_target_root,
+            environ={"TRADELENS_PYTHON_EXECUTABLE": "/usr/local/bin/python3.12"},
+        )
+        self.assertEqual(resolved_override, "/usr/local/bin/python3.12")
+
+        # 2. Render plists via StageBSetupCoordinator against target repo root; verify zero stale tradelens-ai paths
+        mock_state = mock_target_root / "runtime_state"
+        mock_progress = mock_target_root / ".ops_state" / "stage_b_progress.json"
+        mock_state.mkdir(parents=True, exist_ok=True)
+        coord = StageBSetupCoordinator(
+            repo_root=mock_target_root,
+            state_dir=mock_state,
+            progress_path=mock_progress,
+            environ=self.sample_environ,
+        )
+        render_res = coord.run_allowlisted_task(
+            task_id="tradelens-stage-b-render-launchd",
+            confirmed=True,
+            is_loopback=True,
+        )["task_result"]
+        self.assertTrue(render_res["passed"])
+        self.assertTrue(render_res["templates_only"])
+        self.assertFalse(render_res["installed_to_launchagents"])
+
+        target_resolved = str(mock_target_root.resolve())
+        for label, p_str in render_res["rendered_plists"].items():
+            p = Path(p_str)
+            self.assertTrue(p.exists())
+            xml_text = p.read_text(encoding="utf-8")
+            self.assertIn(target_resolved, xml_text)
+            self.assertIn(str(mock_target_root.resolve() / "backend" / ".venv" / "bin" / "python3.12"), xml_text)
+            self.assertNotIn("Documents/GitHub/tradelens-ai", xml_text)
+            self.assertNotIn("ANGEL_API_KEY", xml_text)
+            if shutil.which("plutil"):
+                lint = subprocess.run(["plutil", "-lint", str(p)], capture_output=True, text=True, check=False)
+                self.assertEqual(lint.returncode, 0, lint.stdout + lint.stderr)
+
+        # 3. Direct render_launchd_plists on non-existent mocked Home Mac path resolves cleanly without touching host
+        nonexistent_target = Path("/Users/example_home/Documents/GitHub/trading-assistant")
+        out_dir = Path(self._tmp.name) / "mock_target_out"
+        rendered = render_launchd_plists(
+            output_dir=out_dir,
+            repo_root=nonexistent_target,
+            python_executable="/usr/local/bin/python3.12",
+            bind_host="127.0.0.1",
+        )
+        for p in rendered.values():
+            xml_text = p.read_text(encoding="utf-8")
+            self.assertIn("/Users/example_home/Documents/GitHub/trading-assistant", xml_text)
+            self.assertIn("/usr/local/bin/python3.12", xml_text)
+            self.assertNotIn("Documents/GitHub/tradelens-ai", xml_text)
+            if shutil.which("plutil"):
+                lint = subprocess.run(["plutil", "-lint", str(p)], capture_output=True, text=True, check=False)
+                self.assertEqual(lint.returncode, 0, lint.stdout + lint.stderr)
 
 
 if __name__ == "__main__":

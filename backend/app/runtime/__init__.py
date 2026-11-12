@@ -18,6 +18,7 @@ from .launchd_config import (
     build_home_engine_plist,
     get_launchd_lifecycle_commands,
     render_launchd_plists,
+    resolve_python_executable,
 )
 from .power_policy import (
     MACBOOK_POWER_AND_LID_LIMITATIONS,
@@ -134,6 +135,7 @@ __all__ = [
     "redact_runtime_text",
     "render_hardened_html",
     "render_launchd_plists",
+    "resolve_python_executable",
     "validate_bind_host",
     "wrap_server_tls",
 ]

@@ -26,13 +26,9 @@ from typing import Any, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
 from .frontend_server import run_frontend_server
-from .launchd_config import get_launchd_lifecycle_commands, render_launchd_plists
+from .launchd_config import get_launchd_lifecycle_commands, render_launchd_plists, resolve_python_executable
 from .power_policy import PowerAndSleepMonitor
-from .stage_b_setup import (
-    MANUAL_CONFIRMATION_ALLOWED_STEPS,
-    StageBSetupCoordinator,
-    _default_python_executable,
-)
+from .stage_b_setup import MANUAL_CONFIRMATION_ALLOWED_STEPS, StageBSetupCoordinator
 from .security import (
     DeviceKeyCrypto,
     MacOSKeychainKeyStore,
@@ -230,7 +226,11 @@ def _resolve_remote_and_tls_options(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _build_services(args: argparse.Namespace, probe_secret: str) -> List[SupervisedServiceSpec]:
-    py_exe = sys.executable or "/opt/homebrew/bin/python3.12"
+    py_exe = resolve_python_executable(
+        repo_root=REPO_ROOT,
+        configured=sys.executable or None,
+        environ=os.environ,
+    )
     opts = _resolve_remote_and_tls_options(args)
     env_overrides = {
         "PYTHONPATH": f"{REPO_ROOT}:{REPO_ROOT / 'backend'}",
@@ -669,7 +669,7 @@ def cmd_render_launchd(args: argparse.Namespace) -> int:
     rendered = render_launchd_plists(
         output_dir=args.output_dir,
         repo_root=REPO_ROOT,
-        python_executable=args.python_exe,
+        python_executable=args.python_exe or resolve_python_executable(repo_root=REPO_ROOT, environ=os.environ),
         bind_host=args.bind_host,
         backend_port=args.backend_port,
         frontend_port=args.frontend_port,
@@ -690,9 +690,9 @@ def cmd_render_launchd(args: argparse.Namespace) -> int:
             for label, path in rendered.items()
         },
         "note": (
-            "Templates invoke deploy/scripts/run_launchd_service.sh and were written to deploy/launchd ONLY "
-            "(not installed or bootstrapped into ~/Library/LaunchAgents). "
-            "Provide ANGEL_* , TRADELENS_OWNER_SECRET, and TRADELENS_STATE_HMAC_SECRET via owner-only 0600 .env, never inside plist XML."
+            "Templates invoke deploy/scripts/run_launchd_service.sh for this Home Mac checkout and were written "
+            "to deploy/launchd ONLY (never copy Office Mac templates or treat templates as installed ~/Library/LaunchAgents services). "
+            "Provide ANGEL_*, TRADELENS_OWNER_SECRET, and TRADELENS_STATE_HMAC_SECRET via owner-only 0600 .env, never inside plist XML."
         ),
     }
     print(json.dumps(info, indent=2))
@@ -1351,7 +1351,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_ld = sub.add_parser("render-launchd", help="Render macOS launchd plist templates")
     p_ld.add_argument("--output-dir", default=str(REPO_ROOT / "deploy" / "launchd"))
-    p_ld.add_argument("--python-exe", default=_default_python_executable(REPO_ROOT))
+    p_ld.add_argument(
+        "--python-exe",
+        default=None,
+        help="Explicit Python 3.12+ executable path (defaults to TRADELENS_PYTHON_EXECUTABLE, repo .venv, or active Python)",
+    )
     p_ld.add_argument("--bind-host", default="127.0.0.1")
     p_ld.add_argument("--backend-port", type=int, default=8000)
     p_ld.add_argument("--frontend-port", type=int, default=8080)
@@ -1491,7 +1495,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_sb.add_argument("--note", default="")
     p_sb.add_argument("--no-save", action="store_true")
     p_sb.add_argument("--record-live-drill", action="store_true")
-    p_sb.add_argument("--python-exe", default=None)
+    p_sb.add_argument(
+        "--python-exe",
+        default=None,
+        help="Optional Python 3.12+ interpreter path for render-launchd (defaults to configured/active interpreter)",
+    )
     p_sb.add_argument("--progress-path", default=None)
     p_sb.add_argument("--out", default=None)
     p_sb.add_argument("--stdout", action="store_true")

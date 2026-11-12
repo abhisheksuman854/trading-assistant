@@ -11,16 +11,16 @@ Rather than outputting generic "Buy" tips, TradeLens AI acts as a research analy
 This project has been built to run immediately on macOS with **Python 3.12** without requiring any paid APIs or cloud subscriptions.
 
 ### 1. Run the Terminal Scanner (Instant Shortlist)
-Run the automated trade shortlisting scanner directly in your terminal:
+Run the automated trade shortlisting scanner directly in your terminal (`mise` puts `backend/.venv/bin` and Homebrew `python3.12` on `PATH`):
 ```bash
-backend/.venv/bin/python3.12 backend/cli_scanner.py
+python3.12 backend/cli_scanner.py
 ```
 This scans the universe, calculates technical and fundamental scores, runs Black-Scholes option Greeks and OI buildup checks, identifies vetoed setups (e.g., earnings risk), and checks open positions for trailing exits.
 
 ### 2. Start the Backend API Server
 Launch the lightweight REST API server:
 ```bash
-backend/.venv/bin/python3.12 backend/app/main.py
+python3.12 backend/app/main.py
 ```
 The API starts at `http://127.0.0.1:8000`. Available endpoints:
 - `GET /api/scan`: Runs universe scan and returns shortlisted swing trades, options, and vetoed setups.

@@ -32,13 +32,14 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from backend.app.runtime.health_and_safety import RuntimeHealthCoordinator
 from backend.app.runtime.launchd_config import (
     FRONTEND_SERVER_LABEL,
     HOME_ENGINE_LABEL,
     render_launchd_plists,
+    resolve_python_executable,
 )
 from backend.app.runtime.security import (
     ALLOWED_REMOTE_ROUTE_METHODS,
@@ -765,7 +766,7 @@ def build_command_catalog() -> List[CommandSpec]:
         CommandSpec(
             command_id="cmd_render_launchd",
             command_name="Render Validated LaunchAgent Plist Templates",
-            description="Generate Home Engine and Frontend Dashboard plist files under deploy/launchd/ without installing to ~/Library/LaunchAgents.",
+            description="Generate Home Mac Engine and Frontend Dashboard plist files under deploy/launchd/ using this machine's repo root and configured Python (never copy Office Mac templates or install to ~/Library/LaunchAgents automatically).",
             step_id="step_10_launchagent_installation",
             machine="home_mac",
             category="host_mutation",
@@ -1082,32 +1083,25 @@ _SAFE_PYTHON_BASENAME_RE = re.compile(r"^python3(?:\.\d+)?$")
 _SHELL_META_RE = re.compile(r"[;&|`$><\r\n\t\s]")
 
 
-def _default_python_executable(repo_root: Optional[Path] = None) -> str:
-    """Resolve the active project Python 3.12 interpreter when available."""
-    if repo_root is not None:
-        venv_py = Path(repo_root) / "backend" / ".venv" / "bin" / "python3.12"
-        if venv_py.exists() and os.access(venv_py, os.X_OK):
-            return str(venv_py)
-    if os.path.exists("/opt/homebrew/bin/python3.12") and os.access("/opt/homebrew/bin/python3.12", os.X_OK):
-        return "/opt/homebrew/bin/python3.12"
-    if sys.executable and _SAFE_PYTHON_BASENAME_RE.fullmatch(Path(sys.executable).name):
-        return str(sys.executable)
-    return "/opt/homebrew/bin/python3.12"
-
-
-def _validate_python_executable(candidate: Any, repo_root: Optional[Path] = None) -> str:
+def _validate_python_executable(
+    candidate: Any,
+    *,
+    repo_root: Optional[Path | str] = None,
+    environ: Optional[Mapping[str, str]] = None,
+) -> str:
     raw = str(candidate or "").strip()
     if not raw:
-        return _default_python_executable(repo_root)
+        raw = resolve_python_executable(repo_root=repo_root, environ=environ)
     if _SHELL_META_RE.search(raw):
         raise ValueError("INVALID_PYTHON_EXECUTABLE: Shell metacharacters or whitespace are not allowed.")
     p = Path(raw)
-    if not p.is_absolute():
-        raise ValueError("INVALID_PYTHON_EXECUTABLE: Interpreter path must be absolute.")
+    if not p.is_absolute() or ".." in p.parts:
+        raise ValueError("INVALID_PYTHON_EXECUTABLE: Interpreter path must be an absolute normalized path.")
     if not _SAFE_PYTHON_BASENAME_RE.fullmatch(p.name):
         raise ValueError(f"INVALID_PYTHON_EXECUTABLE: Unapproved interpreter binary '{p.name}'.")
     approved_prefixes = (
         "/opt/homebrew/bin/",
+        "/opt/homebrew/opt/",
         "/usr/local/bin/",
         "/usr/bin/",
         "/Library/Frameworks/Python.framework/",
@@ -1117,6 +1111,11 @@ def _validate_python_executable(candidate: Any, repo_root: Optional[Path] = None
         return raw
     if raw.startswith(approved_prefixes):
         return raw
+    if repo_root is not None:
+        raw_venv_bin = Path(repo_root) / "backend" / ".venv" / "bin"
+        resolved_venv_bin = Path(repo_root).resolve() / "backend" / ".venv" / "bin"
+        if p.parent == raw_venv_bin or p.parent.resolve() == resolved_venv_bin:
+            return raw
     if "/backend/.venv/bin/" in raw and os.path.exists(raw) and os.access(raw, os.X_OK):
         return raw
     raise ValueError(f"INVALID_PYTHON_EXECUTABLE: Interpreter '{raw}' is not in the approved Python allowlist.")
@@ -3136,7 +3135,11 @@ class StageBSetupCoordinator:
             elif lowered == "tradelens-stage-b-render-launchd":
                 out_dir = self.repo_root / "deploy" / "launchd"
                 sup_cfg = _probe_supervisor_runtime(self.state_dir).get("_raw_cfg", {})
-                validated_py = _validate_python_executable(extra_args.get("python_executable"), repo_root=self.repo_root)
+                validated_py = _validate_python_executable(
+                    extra_args.get("python_executable"),
+                    repo_root=self.repo_root,
+                    environ=self.environ,
+                )
                 rendered = render_launchd_plists(
                     output_dir=out_dir,
                     repo_root=self.repo_root,

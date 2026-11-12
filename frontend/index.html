@@ -1785,7 +1785,7 @@
           if (sigEl) sigEl.value = p1363ToDerBase64(sigRaw);
         } else if (box) {
           box.textContent =
-            `Path A (Keychain CLI): Run on Office Mac: /opt/homebrew/bin/python3.12 -m backend.app.runtime.cli sign-challenge --device-id ${devId} --challenge "${data.challenge_string}" (then paste JSON signature field below).`;
+            `Path A (Keychain CLI): Run on Office Mac using your Python 3.12 environment: python3.12 -m backend.app.runtime.cli sign-challenge --device-id ${devId} --challenge "${data.challenge_string}" (then paste JSON signature field below).`;
           box.classList.remove('hidden');
         }
       } catch (err) {
