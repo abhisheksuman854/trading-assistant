@@ -1104,6 +1104,64 @@ class TestRemoteAccessSecurityAudit(unittest.TestCase):
             except Exception:
                 s1.close()
 
+    def test_21_ledger_remote_read_isolation_and_loopback_access(self) -> None:
+        """
+        Phase 3E.5.2.8.2D: Verifies that GET /api/ledger is strictly denied for remote
+        workstations (authenticated or unauthenticated), while remaining accessible
+        to the local Home Mac dashboard over loopback without requiring an owner secret.
+        """
+        mgr = self._new_manager()
+        self._register_office(mgr)
+        chal, sig = self._issue_and_sign(mgr, client_ip="100.64.0.25")
+        sess, _ = mgr.authenticate_remote_session(
+            "office-mac-air", chal["challenge_id"], sig, "100.64.0.25"
+        )
+        token = sess["access_token"]
+        _, _, api_handler, _ = self._build_api_and_frontend_handlers(mgr)
+        auth_hdr = {"Authorization": f"Bearer {token}"}
+
+        # 1. Local loopback read succeeds without credentials
+        st_loop, b_loop, _, _ = _dispatch_http(api_handler, "GET", "/api/ledger", client_ip="127.0.0.1")
+        self.assertEqual(st_loop, 200)
+        self.assertIsInstance(b_loop, dict)
+        self.assertIn("current_balance", b_loop)
+        self.assertIn("overall_pnl", b_loop)
+        self.assertIn("trades", b_loop)
+
+        # 2. Remote unauthenticated read is denied 403 ENDPOINT_NOT_AUTHORIZED_FOR_REMOTE
+        st_unauth, b_unauth, _, _ = _dispatch_http(api_handler, "GET", "/api/ledger", client_ip="100.64.0.25")
+        self.assertEqual(st_unauth, 403)
+        self.assertEqual(b_unauth["reason_code"], "ENDPOINT_NOT_AUTHORIZED_FOR_REMOTE")
+
+        # 3. Remote authenticated read is strictly denied 403 ENDPOINT_NOT_AUTHORIZED_FOR_REMOTE
+        st_auth, b_auth, _, _ = _dispatch_http(
+            api_handler, "GET", "/api/ledger", client_ip="100.64.0.25", headers=auth_hdr
+        )
+        self.assertEqual(st_auth, 403)
+        self.assertEqual(b_auth["reason_code"], "ENDPOINT_NOT_AUTHORIZED_FOR_REMOTE")
+
+        # 4. Other allowed read endpoints remain accessible to authenticated remote sessions
+        for allowed_path in ("/api/scan", "/api/health", "/api/indices", "/api/universe"):
+            st_ok, b_ok, _, _ = _dispatch_http(
+                api_handler, "GET", allowed_path, client_ip="100.64.0.25", headers=auth_hdr
+            )
+            self.assertEqual(st_ok, 200, msg=f"Remote allowed read failed on {allowed_path}")
+            self.assertNotIn("error", b_ok)
+
+        # 5. Remote ledger mutation endpoints remain rejected with HOME_OWNER_ONLY_OPERATION
+        for mutation_path in (
+            "/api/ledger/trade",
+            "/api/ledger/trade/delete",
+            "/api/ledger/clear",
+            "/api/ledger/settings",
+            "/api/ledger/import-chat",
+        ):
+            st_mut, b_mut, _, _ = _dispatch_http(
+                api_handler, "POST", mutation_path, client_ip="100.64.0.25", headers=auth_hdr, body={}
+            )
+            self.assertEqual(st_mut, 403)
+            self.assertEqual(b_mut["reason_code"], "HOME_OWNER_ONLY_OPERATION")
+
 
 if __name__ == "__main__":
     unittest.main()

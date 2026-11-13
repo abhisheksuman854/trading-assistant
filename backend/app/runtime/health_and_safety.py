@@ -18,14 +18,180 @@ Guarantees:
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
+import shutil
+import socket
+import subprocess
+import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from backend.app.data.session_clock import IST_ZONE
+
+
+# Tailscale IPv4 CGNAT (100.64.0.0/10) and IPv6 ULA prefix (fd7a:115c:a1e0::/48)
+TAILSCALE_CGNAT_NET = ipaddress.ip_network("100.64.0.0/10")
+TAILSCALE_ULA_NET = ipaddress.ip_network("fd7a:115c:a1e0::/48")
+
+
+def find_tailscale_bin() -> Optional[str]:
+    """Discover Tailscale CLI path across standard macOS, Homebrew, and app bundle locations."""
+    candidates = [
+        shutil.which("tailscale"),
+        "/opt/homebrew/bin/tailscale",
+        "/usr/local/bin/tailscale",
+        "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+    ]
+    for cand in candidates:
+        if cand and os.path.exists(cand) and os.access(cand, os.X_OK):
+            return cand
+    return None
+
+
+def is_ip_bound_to_local_interface(ip: str) -> bool:
+    """
+    Corroborate that an IP address is genuinely assigned to an active local network interface
+    by testing a local non-transmitting datagram bind with the OS kernel.
+    Fails closed if the address does not belong to any local network interface.
+    """
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    family = socket.AF_INET6 if ip_obj.version == 6 else socket.AF_INET
+    s = socket.socket(family, socket.SOCK_DGRAM)
+    try:
+        s.bind((str(ip_obj), 0))
+        return True
+    except OSError:
+        return False
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass
+
+
+@dataclass
+class VPNProbeResult:
+    connected: bool
+    detail: str
+    backend_state: str
+    assigned_ips: List[str] = field(default_factory=list)
+    bound_ips: List[str] = field(default_factory=list)
+    probed_at: float = 0.0
+
+
+def probe_vpn_status(
+    cmd_runner: Optional[Callable[[List[str], float], Tuple[int, str, str]]] = None,
+    bind_checker: Optional[Callable[[str], bool]] = None,
+    cli_finder: Optional[Callable[[], Optional[str]]] = None,
+    timeout_sec: float = 3.0,
+) -> VPNProbeResult:
+    """
+    Query Tailscale CLI and corroborate with OS network stack:
+    1. Tailscale CLI executable present.
+    2. BackendState == "Running".
+    3. Self has assigned IP in 100.64.0.0/10 or fd7a:115c:a1e0::/48.
+    4. At least one assigned IP is genuinely bound to a local OS interface.
+    Fails closed on any error, timeout, or missing corroboration.
+    """
+    finder = cli_finder or find_tailscale_bin
+    checker = bind_checker or is_ip_bound_to_local_interface
+
+    ts_bin = finder()
+    if not ts_bin:
+        return VPNProbeResult(
+            connected=False,
+            detail="Tailscale CLI executable not found.",
+            backend_state="CLI_NOT_FOUND",
+        )
+
+    def _default_runner(cmd: List[str], to: float) -> Tuple[int, str, str]:
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=to,
+                check=False,
+            )
+            return proc.returncode, proc.stdout, proc.stderr
+        except subprocess.TimeoutExpired:
+            return -1, "", f"Command timed out after {to:.1f}s"
+        except Exception as exc:
+            return -1, "", str(exc)
+
+    runner = cmd_runner or _default_runner
+    rc, out, err = runner([ts_bin, "status", "--json"], timeout_sec)
+    if rc != 0:
+        err_msg = (err.strip() or out.strip() or f"exit code {rc}")[:120]
+        return VPNProbeResult(
+            connected=False,
+            detail=f"Tailscale daemon status check failed ({err_msg}).",
+            backend_state="DAEMON_UNAVAILABLE",
+        )
+
+    try:
+        data = json.loads(out)
+    except Exception:
+        return VPNProbeResult(
+            connected=False,
+            detail="Tailscale status returned malformed JSON output.",
+            backend_state="INVALID_JSON",
+        )
+
+    backend_state = str(data.get("BackendState") or "UNKNOWN")
+    if backend_state != "Running":
+        return VPNProbeResult(
+            connected=False,
+            detail=f"Tailscale daemon not running (BackendState={backend_state}).",
+            backend_state=backend_state,
+        )
+
+    self_node = data.get("Self") or {}
+    raw_ips = self_node.get("TailscaleIPs") or []
+    assigned_vpn_ips: List[str] = []
+    for raw in raw_ips:
+        try:
+            ip_obj = ipaddress.ip_address(str(raw).strip())
+            if ip_obj in TAILSCALE_CGNAT_NET or ip_obj in TAILSCALE_ULA_NET:
+                assigned_vpn_ips.append(str(ip_obj))
+        except ValueError:
+            continue
+
+    if not assigned_vpn_ips:
+        return VPNProbeResult(
+            connected=False,
+            detail="Tailscale running but no valid 100.64.0.0/10 or fd7a:115c:a1e0::/48 address assigned.",
+            backend_state=backend_state,
+            assigned_ips=[],
+            bound_ips=[],
+        )
+
+    bound_ips = [ip for ip in assigned_vpn_ips if checker(ip)]
+    if not bound_ips:
+        return VPNProbeResult(
+            connected=False,
+            detail=f"Tailscale running ({backend_state}) with assigned IP(s) {assigned_vpn_ips}, but none are bound to a local network interface.",
+            backend_state=backend_state,
+            assigned_ips=assigned_vpn_ips,
+            bound_ips=[],
+        )
+
+    v4_bound = [ip for ip in bound_ips if "." in ip]
+    primary_ip = v4_bound[0] if v4_bound else bound_ips[0]
+    return VPNProbeResult(
+        connected=True,
+        detail=f"Tailscale mesh active ({primary_ip}).",
+        backend_state=backend_state,
+        assigned_ips=assigned_vpn_ips,
+        bound_ips=bound_ips,
+    )
 
 
 class EngineState:
@@ -121,6 +287,12 @@ class RuntimeHealthCoordinator:
         # Signal 7: Remote client & VPN connectivity (strictly informational; never implies LIVE market data)
         self.vpn_connected: bool = False
         self.vpn_detail: str = "Private VPN interface not verified."
+        self.vpn_probe_ttl_seconds: float = 10.0
+        self._last_vpn_probe_time: float = 0.0
+        self._cached_vpn_result: Optional[VPNProbeResult] = None
+        self._vpn_cmd_runner: Optional[Callable[[List[str], float], Tuple[int, str, str]]] = None
+        self._vpn_bind_checker: Optional[Callable[[str], bool]] = None
+        self._vpn_cli_finder: Optional[Callable[[], Optional[str]]] = None
         self.remote_access_manager: Optional[Any] = None
 
         # Supervised service states
@@ -359,6 +531,37 @@ class RuntimeHealthCoordinator:
     def mark_vpn_status(self, connected: bool, detail: str = "") -> None:
         self.vpn_connected = connected
         self.vpn_detail = detail or ("Private VPN mesh active." if connected else "Private VPN interface disconnected.")
+        now_mono = time.monotonic()
+        self._cached_vpn_result = VPNProbeResult(
+            connected=connected,
+            detail=self.vpn_detail,
+            backend_state="MANUAL_OVERRIDE" if connected else "DISCONNECTED",
+            assigned_ips=[],
+            bound_ips=[],
+            probed_at=now_mono,
+        )
+        self._last_vpn_probe_time = now_mono
+
+    def check_vpn_status(self, force: bool = False) -> VPNProbeResult:
+        now_mono = time.monotonic()
+        if (
+            not force
+            and self._cached_vpn_result is not None
+            and (now_mono - self._last_vpn_probe_time) < self.vpn_probe_ttl_seconds
+        ):
+            return self._cached_vpn_result
+
+        res = probe_vpn_status(
+            cmd_runner=self._vpn_cmd_runner,
+            bind_checker=self._vpn_bind_checker,
+            cli_finder=self._vpn_cli_finder,
+        )
+        res.probed_at = now_mono
+        self._cached_vpn_result = res
+        self._last_vpn_probe_time = now_mono
+        self.vpn_connected = res.connected
+        self.vpn_detail = res.detail
+        return res
 
     def mark_calculation_health(self, healthy: bool, detail: str = "") -> None:
         if healthy:
@@ -418,6 +621,15 @@ class RuntimeHealthCoordinator:
         freshness = self.compute_freshness(now_utc=now)
         freshness_state = freshness["market_data_freshness"]
 
+        # Ensure fresh or cached VPN status
+        self.check_vpn_status()
+
+        remote_mode_enabled = (
+            bool(getattr(self.remote_access_manager, "remote_mode_enabled", False))
+            if self.remote_access_manager is not None
+            else False
+        )
+
         remote_summary = (
             self.remote_access_manager.summarize_connectivity()
             if self.remote_access_manager is not None
@@ -425,6 +637,7 @@ class RuntimeHealthCoordinator:
         )
         remote_summary["vpn_connected"] = self.vpn_connected
         remote_summary["vpn_detail"] = self.vpn_detail
+        remote_summary["remote_mode_enabled"] = remote_mode_enabled
         remote_summary["proves_live_market_data"] = False  # Enforced invariant
 
         failure_reasons: List[str] = []
@@ -479,7 +692,7 @@ class RuntimeHealthCoordinator:
                 degraded = True
                 failure_reasons.append("BATTERY_POWER_WARNING: Home Mac unplugged; sleep/power loss risk.")
 
-        if not self.vpn_connected:
+        if remote_mode_enabled and not self.vpn_connected:
             failure_reasons.append(f"VPN_DISCONNECTED: {self.vpn_detail}")
 
         # Engine state classification
@@ -506,8 +719,22 @@ class RuntimeHealthCoordinator:
             engine_status = EngineState.DEGRADED
             data_status = "STALE" if freshness_state == FreshnessState.STALE else "UNAVAILABLE"
 
+        tls_enabled = (
+            bool(getattr(self.remote_access_manager, "tls_enabled", False))
+            if self.remote_access_manager is not None
+            else False
+        )
+        owner_initialized = (
+            bool(getattr(self.remote_access_manager, "owner_hash_hex", ""))
+            if self.remote_access_manager is not None
+            else False
+        )
+
         remote_available = (
-            self.backend_healthy
+            remote_mode_enabled
+            and tls_enabled
+            and owner_initialized
+            and self.backend_healthy
             and not self.owner_shutdown_requested
             and self.vpn_connected
         )

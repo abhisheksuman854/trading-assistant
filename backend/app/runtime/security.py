@@ -63,7 +63,6 @@ ALLOWED_REMOTE_ROUTE_METHODS: Dict[str, Set[str]] = {
     "/api/positions/monitor": {"POST"},
     "/api/verify-tip": {"POST"},
     "/api/universe": {"GET"},
-    "/api/ledger": {"GET"},
     "/api/remote/heartbeat": {"POST"},
     "/api/remote/logout": {"POST"},
     "/api/setup/state": {"GET"},
