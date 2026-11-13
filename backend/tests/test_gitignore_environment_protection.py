@@ -200,24 +200,74 @@ class TestGitignoreEnvironmentProtection(unittest.TestCase):
             ignored_res = _run_git(REPO_ROOT, "check-ignore", "-q", rel)
             self.assertEqual(ignored_res.returncode, 1, msg=f"{rel} matched .gitignore")
 
-    def test_06_no_real_environment_file_exists_or_created_in_workspace(self) -> None:
+    def test_06_env_protection_on_host_and_isolated_workspace(self) -> None:
+        # 1. Host workspace check: root `.env` is permitted on the primary Home Mac host,
+        #    must never be read/modified/deleted, and must remain gitignored & untracked.
+        host_env = REPO_ROOT / ".env"
+        if host_env.exists():
+            self.assertTrue(host_env.is_file() and not host_env.is_symlink())
+            chk_host = _run_git(REPO_ROOT, "check-ignore", "-q", ".env")
+            self.assertEqual(chk_host.returncode, 0, msg="Host .env must be ignored by .gitignore.")
+            tracked_host = _run_git(REPO_ROOT, "ls-files", "--error-unmatch", ".env")
+            self.assertNotEqual(tracked_host.returncode, 0, msg="Host .env must never be tracked by Git.")
+            status_host = _run_git(REPO_ROOT, "status", "--porcelain", "--untracked-files=all", ".env")
+            self.assertEqual(status_host.returncode, 0)
+            self.assertEqual(status_host.stdout.strip(), "", msg="Host .env must not appear in git status.")
+
+        # Ensure no unexpected non-template env files (other than permitted root `.env`) exist or are tracked.
         forbidden_names = {".env", ".env.local", ".env.dev", ".env.production", ".envrc"}
-        found_real_env: List[str] = []
+        unexpected_env: List[str] = []
         for pattern in (".env*", "*.env"):
             for path in REPO_ROOT.rglob(pattern):
                 if ".git" in path.parts or ".venv" in path.parts or "node_modules" in path.parts:
                     continue
-                if path.is_file() and (
-                    path.name in forbidden_names
-                    or path.suffix == ".env"
-                    or path.name != ".env.example"
-                ):
-                    found_real_env.append(str(path.relative_to(REPO_ROOT)))
+                if not path.is_file():
+                    continue
+                rel = str(path.relative_to(REPO_ROOT))
+                if rel in {".env", ".env.example"}:
+                    continue
+                if path.name in forbidden_names or path.suffix == ".env" or path.name != ".env.example":
+                    unexpected_env.append(rel)
         self.assertEqual(
-            found_real_env,
+            sorted(set(unexpected_env)),
             [],
-            msg=f"Unexpected real/non-template env files in repository: {sorted(set(found_real_env))}",
+            msg=f"Unexpected real/non-template env files in repository: {sorted(set(unexpected_env))}",
         )
+
+        # 2. Isolated temporary-workspace check: verify clean init, `.env` ignore, and `.env.example` tracking.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _create_isolated_git_repo(Path(tmp))
+            self.assertFalse(
+                (repo / ".env").exists(),
+                msg="Isolated test setup must not create a real .env file automatically.",
+            )
+
+            _touch_rel_files(repo, [".env", ".env.example"])
+            chk_tmp_env = _run_git(repo, "check-ignore", "-q", ".env")
+            self.assertEqual(chk_tmp_env.returncode, 0, msg="Isolated .env must be ignored.")
+            dry_add_env = _run_git(repo, "add", "--dry-run", ".env")
+            self.assertNotEqual(dry_add_env.returncode, 0, msg="git add --dry-run must refuse .env.")
+
+            chk_tmp_example = _run_git(repo, "check-ignore", "-q", ".env.example")
+            self.assertEqual(chk_tmp_example.returncode, 1, msg="Isolated .env.example must not be ignored.")
+            add_ex = _run_git(repo, "add", ".gitignore", ".env.example")
+            self.assertEqual(add_ex.returncode, 0, msg=add_ex.stderr)
+            commit_ex = _run_git(repo, "commit", "-q", "-m", "Add template env")
+            self.assertEqual(commit_ex.returncode, 0, msg=commit_ex.stderr)
+
+            ls_cached = _run_git(repo, "ls-files", "--cached")
+            self.assertEqual(ls_cached.returncode, 0, msg=ls_cached.stderr)
+            tracked = set(ls_cached.stdout.splitlines())
+            self.assertIn(".env.example", tracked)
+            self.assertNotIn(".env", tracked)
+
+            status_tmp = _run_git(repo, "status", "--porcelain", "--untracked-files=all")
+            self.assertEqual(status_tmp.returncode, 0, msg=status_tmp.stderr)
+            self.assertEqual(
+                status_tmp.stdout.strip(),
+                "",
+                msg=f"Isolated workspace must remain clean after tracking .env.example: {status_tmp.stdout}",
+            )
 
 
 if __name__ == "__main__":

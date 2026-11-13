@@ -455,7 +455,7 @@ class TradeLensAppRuntime:
             result["all_watchlist_stocks"] = all_watch
         else:
             result = {
-                "market_sentiment": sentiment,
+                "market_sentiment": "UNAVAILABLE",
                 "top_movers": [],
                 "top_swing_setups": [],
                 "top_options_setups": [],

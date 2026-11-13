@@ -5,11 +5,19 @@ Verifies:
 2. Broker disconnection behavior: returns empty lists and UNAVAILABLE status, never fabricating data.
 3. API endpoints and frontend fallback datasets explicitly mark offline data as SIMULATED, never LIVE.
 """
-import unittest
 import os
+import sys
+import unittest
+from pathlib import Path
+
+_BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
 from app.data.angel_one import AngelOneSmartAPIProvider
 from app.data.base import DataStatus
 from app.data.sample_universe import SampleUniverseProvider
+from app.main import TradeLensAppRuntime
 
 
 class TestBrokerIntegrationAndDataStatus(unittest.TestCase):
@@ -67,6 +75,46 @@ class TestBrokerIntegrationAndDataStatus(unittest.TestCase):
         self.assertIn('"data_status": "SIMULATED"', content)
         # Ensure fallbackData does not declare itself as LIVE Angel One SmartAPI
         self.assertNotIn('"data_source": "LIVE Angel One SmartAPI",\n      "indices": defaultIndices', content)
+
+    def test_scan_sentiment_unavailable_when_market_data_empty(self):
+        """
+        When market data is disconnected or empty (allow_sample_fallback=False),
+        get_scan_payload() must report data_status: UNAVAILABLE and
+        market_sentiment: UNAVAILABLE, never claiming bullish or bearish sentiment.
+        """
+        rt = TradeLensAppRuntime(allow_sample_fallback=False)
+        payload = rt.get_scan_payload()
+        self.assertEqual(payload["data_status"], "UNAVAILABLE")
+        self.assertEqual(payload["market_sentiment"], "UNAVAILABLE")
+        self.assertEqual(payload["top_movers"], [])
+        self.assertEqual(payload["top_swing_setups"], [])
+        self.assertEqual(payload["top_options_setups"], [])
+
+    def test_scan_sentiment_fail_closed_cannot_be_overridden_when_data_unavailable(self):
+        """
+        Even when a caller explicitly passes sentiment='BULLISH' or 'BEARISH'
+        to get_scan_payload, if market data is unavailable, market_sentiment must
+        strictly fail-closed to 'UNAVAILABLE'.
+        """
+        rt = TradeLensAppRuntime(allow_sample_fallback=False)
+        for requested_sentiment in ("BULLISH", "BEARISH", "NEUTRAL"):
+            payload = rt.get_scan_payload(sentiment=requested_sentiment)
+            self.assertEqual(payload["data_status"], "UNAVAILABLE")
+            self.assertEqual(
+                payload["market_sentiment"],
+                "UNAVAILABLE",
+                f"Market sentiment must fail closed to UNAVAILABLE when data is missing, got {payload['market_sentiment']}",
+            )
+
+    def test_scan_sentiment_preserved_when_universe_active(self):
+        """
+        When active stock data is present (e.g. simulated fallback or live universe),
+        get_scan_payload must preserve the requested sentiment in the scan engine.
+        """
+        rt = TradeLensAppRuntime(allow_sample_fallback=True)
+        payload = rt.get_scan_payload(sentiment="BEARISH")
+        self.assertEqual(payload["data_status"], "SIMULATED")
+        self.assertEqual(payload["market_sentiment"], "BEARISH")
 
 
 if __name__ == "__main__":
